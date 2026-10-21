@@ -40,3 +40,7 @@ SQLite 保存会话、搜索元数据、本地收藏、不可变清单、任务�
 真实 Hot 自测需在仓库外保存音频：`python scripts/live_hot_smoke.py --source /path/to/pinned/HotDownloader --work-dir /outside/project`。这会搜索并下载一首样本，记录真实音频校验结果；不测试 fnOS 身份或 FPK。当前环境两首样本均被酷我以地区限制 407 拒绝，详见 [验证记录](VALIDATION.md)。
 
 当前列表接口返回当前用户最近 500 条任务/资产/收藏，历史分页尚未实现；不作为完整歌单导出接口使用。云平台登录、推荐歌单、远端歌单分页、自动入库、注入接管、反馈和 FPK 均有独立准入门槛，见 [迭代计划](ITERATION.md)。
+
+## 前台开发与四种布局验证
+
+浏览器前台已落地 PC/手机横竖屏与下载确认。运行 `npm ci --ignore-scripts`、`npm run check`、`npm test`；开发机/CI 安装 `npx playwright install --with-deps chromium` 后运行 `npm run test:browser`。后者只连接本地合成 API，截图与报告在忽略的 `test-results/`，不用于证明真实账号或音乐下载。GitHub browser 作业保存短期截图附件。NAS 只提供静态页面，无需 Node/Chromium。
