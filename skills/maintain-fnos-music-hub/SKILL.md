@@ -8,8 +8,8 @@ description: 维护 Surc/fnos_music_hub 独立飞牛音乐中心。用于接续�
 ## 先核对当前工程
 
 1. 定位或按任务授权克隆 `https://github.com/Surc/fnos_music_hub.git`。检查 remote、分支、未提交修改；不要把旧 `fnos_music_ext` 当作本仓库。
-2. 读取仓库 `AGENTS.md`、`README.md`、`SOURCE_VERSIONS.json`、`docs/ITERATION.md` 和 `docs/VALIDATION.md`；按任务读取 `docs/DESIGN.md`、`docs/CONTRACTS.md`、`docs/ACCOUNTS_AND_FEEDBACK.md`、`docs/UPSTREAM.md`、`docs/MIGRATION.md`。
-3. 以当前代码和验证记录判断完成度。初始工程是设计与目录骨架，没有可运行服务或可安装 FPK。`docs/design-goals-v1.6-20261021.txt` 是完整历史研究，含被后续审核修订的提议；当前规范文档优先，不能只截取早期选型表。
+2. 读取仓库 `AGENTS.md`、`README.md`、`SOURCE_VERSIONS.json`、`docs/ITERATION.md` 和 `docs/VALIDATION.md`；先读 `docs/RUNNING.md` 和 `docs/HTTP_API.md`，按任务读取 `docs/DESIGN.md`、`docs/CONTRACTS.md`、`docs/ACCOUNTS_AND_FEEDBACK.md`、`docs/UPSTREAM.md`、`docs/MIGRATION.md`。
+3. 以当前代码和验证记录判断完成度。初始化是设计骨架；0.1.0a1 已有可运行开发服务与前台，尚无 FPK。按当前迭代区分模拟验证与真实平台/NAS验收。`docs/design-goals-v1.6-20261021.txt` 是完整历史研究，含被后续审核修订的提议；当前规范文档优先，不能只截取早期选型表。
 4. 核对来源的完整 SHA、实际分支、版本文件、Git tag、观察时间、采用状态和许可证。`observed_commit` 不等于 `adopted_commit`，原工程双来源的采用基线不等于新 Hub 已采用。
 
 ## 保持模块可替换
@@ -34,9 +34,17 @@ description: 维护 Surc/fnos_music_hub 独立飞牛音乐中心。用于接续�
 ## 验证、记录与交付
 
 1. 从 `docs/ITERATION.md` 取最小下一步，先完成严格身份和一首歌的端到端链路，再冻结 OpenAPI。保留内联清单容量上限，超限明确拒绝；暂不引入通用事件总线或复杂分块协议。
-2. 运行与本次改动相符的检查。资料变更运行 `python3 scripts/verify_provenance.py`；适配器需覆盖失败语义和两个用户并发隔离。账号真测、客户端真测、fnOS 安装测试分别记录，不能以模拟测试替代。
-3. 下载回归包含酷我 `rid=142276943` 的 DAYBREAK'S BELL 和其他样本，检查完整可解码音频、实际来源和格式。单首成功不代表全平台、会员资格或所有音质可用。
-4. 原生 FPK 面向 J4125/x86_64；NAS 不安装编译器、不依赖 Docker。实现后核对运行依赖、独立应用 ID、数据目录、升级备份、停用恢复、唯一 Socket 所有者以及密钥排除。
-5. 同步 `SOURCE_VERSIONS.json`、迭代/验证/变更记录和用户说明；实际合入后才能推进采用 SHA。发行请求另核对 VERSION/tag/构建提交/正式附件 SHA256 和实机证据，不把设计提交发布为可用 FPK。
-6. 更新本 skill 时提升清单中的 skill 版本，重新计算本文件与 `agents/openai.yaml` 的 SHA256，同步仓库副本与个人 Skills Git。旧 `maintain-fnos-music` 保持专用于旧工程。
-7. 按会话已有授权完成提交/PR/发布，不因例行维护重复索要许可；权限和凭证不写入项目。交接给出实际提交、检查结果、候选/采用差异和下一项阻断条件。
+2. 运行与本次改动相符的检查。运行相关 pytest、ruff、`npm run check` / jsdom，以及 `python3 scripts/verify_provenance.py`；适配器需覆盖失败语义和两个用户并发隔离。账号真测、客户端真测、fnOS 安装测试分别记录，不能以模拟测试替代。
+3. 现有运行时使用逐用户独立 Hot 进程、端口、凭据与非重叠下载目录；禁止把它改成共享 Cookie 切换。内联选曲清单上限 1000 项/512 KiB，任务投递结果不明时先回读，不盲目重试。
+4. 下载回归包含酷我 `rid=142276943` 的 DAYBREAK'S BELL 和其他样本，检查完整可解码音频、实际来源和格式。单首成功不代表全平台、会员资格或所有音质可用。
+5. 原生 FPK 面向 J4125/x86_64；NAS 不安装编译器、不依赖 Docker。实现后核对运行依赖、独立应用 ID、数据目录、升级备份、停用恢复、唯一 Socket 所有者以及密钥排除。
+6. 同步 `SOURCE_VERSIONS.json`、迭代/验证/变更记录和用户说明；实际合入后才能推进采用 SHA。发行请求另核对 VERSION/tag/构建提交/正式附件 SHA256 和实机证据，不把设计提交发布为可用 FPK。
+7. 更新本 skill 时提升清单中的 skill 版本，重新计算本文件与 `agents/openai.yaml` 的 SHA256，同步仓库副本与个人 Skills Git。旧 `maintain-fnos-music` 保持专用于旧工程。
+8. 按会话已有授权完成提交/PR/发布，不因例行维护重复索要许可；权限和凭证不写入项目。交接给出实际提交、检查结果、候选/采用差异和下一项阻断条件。
+
+## 当前开发版的验证边界
+
+- 2026-10-21 的真实 Hot HTTP 搜索能找到 DAYBREAK'S BELL（RID 142276943）和晴天（RID 228908）；本环境两次下载都被酷我地区限制 407 拒绝。不能沿用“Hot 在其他环境成功”来认定本次下载通过。
+- 当前仅开放酷我下载与 QQ/酷我公共搜索；本地收藏不是云端喜欢。推荐、私人平台账号、远端整单、入库、注入和真实播放反馈仍有独立准入。
+- `scripts/run_hot_user.py` 初始化 Hub 专属原生引擎；`scripts/live_hot_smoke.py` 是显式真测工具，音频和原始日志放在仓库外，不用作生产认证入口。
+- 自有代码 MIT；目前通过 HTTP 对接上游，没有复制或修改其运行源码。真实构建 Hot 时要获取固定子模块并保留其 LICENSE/NOTICE。
