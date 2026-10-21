@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>飞牛音乐 Hub</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <script type="module" src="/static/app.js"></script>
+  </head>
+  <body>
+    <section id="login" class="login-shell">
+      <div class="login-brand">
+        <span class="mark">♪</span>
+        <h1>音乐，各归其位。</h1>
+        <p>你的歌单、收藏和下载，跟随你的飞牛音乐账号。</p>
+        <span class="version">开发预览 · 0.1</span>
+      </div>
+      <form id="login-form" class="login-card">
+        <h2>登录飞牛音乐</h2>
+        <p class="muted">使用当前 NAS 的飞牛音乐账号</p>
+        <label
+          >用户名<input
+            name="username"
+            autocomplete="username"
+            required
+            maxlength="256" /></label
+        ><label
+          >密码<input
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            required
+            maxlength="1024" /></label
+        ><button class="primary" type="submit">登录</button>
+        <p class="small muted">需要管理员先配置音桥与独立下载引擎。</p>
+      </form>
+    </section>
+    <div id="shell" hidden>
+      <aside>
+        <a class="brand" href="/">♪ <span>音乐 Hub</span></a
+        ><span class="version">开发预览 · 0.1</span>
+        <nav aria-label="音乐导航">
+          <button data-view="discover" class="active">发现与搜索</button
+          ><button data-view="favorites">我的收藏</button
+          ><button data-view="tasks">下载任务</button
+          ><button data-view="assets">已下载歌曲</button
+          ><button data-view="accounts">平台账号</button
+          ><button data-view="injection" id="admin-nav" hidden>注入设置</button>
+        </nav>
+        <div class="sidebar-note">
+          <span class="status-dot"></span> 独立音乐中心
+          <p>注入关闭时也能使用</p>
+        </div>
+      </aside>
+      <div class="workspace">
+        <header>
+          <span class="eyebrow">FNOS MUSIC HUB</span>
+          <div class="user-area">
+            <span id="user"></span
+            ><button id="logout" class="quiet">退出</button>
+          </div>
+        </header>
+        <main>
+          <div class="page-heading">
+            <div>
+              <span class="eyebrow" id="section-label"
+                >YOUR MUSIC, YOUR SPACE</span
+              >
+              <h1 id="page-title">发现与搜索</h1>
+              <p id="page-description" class="muted">
+                先找到歌曲，再决定如何收藏与下载。
+              </p>
+            </div>
+            <span class="chip">网易 · QQ · 酷我</span>
+          </div>
+          <section id="discover-controls">
+            <form id="search-form" class="search-bar">
+              <select id="provider" aria-label="音乐来源">
+                <option value="kuwo">酷我音乐</option>
+                <option value="qq">QQ 音乐 · 搜索</option>
+                <option value="netease" disabled>
+                  网易云 · 待接入
+                </option></select
+              ><input
+                id="query"
+                placeholder="搜索歌曲、歌手，例如 DAYBREAK'S BELL"
+                required
+                maxlength="200"
+                aria-label="搜索关键词"
+              /><button class="primary" type="submit">搜索歌曲</button>
+            </form>
+            <div class="notice">
+              首轮已接入歌曲搜索与酷我下载。歌单推荐、平台账号联动和飞牛入库正在后续迭代中。
+            </div>
+          </section>
+          <div id="view-content" aria-live="polite"></div>
+          <div id="pagination" hidden>
+            <button id="next-page" class="quiet">加载下一页</button>
+          </div>
+        </main>
+        <footer>
+          歌单、下载与飞牛注入分别维护 · 下载音质以实际校验结果为准
+        </footer>
+      </div>
+    </div>
+    <div id="toast" role="status" hidden></div>
+  </body>
+</html>
