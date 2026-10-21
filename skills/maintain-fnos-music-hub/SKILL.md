@@ -8,7 +8,7 @@ description: 维护 Surc/fnos_music_hub 独立飞牛音乐中心。用于接续�
 ## 先核对当前工程
 
 1. 定位或按任务授权克隆 `https://github.com/Surc/fnos_music_hub.git`。检查 remote、分支、未提交修改；不要把旧 `fnos_music_ext` 当作本仓库。
-2. 读取仓库 `AGENTS.md`、`README.md`、`SOURCE_VERSIONS.json`、`docs/ITERATION.md` 和 `docs/VALIDATION.md`；先读 `docs/RUNNING.md` 和 `docs/HTTP_API.md`，按任务读取 `docs/DESIGN.md`、`docs/CONTRACTS.md`、`docs/ACCOUNTS_AND_FEEDBACK.md`、`docs/UPSTREAM.md`、`docs/MIGRATION.md`。
+2. 读取仓库 `AGENTS.md`、`README.md`、`SOURCE_VERSIONS.json`、`docs/ITERATION.md` 和 `docs/VALIDATION.md`；先读 `docs/RUNNING.md`、`docs/HTTP_API.md` 与功能/平台两份 `docs/ACCEPTANCE_*.md`。前台任务再读 `docs/UI_REVIEW.md`，其余按模块读取设计、契约、账号反馈、更新和迁移文档。
 3. 以当前代码和验证记录判断完成度。初始化是设计骨架；0.1.0a1 已有可运行开发服务与前台，尚无 FPK。按当前迭代区分模拟验证与真实平台/NAS验收。`docs/design-goals-v1.6-20261021.txt` 是完整历史研究，含被后续审核修订的提议；当前规范文档优先，不能只截取早期选型表。
 4. 核对来源的完整 SHA、实际分支、版本文件、Git tag、观察时间、采用状态和许可证。`observed_commit` 不等于 `adopted_commit`，原工程双来源的采用基线不等于新 Hub 已采用。
 
@@ -44,7 +44,12 @@ description: 维护 Surc/fnos_music_hub 独立飞牛音乐中心。用于接续�
 
 ## 当前开发版的验证边界
 
+- PC/移动端均需横/竖屏；手机横屏使用紧凑侧栏、低高度确认页，竖屏使用底部四入口。管理员设置从“我的”可达。当前前台已接搜索、收藏、任务/文件、批量选曲和下载确认；推荐/私人绑定/入库/注入仍按实际后端能力标为未开放，禁止放入原型示例数据。
+- 保持旋转仅调整布局与可见视口，不重建表单、不重新认证或提交。下载结果不明时冻结原音质/目标，以原清单、请求体和幂等键核对；退出清除路径、弹层与私人筛选。旧用户的迟到响应不能写入新会话或将其登出。
+- 前台改动运行 jsdom 与 `npm run test:browser`。后者用真实 Chromium、合成同源 API 做尺寸/旋转/溢出及页面流程检查，属于开发机/CI 依赖，不进入 NAS。真实手机键盘/安全区、NAS 身份和真实平台仍按验收清单单独记录。
+
 - 2026-10-21 的真实 Hot HTTP 搜索能找到 DAYBREAK'S BELL（RID 142276943）和晴天（RID 228908）；本环境两次下载都被酷我地区限制 407 拒绝。不能沿用“Hot 在其他环境成功”来认定本次下载通过。
+- 保留这两项历史结果，业务码不当作 HTTP 状态。R-KW-001/002 由用户稍后本地复测，不改变网络环境代测，不冻结其他模块开发。
 - 当前仅开放酷我下载与 QQ/酷我公共搜索；本地收藏不是云端喜欢。推荐、私人平台账号、远端整单、入库、注入和真实播放反馈仍有独立准入。
 - `scripts/run_hot_user.py` 初始化 Hub 专属原生引擎；`scripts/live_hot_smoke.py` 是显式真测工具，音频和原始日志放在仓库外，不用作生产认证入口。
 - 自有代码 MIT；目前通过 HTTP 对接上游，没有复制或修改其运行源码。真实构建 Hot 时要获取固定子模块并保留其 LICENSE/NOTICE。
