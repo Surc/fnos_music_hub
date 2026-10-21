@@ -4,7 +4,7 @@
 
 当前已有 0.1.0a1 开发实现。先读 docs/RUNNING.md、docs/HTTP_API.md；不要把 mock/生成音频测试当成真实 NAS、账号、完整音乐下载或 FPK 验收。接口尚未冻结。
 
-按 docs/ACCEPTANCE_FUNCTIONS.md、docs/ACCEPTANCE_PLATFORMS.md 逐项记录。地区限制由用户稍后本地复测，保留两首平台业务码 407 的历史结果，不改成通过，不冻结独立开发。界面方案见 docs/UI_REVIEW.md，待用户评审再落地。
+按 docs/ACCEPTANCE_FUNCTIONS.md、docs/ACCEPTANCE_PLATFORMS.md 逐项记录。地区限制由用户稍后本地复测，保留两首平台业务码 407 的历史结果，不改成通过，不冻结独立开发。界面方案见 docs/UI_REVIEW.md，用户已授权实施；后续按真实后端能力继续接入，不重复要求确认。
 
 界面必须覆盖 PC/移动端各自横/竖屏，并检查窄窗、低高度、软键盘、安全区与旋转状态保留；不以缩放桌面稿代替手机适配，不因重排重新认证或重复提交任务。
 

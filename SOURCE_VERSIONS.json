@@ -301,13 +301,13 @@
   ],
   "maintenance_skill": {
     "name": "maintain-fnos-music-hub",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "files": {
-      "skills/maintain-fnos-music-hub/SKILL.md": "82c56ba6d4753b9d3605b38a1e84645c74fb2b834f601a871bfc70ecf9d60cf7",
+      "skills/maintain-fnos-music-hub/SKILL.md": "0587f3ce103a60daa1ab3ca8b5148aa7fd6012b46185a1332ad290367c049a51",
       "skills/maintain-fnos-music-hub/agents/openai.yaml": "43f885a269d77d2173f7480c43e58afcab96777c2546511cdaeb4636349ed40d",
       "skills/maintain-fnos-music-hub/assets/icon.svg": "9be88f8dd4c5e658961515c71389eafd45142ffa68bcae58e8dcff57d178ed91"
     },
-    "personal_skill_git_commit": "b7f3dc80c703d8939c20a600672ba03786e0334c"
+    "personal_skill_git_commit": "8b4c08f8f2dfb44abb0a06bcf75584106e3025a9"
   },
   "project_release": {
     "tag": null,
@@ -364,7 +364,7 @@
     "functional_checklist": "docs/ACCEPTANCE_FUNCTIONS.md",
     "platform_checklist": "docs/ACCEPTANCE_PLATFORMS.md",
     "ui_proposal": "docs/UI_REVIEW.md",
-    "ui_review_status": "pending_user_review",
+    "ui_review_status": "authorized_implemented_for_current_backend_capabilities",
     "kuwo_live_download_status": "environment_limited_pending_user_local_retest",
     "local_retest_cases": [
       "R-KW-001",
@@ -390,7 +390,7 @@
         "F-UI-05",
         "F-UI-06"
       ],
-      "status": "documented_pending_implementation_and_real_device_validation",
+      "status": "implemented_current_pages_chromium_10_viewports_passed_real_device_pending",
       "preserve_on_rotation": [
         "page",
         "provider",
@@ -407,7 +407,23 @@
         "touch_targets",
         "no_horizontal_overflow",
         "keyboard_and_zoom"
-      ]
+      ],
+      "test_script": "tests/web-browser.mjs",
+      "synthetic_api_fixture": "tests/web-fixture.mjs",
+      "viewport_count": 10,
+      "browser_engine": "Playwright 1.62.1 / Chromium",
+      "validation_commit": "15e5998e31c636b114d6890000a00a7e5f07ab87",
+      "workflow_run": 39581211945,
+      "evidence": "docs/ui-screenshots/browser-report.json",
+      "artifact_sha256": "2bb853a9e444d10ab8a6bc3a2efeff799997f6ee7e4bc2b0b7646cba77640d89",
+      "evidence_files_sha256": {
+        "docs/ui-screenshots/browser-report.json": "91fa8a3fae10e591cbbb051c8072227e1deee5c98aa09ca6f1363b153875bad0",
+        "docs/ui-screenshots/mobile-landscape-confirm.png": "4603831a9b6d6e6928e48ad2f9ceca36fb7828e1ea4173b29b8fc5eb4e2aed89",
+        "docs/ui-screenshots/mobile-landscape.png": "42e6b1eb8b2b4493f680662403558a61163c8495582a4b1f66b5fbdb0619496b",
+        "docs/ui-screenshots/mobile-portrait.png": "1a9858558dd599d28fff30ec5ccb3b6c3fa8dafb0abc2f3e11d2e97efcd413d2",
+        "docs/ui-screenshots/pc-landscape.png": "48c25dfa281ba3e16293dbdbb7d3fa9d8101f143f9b5059c44aabad9bc630ecc",
+        "docs/ui-screenshots/pc-portrait.png": "e48e7f1a7871c853a4d5af3d139ffcae6582a1601a6ecd4ef176fd9339a652c1"
+      }
     }
   }
 }
