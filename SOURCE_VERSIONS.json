@@ -1,0 +1,317 @@
+{
+  "schema_version": 1,
+  "repository": "Surc/fnos_music_hub",
+  "stage": "design-bootstrap",
+  "recorded_on": "2026-10-21",
+  "observation_policy": "Inherited from the fixed-source v1.6 research of 2026-10-21. Not a claim of fresh upstream heads. No runtime source adopted in this bootstrap.",
+  "design_archive": {
+    "path": "docs/design-goals-v1.6-20261021.txt",
+    "version": "1.6",
+    "bytes": 109037,
+    "lines": 1235,
+    "sha256": "69e96d6c49d9142770da8a12809540f46f6067697a2b24060d1b3e4637dbdd6c",
+    "preservation": "Unchanged complete research text; current canonical documents supersede earlier proposals."
+  },
+  "legacy_project": {
+    "repository": "Surc/fnos_music_ext",
+    "branch": "main",
+    "observed_commit": "1d8f4e73945ae51a21cb5bce2202a3f9ee9d4ef6",
+    "version_file": "2.8.0",
+    "last_known_release_tag": "v2.8.0",
+    "release_is_observed_head": false,
+    "upstreams": [
+      {
+        "repository": "javycoder/fnos_music_ext",
+        "branch": "main",
+        "adoption_method_in_legacy": "merge",
+        "adopted_commit_in_legacy": "6973402df5e180cd49a00af4db48758504303c58",
+        "adopted_version_file": "2.8.0",
+        "adopted_tag": "v2.8.0",
+        "observed_commit": "22122adebb9b526e297b00d028486c66e76ad989",
+        "observed_version_file": "2.9.0",
+        "observed_is_adopted": false
+      },
+      {
+        "repository": "gzywd/fnos_music_ext",
+        "branch": "main",
+        "adoption_method_in_legacy": "selected feature port",
+        "adopted_commit_in_legacy": "08b0b23486d289619ab73575f42aa0d20e78c2b3",
+        "adopted_version_file": "2.9.30",
+        "adopted_tag": null,
+        "observed_commit": "f5b2db85bf6d00ebb2966ccd8e37e81699e35571",
+        "observed_version_file": "2.9.30",
+        "observed_is_adopted": false
+      }
+    ],
+    "maintenance_skill": {
+      "name": "maintain-fnos-music",
+      "version": "1.0.0",
+      "scope": "legacy project only",
+      "skill_md_sha256": "38af32b0568d4b18372c0ca86262226a8933dfb9a3695b3df0180f8e7d83abb7",
+      "openai_yaml_sha256": "02794f2bf656d89e4828fb83d9c0f8bcd639a267aa041574d130b9e158e097dc"
+    }
+  },
+  "sources": [
+    {
+      "repository": "lerdb/HotDownloader",
+      "repository_url": "https://github.com/lerdb/HotDownloader",
+      "observed_on": "2026-10-21",
+      "observed_branch": null,
+      "observed_commit": "07e86c3d06243cf1350925c0dd3be704005abd29",
+      "version_file_or_documented_version": null,
+      "status": "candidate",
+      "planned_role": "QQ/酷我下载引擎；QQ 登录/刷新单一所有者",
+      "adopted_commit": null,
+      "adoption_evidence": null,
+      "license_record": null,
+      "license_status": "not_rechecked_in_bootstrap",
+      "evidence_path": "docs/design-goals-v1.6-20261021.txt"
+    },
+    {
+      "repository": "L-1124/QQMusicApi",
+      "repository_url": "https://github.com/L-1124/QQMusicApi",
+      "observed_on": "2026-10-21",
+      "observed_branch": null,
+      "observed_commit": "27861e51432ea6b6e88dc35c4e8c8e239c0339e8",
+      "version_file_or_documented_version": null,
+      "status": "candidate",
+      "planned_role": "QQ 账号推荐、私人列表和明确云端收藏；不竞争凭据刷新",
+      "adopted_commit": null,
+      "adoption_evidence": null,
+      "license_record": null,
+      "license_status": "not_rechecked_in_bootstrap",
+      "evidence_path": "docs/design-goals-v1.6-20261021.txt"
+    },
+    {
+      "repository": "darknessomi/musicbox",
+      "repository_url": "https://github.com/darknessomi/musicbox",
+      "observed_on": "2026-10-21",
+      "observed_branch": null,
+      "observed_commit": "9c405f4bae2384d0410e63f8b816a707553d72d3",
+      "version_file_or_documented_version": "0.5.3",
+      "status": "candidate",
+      "planned_role": "网易已有协议基础；多账号与反馈/订阅需验证",
+      "adopted_commit": null,
+      "adoption_evidence": null,
+      "license_record": null,
+      "license_status": "not_rechecked_in_bootstrap",
+      "evidence_path": "docs/design-goals-v1.6-20261021.txt"
+    },
+    {
+      "repository": "NeteaseCloudMusicApiEnhanced/api-enhanced",
+      "repository_url": "https://github.com/NeteaseCloudMusicApiEnhanced/api-enhanced",
+      "observed_on": "2026-10-21",
+      "observed_branch": null,
+      "observed_commit": "19c7dad6db7d660954c7a615a686ff0acb030f91",
+      "version_file_or_documented_version": null,
+      "status": "reference",
+      "planned_role": "网易协议替换评估；不是默认第二套服务",
+      "adopted_commit": null,
+      "adoption_evidence": null,
+      "license_record": null,
+      "license_status": "not_rechecked_in_bootstrap",
+      "evidence_path": "docs/design-goals-v1.6-20261021.txt"
+    },
+    {
+      "repository": "guohuiyuan/music-lib",
+      "repository_url": "https://github.com/guohuiyuan/music-lib",
+      "observed_on": "2026-10-21",
+      "observed_branch": null,
+      "observed_commit": "6353508e84cd357b5bc3acf32d95a16e01bbe20c",
+      "version_file_or_documented_version": null,
+      "status": "conditional",
+      "planned_role": "QQ/酷我公共目录；完整分页与重复条目准入",
+      "adopted_commit": null,
+      "adoption_evidence": null,
+      "license_record": "AGPL-3.0",
+      "license_status": "recorded_in_research_recheck_before_adoption",
+      "evidence_path": "docs/design-goals-v1.6-20261021.txt"
+    },
+    {
+      "repository": "guohuiyuan/go-music-dl",
+      "repository_url": "https://github.com/guohuiyuan/go-music-dl",
+      "observed_on": "2026-10-21",
+      "observed_branch": null,
+      "observed_commit": "2c1cefe7064fba6e46034359791060debbc935e6",
+      "version_file_or_documented_version": "1.1.3",
+      "status": "reference",
+      "planned_role": "歌单功能与交互对比，不整体接入下载/Web 栈",
+      "adopted_commit": null,
+      "adoption_evidence": null,
+      "license_record": null,
+      "license_status": "not_rechecked_in_bootstrap",
+      "evidence_path": "docs/design-goals-v1.6-20261021.txt"
+    },
+    {
+      "repository": "MOPELotus/TuneWeave",
+      "repository_url": "https://github.com/MOPELotus/TuneWeave",
+      "observed_on": "2026-10-21",
+      "observed_branch": null,
+      "observed_commit": "b6e35c0999965d56ba61b2cfc146218b5763b343",
+      "version_file_or_documented_version": null,
+      "status": "optional-validation",
+      "planned_role": "酷我私人账号读写真实验收候选",
+      "adopted_commit": null,
+      "adoption_evidence": null,
+      "license_record": null,
+      "license_status": "not_rechecked_in_bootstrap",
+      "evidence_path": "docs/design-goals-v1.6-20261021.txt"
+    },
+    {
+      "repository": "MakcRe/KuGouMusicApi",
+      "repository_url": "https://github.com/MakcRe/KuGouMusicApi",
+      "observed_on": "2026-10-21",
+      "observed_branch": null,
+      "observed_commit": "514f870db7e60ca37bc5535be5da36d32b571c6f",
+      "version_file_or_documented_version": null,
+      "status": "reference",
+      "planned_role": "后续平台反馈协议研究；不扩张一期",
+      "adopted_commit": null,
+      "adoption_evidence": null,
+      "license_record": null,
+      "license_status": "not_rechecked_in_bootstrap",
+      "evidence_path": "docs/design-goals-v1.6-20261021.txt"
+    },
+    {
+      "repository": "qianlipp/fn-music-bridge",
+      "repository_url": "https://github.com/qianlipp/fn-music-bridge",
+      "observed_on": "2026-10-21",
+      "observed_branch": "main",
+      "observed_commit": "ad9ce203cbb7fdb54f9404a7abb2df605893f388",
+      "version_file_or_documented_version": null,
+      "status": "candidate",
+      "planned_role": "FnIdentity/FnLibrary 同一主上游；认证后事件出口",
+      "adopted_commit": null,
+      "adoption_evidence": null,
+      "license_record": "AGPL-3.0",
+      "license_status": "recorded_in_research_recheck_before_adoption",
+      "evidence_path": "docs/design-goals-v1.6-20261021.txt"
+    },
+    {
+      "repository": "dtapps/fnmusic-sync",
+      "repository_url": "https://github.com/dtapps/fnmusic-sync",
+      "observed_on": "2026-10-21",
+      "observed_branch": "main",
+      "observed_commit": "5b843dab69c7811365ba323627195257e88eea25",
+      "version_file_or_documented_version": null,
+      "status": "reference",
+      "planned_role": "事件采集与生命周期；不采用估算时长作为实际反馈",
+      "adopted_commit": null,
+      "adoption_evidence": null,
+      "license_record": "MIT",
+      "license_status": "recorded_in_research_recheck_before_adoption",
+      "evidence_path": "docs/design-goals-v1.6-20261021.txt"
+    },
+    {
+      "repository": "QiaoKes/fn-music-tv",
+      "repository_url": "https://github.com/QiaoKes/fn-music-tv",
+      "observed_on": "2026-10-21",
+      "observed_branch": "main",
+      "observed_commit": "f25f1aceb5617bf20e94f97190a0b6229083a5c1",
+      "version_file_or_documented_version": null,
+      "status": "reference",
+      "planned_role": "TV 登录参考，未证实完整事件上报",
+      "adopted_commit": null,
+      "adoption_evidence": null,
+      "license_record": "GPL-3.0",
+      "license_status": "recorded_in_research_recheck_before_adoption",
+      "evidence_path": "docs/design-goals-v1.6-20261021.txt"
+    },
+    {
+      "repository": "finamp-app/finamp",
+      "repository_url": "https://github.com/finamp-app/finamp",
+      "observed_on": "2026-10-21",
+      "observed_branch": "redesign",
+      "observed_commit": "2e58f89ab6e91245c02fb826eb6cbe930d151804",
+      "version_file_or_documented_version": null,
+      "status": "reference",
+      "planned_role": "可审阅 Jellyfin 播放事件对照客户端",
+      "adopted_commit": null,
+      "adoption_evidence": null,
+      "license_record": "MPL-2.0",
+      "license_status": "recorded_in_research_recheck_before_adoption",
+      "evidence_path": "docs/design-goals-v1.6-20261021.txt"
+    },
+    {
+      "repository": "amcfy-music/amcfy-music",
+      "repository_url": "https://github.com/amcfy-music/amcfy-music",
+      "observed_on": "2026-10-21",
+      "observed_branch": "main",
+      "observed_commit": "cfc519fb7e107671fd6fe08605f1badcd6af9e51",
+      "version_file_or_documented_version": null,
+      "status": "reference",
+      "planned_role": "移动端产品说明；公开仓库不包含播放器实现",
+      "adopted_commit": null,
+      "adoption_evidence": null,
+      "license_record": "MIT (public repository only)",
+      "license_status": "recorded_in_research_recheck_before_adoption",
+      "evidence_path": "docs/design-goals-v1.6-20261021.txt"
+    },
+    {
+      "repository": "Surc/fnos_music_ext",
+      "repository_url": "https://github.com/Surc/fnos_music_ext",
+      "observed_on": "2026-10-21",
+      "observed_branch": "main",
+      "observed_commit": "1d8f4e73945ae51a21cb5bce2202a3f9ee9d4ef6",
+      "version_file_or_documented_version": "2.8.0",
+      "status": "candidate",
+      "planned_role": "旧界面/网易基础/注入与 Socket 生命周期组件参考",
+      "adopted_commit": null,
+      "adoption_evidence": null,
+      "license_record": null,
+      "license_status": "not_rechecked_in_bootstrap",
+      "evidence_path": "docs/design-goals-v1.6-20261021.txt"
+    }
+  ],
+  "release_observations": [
+    {
+      "repository": "guohuiyuan/go-music-dl",
+      "tag": "v1.1.3",
+      "note": "Pinned dependency music-lib v1.1.1-0.20261018010056-7cc4467b4e30; distinct from separately observed music-lib head."
+    },
+    {
+      "repository": "MOPELotus/TuneWeave",
+      "tag": "v1.0.0-beta.1",
+      "prerelease": true,
+      "published_on": "2026-09-28",
+      "note": "Research commit is later; tag content not treated as identical."
+    },
+    {
+      "repository": "qianlipp/fn-music-bridge",
+      "tag": "3-修复端口识别，支持手动调整",
+      "asset_name": "yinqiao-1.0.7.fpk",
+      "prerelease": false,
+      "published_on": "2026-08-04",
+      "asset_sha256": null,
+      "note": "Metadata observation, not a local install or checksum verification."
+    },
+    {
+      "repository": "dtapps/fnmusic-sync",
+      "tag": "v0.1.27",
+      "prerelease": true,
+      "published_on": "2026-10-19",
+      "note": "Observed main is later; no byte equivalence claimed."
+    },
+    {
+      "repository": "dtapps/fnmusic-sync",
+      "tag": "v0.1.26",
+      "prerelease": false,
+      "published_on": "2026-10-10"
+    }
+  ],
+  "maintenance_skill": {
+    "name": "maintain-fnos-music-hub",
+    "version": "1.0.0",
+    "files": {
+      "skills/maintain-fnos-music-hub/SKILL.md": "43e655beb3b8c1e062d67dc852839320c8ca40b25f81a61b7143178a880d5bf6",
+      "skills/maintain-fnos-music-hub/agents/openai.yaml": "69e9410cd1e9815475e7af57678c44bced5e3044c103aa689689679ed7c6a60c"
+    },
+    "personal_skill_git_commit": "635ffaf099850e05477ac443b3285f4855df1937"
+  },
+  "project_release": {
+    "tag": null,
+    "commit": null,
+    "assets": [],
+    "status": "not_released"
+  }
+}

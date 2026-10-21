@@ -1,0 +1,29 @@
+# Local runtime data and secrets
+.env
+.env.*
+!.env.example
+*.db
+*.db-*
+*.sqlite*
+*credentials*.json
+*cookies*.json
+data/
+cache/
+logs/
+downloads/
+*.log
+# Build output
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+target/
+dist/
+build/
+*.fpk
+*.mp3
+*.flac
+*.m4a
+*.wav
+*.ogg
+*.opus
