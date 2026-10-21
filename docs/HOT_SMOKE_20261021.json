@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-21",
+  "scope": "real Hot HTTP + Hub adapters; no fnOS identity/NAS/FPK test",
+  "hot_commit": "07e86c3d06243cf1350925c0dd3be704005abd29",
+  "hot_submodule_um_crypto": "5dad838c33c3e4aab198d995160d3fbb9968470f",
+  "hot_source_modified": false,
+  "compiler": "rustc 1.99.1, dev profile, Linux x86_64",
+  "binary_sha256": "ff60dd192356b593b5a826a921bacd8161f88fec5c0743f1fb3f8e4a10b80a89",
+  "samples": [
+    {
+      "keyword": "DAYBREAK'S BELL",
+      "rid": "142276943",
+      "quality": "320kmp3",
+      "search_count": 30,
+      "found_title": "DAYBREAK'S BELL",
+      "duration_expected": 252.0,
+      "task_status": "failed",
+      "assets": [],
+      "upstream_error_code": 407,
+      "failure_reason": "region_restricted"
+    },
+    {
+      "keyword": "晴天",
+      "rid": "228908",
+      "quality": "320kmp3",
+      "search_count": 30,
+      "found_title": "晴天",
+      "duration_expected": 269.0,
+      "task_status": "failed",
+      "assets": [],
+      "upstream_error_code": 407,
+      "failure_reason": "region_restricted"
+    }
+  ]
+}
