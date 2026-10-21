@@ -12,6 +12,7 @@
   --sidebar-width: 208px;
   --nav-space: 0px;
   --visual-height: 100dvh;
+  --available-height: min(100dvh, var(--visual-height));
   --visual-top: 0px;
 }
 * {
@@ -753,7 +754,7 @@ dialog {
   border-radius: 16px;
   width: min(510px, calc(100% - 36px));
   max-width: 100%;
-  max-height: calc(var(--visual-height) - 32px);
+  max-height: calc(var(--available-height) - 32px);
   color: inherit;
   background: var(--paper);
   box-shadow: 0 20px 80px #223c2c35;
@@ -761,7 +762,7 @@ dialog {
   position: fixed;
   inset: var(--visual-top) 0 auto;
   margin: 16px auto;
-  top: calc(var(--visual-top) + max(16px, (var(--visual-height) - 650px)/2));
+  top: calc(var(--visual-top) + max(16px, (var(--available-height) - 650px)/2));
 }
 dialog:not([open]) {
   display: none;
@@ -772,7 +773,7 @@ dialog::backdrop {
 .dialog-shell {
   display: flex;
   flex-direction: column;
-  max-height: calc(var(--visual-height) - 34px);
+  max-height: calc(var(--available-height) - 34px);
   min-height: 0;
   margin: 0;
 }
@@ -1109,11 +1110,11 @@ body:has(dialog[open]) {
     border-bottom: 0;
     margin: 0 auto;
     top: auto;
-    bottom: calc(100dvh - var(--visual-top) - var(--visual-height));
-    max-height: calc(var(--visual-height) - 12px);
+    bottom: calc(100dvh - var(--visual-top) - var(--available-height));
+    max-height: calc(var(--available-height) - 12px);
   }
   .dialog-shell {
-    max-height: calc(var(--visual-height) - 14px);
+    max-height: calc(var(--available-height) - 14px);
   }
   .dialog-header {
     padding: 18px 20px 12px;
@@ -1274,12 +1275,12 @@ body:has(dialog[open]) {
     width: calc(
       100% - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)
     );
-    max-height: var(--visual-height);
+    max-height: var(--available-height);
     border-radius: 0;
     border: 0;
   }
   .dialog-shell {
-    max-height: var(--visual-height);
+    max-height: var(--available-height);
   }
   .dialog-header {
     padding: 10px max(20px, env(safe-area-inset-right, 0px)) 8px
