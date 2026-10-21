@@ -5,8 +5,8 @@
 - Python 3.12：20 项 pytest 通过。使用真实 SQLite、HTTP MockTransport 和本地生成音频，覆盖两用户私有读写/文件/任务隔离、失效/换号、CSRF/Origin、秘密加密、保序重复、并发幂等、接单响应丢失后的恢复、缺失任务不重复下单、目录限制、完整解码/时长/格式、文件篡改与请求体限制。
 - 前台：Node 语法检查、2 项 jsdom 测试通过，覆盖不可信标题作为文本显示、只提交稳定 TrackRef、CSRF/幂等键、退出清屏、非管理员入口。它们不是实际浏览器或 NAS 的视觉/交互验收。
 - 独立 Python venv 按锁定运行依赖安装；最终 20 项 pytest 同样通过，没有依赖系统 site-packages。
-- Ruff 检查与资料摘要/35 个本地文档链接校验通过；GitHub 工作流已加入，远端实际结果另以 Actions 为准。
-- Python wheel 已构建并包含前台资源；不等于已构建或安装 FPK。
+- Ruff 检查与资料摘要/35 个本地文档链接校验通过；GitHub Actions 运行 39572323339（实现提交 8a16b79ec3c91dfcb08e451d8bd52f448ddedf0e）已通过 web、core (3.11)、core (3.12) 全部三项检查；运行页面：https://github.com/Surc/fnos_music_hub/actions/runs/39572323339。
+- Python wheel 已构建；在源码目录外安装后，HTML/JS/CSS 均可由安装包提供。不等于已构建或安装 FPK。
 
 ### 真实 Hot HTTP 测试
 
