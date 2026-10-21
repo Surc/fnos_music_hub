@@ -1,41 +1,69 @@
 const $ = (s) => document.querySelector(s);
-const state = {
-  me: null,
-  csrf: "",
-  view: "discover",
-  page: 1,
-  search: "",
-  provider: "kuwo",
-  songs: [],
-  favorites: new Set(),
-  epoch: 0,
-  drafts: new Map(),
-};
-const titles = {
-  discover: ["发现与搜索", "先找到歌曲，再决定如何收藏与下载。"],
-  favorites: ["我的收藏", "只属于当前飞牛用户的本地收藏。"],
-  tasks: ["下载任务", "引擎继续工作，关闭页面也不会丢失任务。"],
-  assets: ["已下载歌曲", "只显示已经通过完整音频校验的文件。"],
-  accounts: ["平台账号", "本地收藏与云平台账号联动分别管理。"],
-  injection: ["注入设置", "独立设置，和歌单、下载管理分别启用。"],
+const providers = { netease: "网易云音乐", qq: "QQ 音乐", kuwo: "酷我音乐" };
+const qualities = {
+  "320kmp3": "MP3 · 320 kbps",
+  "128kmp3": "MP3 · 128 kbps",
+  flac: "FLAC · 无损",
+  hires: "Hi-Res · 高解析",
 };
 const statusNames = {
   queued: "待提交",
   submitting: "正在接单",
   running: "下载中",
-  paused: "等待恢复",
-  completed: "已校验完成",
+  paused: "已暂停",
+  completed: "校验完成",
   failed: "失败",
   attention: "需要核对",
-  outcome_unknown: "接单结果未知",
+  outcome_unknown: "结果未知",
+};
+const titles = {
+  discover: ["发现", "先找到喜欢的歌曲，再决定收藏与下载。"],
+  collections: ["我的歌单", "本地收藏属于当前飞牛用户，平台歌单独立管理。"],
+  downloads: ["下载管理", "任务、音频校验和飞牛入库各有自己的状态。"],
+  accounts: ["我的与平台账号", "你的平台账号、下载目标与个人空间。"],
+  storage: ["下载与曲库", "管理员设置 · 文件保存与音乐库索引分别管理。"],
+  injection: ["飞牛注入", "管理员设置 · 独立于歌单与下载管理。"],
+};
+const state = {
+  me: null,
+  csrf: "",
+  epoch: 0,
+  load: 0,
+  searchRequest: 0,
+  view: "discover",
+  downloadTab: "tasks",
+  provider: "kuwo",
+  search: "",
+  page: 0,
+  rows: [],
+  hasMore: false,
+  searched: false,
+  searchBusy: false,
+  favorites: [],
+  tasks: [],
+  assets: [],
+  injection: null,
+  selected: { discover: new Set(), collections: new Set() },
+  drafts: new Map(),
+  download: null,
+  submitting: false,
+  lastFocus: null,
+};
+class StaleRequest extends Error {}
+const guard = (epoch) => {
+  if (epoch !== state.epoch) throw new StaleRequest();
 };
 const key = (track) =>
   JSON.stringify([track.provider, track.id_type, track.id]);
+const capability = (name, provider) =>
+  Array.isArray(state.me?.capabilities?.[name]) &&
+  state.me.capabilities[name].includes(provider);
+const targetName = (id) => (id === "private" ? "我的下载 · 私有目录" : id);
 function node(tag, text, className) {
-  const e = document.createElement(tag);
-  if (text !== undefined) e.textContent = text;
-  if (className) e.className = className;
-  return e;
+  const el = document.createElement(tag);
+  if (text !== undefined) el.textContent = text;
+  if (className) el.className = className;
+  return el;
 }
 function toast(message) {
   $("#toast").textContent = message;
@@ -43,65 +71,221 @@ function toast(message) {
   clearTimeout(toast.timer);
   toast.timer = setTimeout(() => ($("#toast").hidden = true), 5500);
 }
-function signedOut() {
-  state.epoch++;
-  state.me = null;
-  state.csrf = "";
-  state.songs = [];
-  state.favorites.clear();
-  state.drafts.clear();
-  $("#shell").hidden = true;
-  $("#login").hidden = false;
-  $("#view-content").replaceChildren();
-}
-async function api(path, options = {}) {
-  const response = await fetch(path, {
-    ...options,
-    credentials: "same-origin",
-    headers: {
-      ...(options.body ? { "Content-Type": "application/json" } : {}),
-      ...(state.csrf ? { "X-CSRF-Token": state.csrf } : {}),
-      ...options.headers,
-    },
-  });
-  const data = await response.json();
-  if (!response.ok) {
-    if (response.status === 401 && path !== "/api/auth/login") signedOut();
-    throw new Error(data.error?.message || "请求失败，请稍后重试");
-  }
-  return data;
-}
-function empty(title, description) {
-  const e = node("div", undefined, "empty");
-  e.append(node("strong", title), node("span", description));
-  return e;
+function report(error) {
+  if (!(error instanceof StaleRequest))
+    toast(error.message || "请求失败，请稍后重试");
 }
 function button(text, action, className = "quiet") {
-  const b = node("button", text, className);
-  b.type = "button";
-  b.addEventListener("click", async () => {
-    b.disabled = true;
+  const el = node("button", text, className);
+  el.type = "button";
+  el.addEventListener("click", async () => {
+    if (el.disabled) return;
+    el.disabled = true;
     try {
       await action();
     } catch (e) {
-      toast(e.message);
+      report(e);
     } finally {
-      b.disabled = false;
+      el.disabled = false;
     }
   });
-  return b;
+  return el;
 }
-function cards(songs) {
+function empty(title, description) {
+  const el = node("div", undefined, "empty");
+  el.append(node("strong", title), node("span", description));
+  return el;
+}
+function badge(text, warning = false) {
+  return node("span", text, warning ? "pill warning" : "pill");
+}
+function details(entries) {
+  const dl = node("dl", undefined, "detail-grid");
+  for (const [label, value] of entries)
+    dl.append(node("dt", label), node("dd", String(value ?? "未知")));
+  return dl;
+}
+function panel(title, description) {
+  const el = node("section", undefined, "panel");
+  el.append(node("h2", title));
+  if (description) el.append(node("p", description, "small muted"));
+  return el;
+}
+function closeDialog(id, force = false) {
+  if (id === "download-dialog" && state.submitting && !force) return;
+  const el = $("#" + id);
+  if (typeof el.close === "function") el.close();
+  else el.removeAttribute("open");
+  if (id === "download-dialog") {
+    state.download = null;
+    $("#download-tracks").replaceChildren();
+    $("#download-error").textContent = "";
+  }
+  if (id === "detail-dialog") $("#detail-body").replaceChildren();
+  if (state.lastFocus?.isConnected && !force) state.lastFocus.focus();
+}
+function showDialog(id) {
+  state.lastFocus = document.activeElement;
+  const el = $("#" + id);
+  if (typeof el.showModal === "function") el.showModal();
+  else el.setAttribute("open", "");
+}
+function showDetails(title, body) {
+  $("#detail-title").textContent = title;
+  $("#detail-body").replaceChildren(body);
+  showDialog("detail-dialog");
+}
+function signedOut() {
+  state.epoch++;
+  state.load++;
+  state.searchRequest++;
+  state.me = null;
+  state.csrf = "";
+  state.rows = [];
+  state.favorites = [];
+  state.tasks = [];
+  state.assets = [];
+  state.injection = null;
+  state.selected.discover.clear();
+  state.selected.collections.clear();
+  state.drafts.clear();
+  state.submitting = false;
+  state.searchBusy = false;
+  state.search = "";
+  state.page = 0;
+  state.searched = false;
+  state.hasMore = false;
+  closeDialog("download-dialog", true);
+  closeDialog("detail-dialog", true);
+  $("#shell").hidden = true;
+  $("#login").hidden = false;
+  $("#admin-nav").hidden = true;
+  $("#view-content").replaceChildren();
+  $("#user").textContent = "";
+  $("#query").value = "";
+  $("#asset-filter").value = "";
+  $("#task-filter").value = "all";
+  $("#download-summary").textContent = "";
+  $("#target-path").textContent = "";
+  $("#download-quality").replaceChildren();
+  $("#download-target").replaceChildren();
+  $("#page-error span").textContent = "";
+  $("#page-status").textContent = "";
+  $("#toast").textContent = "";
+  state.lastFocus = null;
+  $("#page-status").hidden = true;
+  $("#page-error").hidden = true;
+  $("#toast").hidden = true;
+  $("#login-form").elements.password.value = "";
+}
+async function api(path, options = {}) {
+  const epoch = state.epoch;
+  let response;
+  try {
+    response = await fetch(path, {
+      ...options,
+      credentials: "same-origin",
+      headers: {
+        ...(options.body ? { "Content-Type": "application/json" } : {}),
+        ...(state.csrf ? { "X-CSRF-Token": state.csrf } : {}),
+        ...options.headers,
+      },
+    });
+  } catch (error) {
+    guard(epoch);
+    throw new Error("连接失败，请检查服务后重试");
+  }
+  let data;
+  try {
+    data = await response.json();
+  } catch {
+    guard(epoch);
+    throw new Error("服务返回了无法识别的结果，请稍后核对");
+  }
+  guard(epoch);
+  if (!response.ok) {
+    if (response.status === 401 && path !== "/api/auth/login") {
+      signedOut();
+      $("#login-error").textContent = "会话已失效，请重新登录";
+      $("#login-error").hidden = false;
+      throw new StaleRequest();
+    }
+    const error = new Error(data.error?.message || "请求失败，请稍后重试");
+    error.code = data.error?.code;
+    throw error;
+  }
+  return data;
+}
+function qualityList(song) {
+  return Object.keys(qualities).filter((q) =>
+    (song.qualities || []).some((item) => item.quality === q),
+  );
+}
+function downloadable(song) {
+  return Boolean(
+    song.track &&
+      capability("download", song.track.provider) &&
+      qualityList(song).length &&
+      Number(song.duration_seconds) > 0 &&
+      (state.me?.targets || []).some((t) => t.id === "private"),
+  );
+}
+function visibleRows() {
+  return state.view === "collections"
+    ? state.favorites.map((song, i) => ({ id: "favorite:" + i, song }))
+    : state.rows;
+}
+function selection() {
+  return state.selected[state.view];
+}
+function updateSelection() {
+  const rows = ["discover", "collections"].includes(state.view)
+    ? visibleRows()
+    : [];
+  const eligible = rows.filter((r) => downloadable(r.song));
+  const selected = selection();
+  const count = selected
+    ? eligible.filter((r) => selected.has(r.id)).length
+    : 0;
+  $("#selection-bar").hidden = !eligible.length;
+  $("#selection-count").textContent = `已选 ${count} 首`;
+  $("#download-selected").disabled = !count;
+  $("#select-all").checked = Boolean(
+    eligible.length && count === eligible.length,
+  );
+  $("#select-all").indeterminate = count > 0 && count < eligible.length;
+}
+function songCards(rows) {
   const grid = node("div", undefined, "results");
-  for (const song of songs) {
+  for (const { song, id } of rows) {
     const card = node("article", undefined, "song-card");
-    card.append(
+    const head = node("div", undefined, "song-heading");
+    head.append(
       node(
-        "div",
-        song.track?.provider === "qq" ? "QQ MUSIC" : "KUWO MUSIC",
+        "span",
+        providers[song.track?.provider] || "来源未知",
         "song-source",
       ),
-      node("h3", song.title),
+    );
+    if (downloadable(song)) {
+      const label = node("label", undefined, "select-song");
+      const check = node("input");
+      check.type = "checkbox";
+      check.dataset.row = id;
+      check.checked = selection()?.has(id) || false;
+      check.setAttribute("aria-label", `选择 ${song.title}`);
+      const selected = selection();
+      check.addEventListener("change", () => {
+        if (check.checked) selected.add(id);
+        else selected.delete(id);
+        updateSelection();
+      });
+      label.append(node("span", "选择"), check);
+      head.append(label);
+    }
+    card.append(
+      head,
+      node("h3", song.title || "来源中的未知条目"),
       node("p", song.artist || "歌手信息未知"),
       node(
         "p",
@@ -109,7 +293,7 @@ function cards(songs) {
           song.album,
           song.duration_seconds
             ? `${Math.round(song.duration_seconds)} 秒`
-            : null,
+            : "时长未知",
         ]
           .filter(Boolean)
           .join(" · "),
@@ -122,232 +306,706 @@ function cards(songs) {
     }
     const actions = node("div", undefined, "song-actions");
     const favorite = button(
-      state.favorites.has(key(song.track)) ? "取消收藏" : "收藏",
+      state.favorites.some((s) => s.track && key(s.track) === key(song.track))
+        ? "取消本地收藏"
+        : "收藏到本地",
       async () => {
-        const enabled = !state.favorites.has(key(song.track));
+        const enabled = !state.favorites.some(
+          (s) => s.track && key(s.track) === key(song.track),
+        );
         await api("/api/favorites", {
           method: "POST",
           body: JSON.stringify({ track: song.track, enabled }),
         });
-        if (enabled) state.favorites.add(key(song.track));
-        else state.favorites.delete(key(song.track));
-        favorite.textContent = enabled ? "取消收藏" : "收藏";
-        if (state.view === "favorites") await loadView();
+        if (enabled) state.favorites.push(song);
+        else
+          state.favorites = state.favorites.filter(
+            (s) => !s.track || key(s.track) !== key(song.track),
+          );
+        // A changed collection changes its row positions; clear only that explicit edit's selection.
+        state.selected.collections.clear();
+        render();
       },
     );
-    actions.append(favorite);
-    const quality = node("select");
-    quality.setAttribute("aria-label", "下载音质");
-    for (const q of song.qualities.filter((q) =>
-      ["128kmp3", "320kmp3", "flac", "hires"].includes(q.quality),
-    )) {
-      const opt = node("option", q.quality);
-      opt.value = q.quality;
-      quality.append(opt);
-    }
-    if ([...quality.options].some((o) => o.value === "320kmp3"))
-      quality.value = "320kmp3";
     const download = button(
-      song.track.provider === "kuwo" ? "下载" : "下载待接入",
-      () => downloadSong(song, quality.value),
+      capability("download", song.track.provider) ? "下载" : "下载待接入",
+      () => openDownload([song]),
       "primary",
     );
-    download.disabled =
-      song.track.provider !== "kuwo" ||
-      !quality.options.length ||
-      !song.duration_seconds;
-    if (quality.options.length) actions.append(quality);
-    actions.append(download);
+    download.disabled = !downloadable(song);
+    actions.append(favorite, download);
     card.append(actions);
-    if (!song.qualities.length)
+    if (!qualityList(song).length)
       card.append(
-        node("p", "暂未提供音质；元数据与收藏仍可使用。", "small muted"),
+        node("p", "暂未提供可用音质，仍可浏览和本地收藏。", "small muted"),
       );
     grid.append(card);
   }
   return grid;
 }
-async function downloadSong(song, quality) {
-  const draftKey = key(song.track) + quality;
-  let draft = state.drafts.get(draftKey);
-  if (!draft) {
-    const manifest = await api("/api/manifests", {
-      method: "POST",
-      body: JSON.stringify({ tracks: [song.track] }),
-    });
-    draft = {
-      manifest_id: manifest.id,
-      quality,
-      target_ref: "private",
-      idem: crypto.randomUUID(),
-    };
-    state.drafts.set(draftKey, draft);
+function taskCards() {
+  const rows = state.tasks.filter(
+    (t) =>
+      $("#task-filter").value === "all" || t.status === $("#task-filter").value,
+  );
+  if (!rows.length)
+    return empty(
+      "没有符合条件的任务",
+      "搜索歌曲后选择音质与保存位置，任务会保存在服务端。",
+    );
+  const list = node("div");
+  for (const task of rows) {
+    const c = node("article", undefined, "task-card");
+    const head = node("div", undefined, "task-heading");
+    const label = node("div");
+    label.append(
+      node(
+        "h3",
+        task.entries.length === 1
+          ? task.entries[0].title
+          : `${task.entries.length} 首歌曲`,
+      ),
+      node("p", `${qualities[task.quality] || task.quality} · 我的下载`),
+    );
+    head.append(
+      label,
+      badge(
+        statusNames[task.status] || task.status,
+        ["failed", "attention"].includes(task.status),
+      ),
+    );
+    c.append(head);
+    for (const entry of task.entries) {
+      const row = node("div", undefined, "task-entry");
+      row.append(
+        node("span", entry.title),
+        node("span", statusNames[entry.status] || entry.status, "muted"),
+      );
+      c.append(row);
+      if (entry.error)
+        c.append(
+          node(
+            "p",
+            entry.error.code === "region_restricted"
+              ? "来源地区限制：歌曲信息已保留，尚无已校验文件。"
+              : entry.error.message,
+            "error",
+          ),
+        );
+    }
+    if (task.last_error) c.append(node("p", task.last_error.message, "error"));
+    const actions = node("div", undefined, "song-actions");
+    actions.append(
+      button("任务详情", () => {
+        const body = node("div");
+        body.append(
+          details([
+            ["任务 ID", task.id],
+            ["任务状态", statusNames[task.status] || task.status],
+            ["请求音质", qualities[task.quality] || task.quality],
+            ["创建时间", task.created_at || "未知"],
+          ]),
+        );
+        for (const entry of task.entries) {
+          const p = panel(entry.title);
+          p.append(
+            details([
+              ["来源", providers[entry.track?.provider] || "未知"],
+              [
+                "曲目 ID",
+                entry.track
+                  ? `${entry.track.id_type}: ${entry.track.id}`
+                  : "未知",
+              ],
+              ["条目状态", statusNames[entry.status] || entry.status],
+              ["失败分类", entry.error?.code || "无"],
+              ["说明", entry.error?.message || "无"],
+            ]),
+          );
+          body.append(p);
+        }
+        showDetails("任务详情", body);
+      }),
+    );
+    for (const [action, label, expected] of [
+      ["pause", "暂停", "running"],
+      ["resume", "继续下载", "paused"],
+      ["retry", "重试", "failed"],
+    ]) {
+      if (task.status === expected)
+        actions.append(
+          button(label, async () => {
+            await api(`/api/tasks/${encodeURIComponent(task.id)}/control`, {
+              method: "POST",
+              body: JSON.stringify({ action }),
+            });
+            await loadView();
+          }),
+        );
+    }
+    if (task.status === "attention")
+      c.append(
+        node(
+          "p",
+          "接单结果需要核对，系统会回读已有任务；请勿重复创建。",
+          "notice",
+        ),
+      );
+    c.append(actions);
+    list.append(c);
   }
-  const epoch = state.epoch;
-  await api("/api/tasks", {
-    method: "POST",
-    headers: { "Idempotency-Key": draft.idem },
-    body: JSON.stringify({
-      manifest_id: draft.manifest_id,
-      quality: draft.quality,
-      target_ref: draft.target_ref,
-    }),
-  });
-  if (epoch !== state.epoch) return;
-  state.drafts.delete(draftKey);
-  toast("下载任务已保存");
-  await navigate("tasks");
+  return list;
 }
-async function navigate(view) {
-  state.view = view;
-  for (const b of document.querySelectorAll("nav button"))
-    b.classList.toggle("active", b.dataset.view === view);
+const indexNames = {
+  unsupported: "飞牛入库尚未支持",
+  pending: "等待飞牛入库",
+  indexed: "已入库",
+  failed: "飞牛入库失败",
+};
+function assetCards() {
+  const query = $("#asset-filter").value.trim().toLocaleLowerCase();
+  const items = state.assets.filter((a) =>
+    `${a.title} ${a.artist}`.toLocaleLowerCase().includes(query),
+  );
+  if (!items.length)
+    return empty(
+      "还没有符合条件的文件",
+      "这里只登记已经通过完整音频校验的文件，下载和入库分别显示。",
+    );
+  const grid = node("div", undefined, "results");
+  for (const asset of items) {
+    const c = node("article", undefined, "song-card");
+    c.append(
+      node(
+        "div",
+        providers[asset.track?.provider] || "来源未知",
+        "song-source",
+      ),
+      node("h3", asset.title),
+      node("p", asset.artist || "歌手信息未知"),
+      node(
+        "p",
+        `${String(asset.codec || "未知").toUpperCase()} · ${Math.round(asset.duration_seconds || 0)} 秒 · ${((asset.bytes || 0) / 1048576).toFixed(1)} MB`,
+      ),
+    );
+    const statuses = node("div", undefined, "status-list");
+    statuses.append(
+      badge("下载完成"),
+      badge("音频校验通过"),
+      badge(
+        indexNames[asset.index_status] || "入库状态未知",
+        asset.index_status !== "indexed",
+      ),
+    );
+    c.append(statuses);
+    const actions = node("div", undefined, "song-actions");
+    const link = node("a", "下载文件", "asset-file-link");
+    link.href = `/api/assets/${encodeURIComponent(asset.id)}/file`;
+    actions.append(
+      link,
+      button("文件详情", () =>
+        showDetails(
+          "文件详情",
+          details([
+            ["歌曲", asset.title],
+            ["歌手", asset.artist],
+            ["实际来源", providers[asset.track?.provider] || "未知"],
+            [
+              "格式 / 编码",
+              `${asset.format || "未知"} / ${asset.codec || "未知"}`,
+            ],
+            ["时长", `${asset.duration_seconds} 秒`],
+            [
+              "码率",
+              asset.bitrate
+                ? `${Math.round(asset.bitrate / 1000)} kbps`
+                : "未知",
+            ],
+            ["字节", asset.bytes],
+            ["SHA256", asset.sha256],
+            ["保存目标", targetName("private")],
+            [
+              "音频校验",
+              asset.validation === "full_decode"
+                ? "完整解码通过"
+                : asset.validation || "通过",
+            ],
+            ["飞牛入库", indexNames[asset.index_status] || "未知"],
+          ]),
+        ),
+      ),
+    );
+    c.append(actions);
+    grid.append(c);
+  }
+  return grid;
+}
+function accountsPage() {
+  const result = node("div");
+  const identity = panel("当前飞牛用户", state.me.principal.user_guid);
+  identity.append(
+    node(
+      "p",
+      "本地收藏和下载属于当前用户；平台账号绑定后再读取本人的私人内容。",
+      "small muted",
+    ),
+  );
+  result.append(identity);
+  const grid = node("div", undefined, "account-grid");
+  for (const [provider, name] of Object.entries(providers)) {
+    const p = panel(name);
+    const caps = node("div", undefined, "capability-list");
+    caps.append(
+      badge(capability("search", provider) ? "公共搜索" : "搜索待接入"),
+      badge(capability("download", provider) ? "下载已接入" : "下载待接入"),
+    );
+    p.append(
+      caps,
+      node(
+        "p",
+        provider === "kuwo"
+          ? "公共模式；私人账号、歌单推荐尚未开放。"
+          : "本人账号绑定、私人歌单和推荐尚未开放。",
+        "small muted",
+      ),
+    );
+    const bind = node("button", "绑定账号 · 待接入");
+    bind.disabled = true;
+    p.append(bind);
+    grid.append(p);
+  }
+  result.append(grid);
+  const preferences = panel("我的下载与反馈");
+  preferences.append(
+    node(
+      "p",
+      "本地收藏不会自动写入云平台；自动播放反馈保持关闭。",
+      "small muted",
+    ),
+  );
+  for (const target of state.me.targets || [])
+    preferences.append(
+      node(
+        "p",
+        `${targetName(target.id)}：${target.path}`,
+        "small muted break-text",
+      ),
+    );
+  if (!(state.me.targets || []).length)
+    preferences.append(
+      node("p", "尚未配置本人的下载目标，请联系管理员。", "small muted"),
+    );
+  if (state.me.is_admin) {
+    const actions = node("div", undefined, "settings-links");
+    actions.append(
+      button("下载与曲库", () => navigate("storage")),
+      button("飞牛注入", () => navigate("injection")),
+    );
+    preferences.append(actions);
+  }
+  preferences.append(button("退出当前飞牛账号", logout));
+  result.append(preferences);
+  return result;
+}
+function storagePage() {
+  const result = node("div");
+  const storage = panel(
+    "下载存储",
+    "当前只读展示本人的授权目标，目录变更由部署配置管理。",
+  );
+  for (const target of state.me.targets || [])
+    storage.append(
+      details([
+        ["授权目标", targetName(target.id)],
+        ["保存目录", target.path],
+        ["所属用户", state.me.principal.user_guid],
+      ]),
+    );
+  if (!(state.me.targets || []).length)
+    storage.append(node("p", "当前用户尚无下载目标。", "muted"));
+  const library = panel(
+    "飞牛音乐库",
+    "音乐库是独立的索引目标，下载到目录不代表已经入库。",
+  );
+  library.append(badge("自动入库尚未支持", true));
+  result.append(storage, library);
+  return result;
+}
+function injectionPage() {
+  const p = panel(
+    "官方音乐注入：尚未启用",
+    state.injection?.reason || "当前尚未开放官方音乐注入。",
+  );
+  p.append(
+    badge("未接管 Socket"),
+    node("p", "注入关闭时，独立音乐中心仍可认证、搜索和管理下载。", "notice"),
+  );
+  const b = node("button", "启用注入 · 待实现", "primary");
+  b.disabled = true;
+  p.append(b);
+  return p;
+}
+function render() {
+  if (!state.me) return;
+  const view = state.view;
+  const content = $("#view-content");
+  let result;
+  for (const b of document.querySelectorAll("[data-view]")) {
+    if (
+      b.dataset.view === view ||
+      (["storage", "injection"].includes(view) && b.dataset.view === "accounts")
+    )
+      b.setAttribute("aria-current", "page");
+    else b.removeAttribute("aria-current");
+  }
   $("#page-title").textContent = titles[view][0];
   $("#page-description").textContent = titles[view][1];
   $("#discover-controls").hidden = view !== "discover";
-  $("#pagination").hidden = true;
-  await loadView();
-}
-async function loadView() {
-  if (!state.me) return;
-  const view = state.view,
-    epoch = state.epoch;
-  const content = $("#view-content");
-  let result;
-  if (view === "discover") {
-    result = state.songs.length
-      ? cards(state.songs)
-      : empty(
-          "从一首喜欢的歌开始",
-          "搜索酷我或 QQ 的歌曲；推荐歌单将在后续接入。",
-        );
-    $("#pagination").hidden = !state.hasMore;
-  } else if (view === "favorites") {
-    const data = await api("/api/favorites");
-    result = data.items.length
-      ? cards(data.items)
-      : empty("还没有收藏", "在搜索结果中收藏歌曲，这里只保存当前用户的记录。");
-  } else if (view === "tasks") {
-    const data = await api("/api/tasks");
-    result = node("div");
-    if (!data.items.length)
-      result = empty(
-        "没有下载任务",
-        "从搜索结果选择曲目和音质，任务会持久保存。",
-      );
-    for (const task of data.items) {
-      const c = node("article", undefined, "task-card"),
-        head = node("div", undefined, "task-heading");
-      head.append(
-        node("h3", `${task.entries.length} 首歌曲 · ${task.quality}`),
-        node("span", statusNames[task.status] || task.status, "pill"),
-      );
-      c.append(head);
-      for (const e of task.entries) {
-        const row = node("div", undefined, "task-entry");
-        row.append(
-          node("span", e.title),
-          node("span", statusNames[e.status] || e.status, "muted"),
-        );
-        c.append(row);
-        if (e.error) c.append(node("p", e.error.message, "error"));
-      }
-      if (task.last_error)
-        c.append(node("p", task.last_error.message, "error"));
-      const actions = node("div", undefined, "song-actions");
-      for (const [action, label] of [
-        ["pause", "暂停"],
-        ["resume", "恢复"],
-        ["retry", "重试"],
-      ]) {
-        if (
-          (action === "pause" && task.status === "running") ||
-          (action === "resume" && task.status === "paused") ||
-          (action === "retry" && task.status === "failed")
-        )
-          actions.append(
-            button(label, async () => {
-              await api(`/api/tasks/${encodeURIComponent(task.id)}/control`, {
-                method: "POST",
-                body: JSON.stringify({ action }),
-              });
-              await loadView();
-            }),
-          );
-      }
-      c.append(actions);
-      result.append(c);
-    }
-  } else if (view === "assets") {
-    const data = await api("/api/assets");
-    result = node("div", undefined, "results");
-    if (!data.items.length)
-      result = empty(
-        "还没有已校验的歌曲",
-        "下载完成后会检查实际编码、时长与完整解码，再登记到这里。",
-      );
-    for (const a of data.items) {
-      const c = node("article", undefined, "song-card");
-      c.append(
-        node("h3", a.title),
-        node("p", a.artist),
-        node(
-          "p",
-          `${a.codec.toUpperCase()} · ${Math.round(a.duration_seconds)} 秒 · ${(a.bytes / 1048576).toFixed(1)} MB`,
-        ),
-        node("p", "音频校验通过 · 飞牛入库尚未接入"),
-      );
-      const link = node("a", "下载文件");
-      link.href = `/api/assets/${encodeURIComponent(a.id)}/file`;
-      c.append(link);
-      result.append(c);
-    }
-  } else if (view === "accounts") {
-    result = node("div", undefined, "panel");
-    result.append(
-      node("h3", "平台账号联动待接入"),
-      node(
-        "p",
-        "当前已使用飞牛音乐身份隔离本地收藏与下载。网易云、QQ 与酷我的私人账号推荐、云端收藏和真实收听反馈尚未开放。",
-        "muted",
-      ),
-      node("p", "本地收藏不会自动写入任何云平台。"),
+  $("#collection-tabs").hidden = view !== "collections";
+  $("#download-tabs").hidden = view !== "downloads";
+  $("#download-filters").hidden = view !== "downloads";
+  $("#task-filter-label").hidden = state.downloadTab !== "tasks";
+  $("#asset-filter-label").hidden = state.downloadTab !== "assets";
+  for (const b of document.querySelectorAll("[data-download-tab]"))
+    b.setAttribute(
+      "aria-selected",
+      String(b.dataset.downloadTab === state.downloadTab),
     );
-  } else if (view === "injection") {
-    const data = await api("/api/admin/injection");
-    result = node("div", undefined, "panel");
-    result.append(
-      node("h3", "官方音乐注入：尚未启用"),
-      node("p", data.reason, "muted"),
+  for (const b of document.querySelectorAll("[data-provider]")) {
+    b.disabled = !capability("search", b.dataset.provider);
+    b.setAttribute(
+      "aria-pressed",
+      String(b.dataset.provider === state.provider),
     );
   }
-  if (epoch === state.epoch && view === state.view)
-    content.replaceChildren(result);
+  for (const opt of $("#provider").options)
+    opt.disabled = !capability("search", opt.value);
+  $("#provider").value = state.provider;
+  $("#source-notice").textContent = capability("search", state.provider)
+    ? `${providers[state.provider]} · 公共歌曲搜索。本地收藏可独立使用；推荐歌单和私人账号尚未接入。`
+    : "当前用户尚未配置可用的搜索引擎，请联系管理员。";
+  $("#pagination").hidden = view !== "discover" || !state.hasMore;
+  $("#view-content").removeAttribute("role");
+  $("#view-content").removeAttribute("aria-labelledby");
+  if (view === "discover")
+    result = state.rows.length
+      ? songCards(state.rows)
+      : empty(
+          state.searched ? "没有找到歌曲" : "从一首喜欢的歌开始",
+          state.searched
+            ? "可以调整关键词或切换来源；下载失败不会使已经找到的元数据消失。"
+            : "搜索酷我或 QQ 的歌曲，选择收藏与下载。个人推荐和歌单功能将在后续接入。",
+        );
+  if (view === "collections") {
+    result = state.favorites.length
+      ? songCards(visibleRows())
+      : empty(
+          "还没有本地收藏",
+          "在搜索结果中收藏歌曲，这里仅保存当前用户的记录。",
+        );
+    content.setAttribute("role", "tabpanel");
+    content.setAttribute("aria-labelledby", "local-collection-tab");
+  }
+  if (view === "downloads") {
+    result = state.downloadTab === "tasks" ? taskCards() : assetCards();
+    content.setAttribute("role", "tabpanel");
+    content.setAttribute("aria-labelledby", state.downloadTab + "-tab");
+  }
+  if (view === "accounts") result = accountsPage();
+  if (view === "storage") result = storagePage();
+  if (view === "injection") result = injectionPage();
+  content.replaceChildren(result);
+  updateSelection();
+}
+function pageError(message) {
+  $("#page-error span").textContent = message;
+  $("#page-error").hidden = false;
+}
+async function navigate(view) {
+  if (!titles[view] || !state.me) return;
+  if (["storage", "injection"].includes(view) && !state.me.is_admin) {
+    toast("只有管理员可以访问此设置");
+    return;
+  }
+  state.view = view;
+  state.load++;
+  $("#page-error").hidden = true;
+  $("#page-status").hidden = true;
+  render();
+  await loadView();
+}
+async function loadView(quiet = false) {
+  if (!state.me) return;
+  const view = state.view,
+    tab = state.downloadTab,
+    seq = ++state.load,
+    epoch = state.epoch;
+  const path =
+    view === "collections"
+      ? "/api/favorites"
+      : view === "downloads"
+        ? "/api/" + tab
+        : view === "injection"
+          ? "/api/admin/injection"
+          : null;
+  if (!path) return;
+  if (!quiet) {
+    $("#page-status").textContent = "正在刷新…";
+    $("#page-status").hidden = false;
+  }
+  try {
+    const data = await api(path);
+    guard(epoch);
+    if (seq !== state.load || view !== state.view || tab !== state.downloadTab)
+      return;
+    if (view === "collections") {
+      state.favorites = data.items;
+      state.selected.collections.clear();
+    } else if (view === "downloads") state[tab] = data.items;
+    else state.injection = data;
+    $("#page-error").hidden = true;
+    render();
+  } catch (e) {
+    if (
+      !(e instanceof StaleRequest) &&
+      epoch === state.epoch &&
+      seq === state.load
+    )
+      pageError(e.message);
+  } finally {
+    if (epoch === state.epoch && seq === state.load)
+      $("#page-status").hidden = true;
+  }
+}
+function openDownload(songs) {
+  if (state.download || !songs.length || songs.some((s) => !downloadable(s)))
+    return;
+  const available = Object.keys(qualities).filter((q) =>
+    songs.every((song) => qualityList(song).includes(q)),
+  );
+  if (!available.length) {
+    toast("所选歌曲没有共同可用音质，请分别下载");
+    return;
+  }
+  state.download = { songs: structuredClone(songs), epoch: state.epoch };
+  $("#download-summary").textContent =
+    `${songs.length} 首歌曲 · ${[...new Set(songs.map((s) => providers[s.track.provider]))].join("、")}`;
+  $("#download-tracks").replaceChildren(
+    ...songs
+      .slice(0, 5)
+      .map((s) => node("p", `${s.title} · ${s.artist || "歌手未知"}`)),
+  );
+  if (songs.length > 5)
+    $("#download-tracks").append(
+      node("p", `另有 ${songs.length - 5} 首，按当前选择顺序下载`),
+    );
+  $("#download-quality").replaceChildren(
+    ...available.map((q) => {
+      const option = node("option", qualities[q]);
+      option.value = q;
+      return option;
+    }),
+  );
+  $("#download-target").replaceChildren(
+    ...state.me.targets
+      .filter((t) => t.id === "private")
+      .map((t) => {
+        const option = node("option", targetName(t.id));
+        option.value = t.id;
+        return option;
+      }),
+  );
+  $("#target-path").textContent =
+    `保存目录：${state.me.targets.find((t) => t.id === $("#download-target").value)?.path || "未知"}`;
+  $("#download-error").hidden = true;
+  $("#confirm-download").textContent = "创建下载任务";
+  const pending = state.drafts.get(JSON.stringify(songs.map((s) => s.track)));
+  for (const el of $("#download-form").querySelectorAll("button,select"))
+    el.disabled = false;
+  if (pending) {
+    if (!available.includes(pending.quality)) {
+      const option = node("option", qualities[pending.quality]);
+      option.value = pending.quality;
+      $("#download-quality").append(option);
+    }
+    $("#download-quality").value = pending.quality;
+    $("#download-target").value = pending.target;
+    $("#download-quality").disabled = true;
+    $("#download-target").disabled = true;
+    $("#download-error").textContent =
+      "上次接单结果尚未确认，将核对原音质与原任务。";
+    $("#download-error").hidden = false;
+    $("#confirm-download").textContent = "核对并继续";
+  }
+  showDialog("download-dialog");
+}
+async function submitDownload(event) {
+  event.preventDefault();
+  if (!state.download || state.submitting) return;
+  const snapshot = state.download;
+  const epoch = snapshot.epoch;
+  const quality = $("#download-quality").value;
+  const target = $("#download-target").value;
+  const tracks = snapshot.songs.map((s) => s.track);
+  const draftKey = JSON.stringify(tracks);
+  let draft = state.drafts.get(draftKey);
+  if (!draft) {
+    draft = { idem: crypto.randomUUID(), manifest_id: null, quality, target };
+    state.drafts.set(draftKey, draft);
+  }
+  state.submitting = true;
+  for (const el of $("#download-form").querySelectorAll("button,select"))
+    el.disabled = true;
+  $("#download-error").hidden = true;
+  try {
+    guard(epoch);
+    if (!draft.manifest_id) {
+      const manifest = await api("/api/manifests", {
+        method: "POST",
+        body: JSON.stringify({ tracks }),
+      });
+      guard(epoch);
+      draft.manifest_id = manifest.id;
+    }
+    const task = await api("/api/tasks", {
+      method: "POST",
+      headers: { "Idempotency-Key": draft.idem },
+      body: JSON.stringify({
+        manifest_id: draft.manifest_id,
+        quality: draft.quality,
+        target_ref: draft.target,
+      }),
+    });
+    guard(epoch);
+    state.drafts.delete(draftKey);
+    state.selected.discover.clear();
+    state.selected.collections.clear();
+    state.submitting = false;
+    closeDialog("download-dialog");
+    state.downloadTab = "tasks";
+    await navigate("downloads");
+    guard(epoch);
+    toast(`下载任务已保存：${task.entries?.length || tracks.length} 首`);
+  } catch (e) {
+    if (!(e instanceof StaleRequest) && epoch === state.epoch) {
+      $("#download-error").textContent =
+        e.message + "。再次确认将使用同一接单标识核对任务。";
+      $("#download-error").hidden = false;
+      $("#confirm-download").textContent = "核对并继续";
+    }
+  } finally {
+    if (epoch === state.epoch) {
+      state.submitting = false;
+      for (const el of $("#download-form").querySelectorAll("button,select"))
+        el.disabled = false;
+      if (state.drafts.has(draftKey)) {
+        $("#download-quality").disabled = true;
+        $("#download-target").disabled = true;
+      }
+    }
+  }
+}
+async function search(append = false) {
+  if (state.searchBusy || !capability("search", state.provider)) return;
+  const epoch = state.epoch,
+    request = ++state.searchRequest,
+    provider = state.provider,
+    query = state.search,
+    page = append ? state.page + 1 : 1;
+  state.searchBusy = true;
+  $("#search-submit").disabled = true;
+  $("#next-page").disabled = true;
+  $("#page-error").hidden = true;
+  $("#page-status").textContent = "正在搜索歌曲…";
+  $("#page-status").hidden = false;
+  try {
+    const data = await api(
+      `/api/search?provider=${encodeURIComponent(provider)}&q=${encodeURIComponent(query)}&page=${page}`,
+    );
+    guard(epoch);
+    if (request !== state.searchRequest || provider !== state.provider) return;
+    if (!append) {
+      state.rows = [];
+      state.selected.discover.clear();
+    }
+    const offset = state.rows.length;
+    state.rows.push(
+      ...data.items.map((song, i) => ({
+        song,
+        id: `${request}:${offset + i}`,
+      })),
+    );
+    state.hasMore = data.has_more === true;
+    state.page = page;
+    state.searched = true;
+    if (state.view === "discover") render();
+  } catch (e) {
+    if (
+      !(e instanceof StaleRequest) &&
+      epoch === state.epoch &&
+      request === state.searchRequest
+    )
+      pageError(e.message);
+  } finally {
+    if (epoch === state.epoch && request === state.searchRequest) {
+      state.searchBusy = false;
+      $("#search-submit").disabled = false;
+      $("#next-page").disabled = false;
+      $("#page-status").hidden = true;
+    }
+  }
+}
+function chooseProvider(provider) {
+  if (!capability("search", provider) || provider === state.provider) return;
+  state.provider = provider;
+  state.searchRequest++;
+  state.searchBusy = false;
+  state.rows = [];
+  state.page = 0;
+  state.hasMore = false;
+  state.searched = false;
+  state.selected.discover.clear();
+  $("#search-submit").disabled = false;
+  $("#next-page").disabled = false;
+  $("#page-status").hidden = true;
+  $("#page-error").hidden = true;
+  render();
 }
 async function restore() {
+  const epoch = ++state.epoch;
   try {
     const me = await api("/api/me");
+    guard(epoch);
     state.me = me;
     state.csrf = me.csrf_token;
-    state.epoch++;
+    state.provider = me.capabilities?.search?.[0] || "kuwo";
     const favorites = await api("/api/favorites");
-    state.favorites = new Set(
-      favorites.items.filter((s) => s.track).map((s) => key(s.track)),
-    );
+    guard(epoch);
+    state.favorites = favorites.items;
     $("#login").hidden = true;
     $("#shell").hidden = false;
     $("#admin-nav").hidden = !me.is_admin;
     $("#user").textContent = me.principal.user_guid;
+    $("#login-error").hidden = true;
     await navigate("discover");
   } catch (e) {
-    signedOut();
+    if (!(e instanceof StaleRequest) && epoch === state.epoch) {
+      signedOut();
+      $("#login-error").textContent = e.message;
+      $("#login-error").hidden = false;
+    }
   }
+}
+async function logout() {
+  await api("/api/auth/logout", { method: "POST", body: "{}" });
+  signedOut();
 }
 $("#login-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   const form = event.currentTarget,
     b = form.querySelector("button");
   b.disabled = true;
+  $("#login-error").hidden = true;
   try {
     await api("/api/auth/login", {
       method: "POST",
@@ -359,63 +1017,117 @@ $("#login-form").addEventListener("submit", async (event) => {
     form.elements.password.value = "";
     await restore();
   } catch (e) {
-    toast(e.message);
+    if (!(e instanceof StaleRequest)) {
+      $("#login-error").textContent = e.message;
+      $("#login-error").hidden = false;
+    }
   } finally {
     b.disabled = false;
   }
 });
 $("#logout").addEventListener("click", async () => {
+  const b = $("#logout");
+  b.disabled = true;
   try {
-    await api("/api/auth/logout", { method: "POST", body: "{}" });
-    signedOut();
+    await logout();
   } catch (e) {
-    toast(e.message);
+    report(e);
+  } finally {
+    b.disabled = false;
   }
 });
-for (const b of document.querySelectorAll("nav button"))
-  b.addEventListener("click", () =>
-    navigate(b.dataset.view).catch((e) => toast(e.message)),
-  );
-async function search(append = false) {
-  const epoch = state.epoch;
-  const data = await api(
-    `/api/search?provider=${encodeURIComponent(state.provider)}&q=${encodeURIComponent(state.search)}&page=${state.page}`,
-  );
-  if (epoch !== state.epoch) return;
-  state.songs = append ? [...state.songs, ...data.items] : data.items;
-  state.hasMore = data.has_more;
-  await loadView();
-}
+for (const b of document.querySelectorAll("[data-view]"))
+  b.addEventListener("click", () => navigate(b.dataset.view).catch(report));
+for (const b of document.querySelectorAll("[data-provider]"))
+  b.addEventListener("click", () => chooseProvider(b.dataset.provider));
+$("#provider").addEventListener("change", (event) =>
+  chooseProvider(event.target.value),
+);
 $("#search-form").addEventListener("submit", async (event) => {
   event.preventDefault();
-  const b = event.currentTarget.querySelector("button");
-  b.disabled = true;
-  try {
-    state.search = $("#query").value;
-    state.provider = $("#provider").value;
-    state.page = 1;
-    await search();
-  } catch (e) {
-    toast(e.message);
-  } finally {
-    b.disabled = false;
-  }
+  if (state.searchBusy) return;
+  state.search = $("#query").value.trim();
+  if (!state.search) return;
+  await navigate("discover");
+  await search();
 });
-$("#next-page").addEventListener("click", async () => {
-  const b = $("#next-page");
-  b.disabled = true;
-  state.page++;
-  try {
-    await search(true);
-  } catch (e) {
-    state.page--;
-    toast(e.message);
-  } finally {
-    b.disabled = false;
+$("#next-page").addEventListener("click", () => search(true));
+$("#select-all").addEventListener("change", (event) => {
+  const set = selection();
+  for (const row of visibleRows().filter((r) => downloadable(r.song))) {
+    if (event.target.checked) set.add(row.id);
+    else set.delete(row.id);
   }
+  for (const check of document.querySelectorAll("[data-row]"))
+    check.checked = set.has(check.dataset.row);
+  updateSelection();
 });
+$("#download-selected").addEventListener("click", () =>
+  openDownload(
+    visibleRows()
+      .filter((r) => selection()?.has(r.id))
+      .map((r) => r.song),
+  ),
+);
+$("#download-form").addEventListener("submit", submitDownload);
+for (const b of document.querySelectorAll("[data-close]"))
+  b.addEventListener("click", () => closeDialog(b.dataset.close));
+$("#download-dialog").addEventListener("cancel", (event) => {
+  event.preventDefault();
+  closeDialog("download-dialog");
+});
+$("#detail-dialog").addEventListener("close", () =>
+  $("#detail-body").replaceChildren(),
+);
+for (const b of document.querySelectorAll("[data-download-tab]"))
+  b.addEventListener("click", async () => {
+    state.downloadTab = b.dataset.downloadTab;
+    render();
+    await loadView();
+  });
+$("#download-tabs").addEventListener("keydown", (event) => {
+  if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+  event.preventDefault();
+  const next =
+    event.key === "Home"
+      ? $("#tasks-tab")
+      : event.key === "End"
+        ? $("#assets-tab")
+        : state.downloadTab === "tasks"
+          ? $("#assets-tab")
+          : $("#tasks-tab");
+  next.focus();
+  next.click();
+});
+$("#task-filter").addEventListener("change", render);
+$("#asset-filter").addEventListener("input", render);
+$("#retry-page").addEventListener("click", () =>
+  state.view === "discover" ? search() : loadView(),
+);
+$("#refresh-list").addEventListener("click", () => loadView());
+function viewportChanged() {
+  const viewport = window.visualViewport;
+  document.documentElement.style.setProperty(
+    "--visual-height",
+    `${viewport?.height || window.innerHeight}px`,
+  );
+  document.documentElement.style.setProperty(
+    "--visual-top",
+    `${viewport?.offsetTop || 0}px`,
+  );
+}
+window.addEventListener("resize", viewportChanged);
+window.visualViewport?.addEventListener("resize", viewportChanged);
+window.visualViewport?.addEventListener("scroll", viewportChanged);
+viewportChanged();
 setInterval(() => {
-  if (state.me && ["tasks", "assets"].includes(state.view))
-    loadView().catch((e) => toast(e.message));
+  if (
+    state.me &&
+    state.view === "downloads" &&
+    !document.hidden &&
+    !document.querySelector("dialog[open]") &&
+    !$("#view-content").contains(document.activeElement)
+  )
+    loadView(true);
 }, 5000);
 restore();
