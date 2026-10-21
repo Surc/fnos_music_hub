@@ -27,3 +27,9 @@ build/
 *.wav
 *.ogg
 *.opus
+config.json
+config.*.local.json
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+.coverage

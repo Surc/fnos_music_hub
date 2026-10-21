@@ -1,0 +1,16 @@
+{
+  "instance_id": "replace-with-a-stable-nas-instance-id",
+  "data_dir": "./data",
+  "bridge_url": "http://127.0.0.1:18086/api/v1",
+  "bridge_key_env": "HUB_BRIDGE_KEY",
+  "public_origin": "https://music.example.com",
+  "secure_cookie": true,
+  "admin_guids": [],
+  "users": {
+    "replace-with-verified-fn-music-user-guid": {
+      "engine_url": "http://127.0.0.1:8787",
+      "engine_token_env": "HUB_HOT_USER_A_TOKEN",
+      "download_root": "/absolute/allowed/music/user-a"
+    }
+  }
+}

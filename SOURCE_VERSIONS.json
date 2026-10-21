@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "repository": "Surc/fnos_music_hub",
-  "stage": "design-bootstrap",
+  "stage": "core-download-development",
   "recorded_on": "2026-10-21",
   "observation_policy": "Inherited from the fixed-source v1.6 research of 2026-10-21. Not a claim of fresh upstream heads. No runtime source adopted in this bootstrap.",
   "design_archive": {
@@ -63,8 +63,8 @@
       "planned_role": "QQ/酷我下载引擎；QQ 登录/刷新单一所有者",
       "adopted_commit": null,
       "adoption_evidence": null,
-      "license_record": null,
-      "license_status": "not_rechecked_in_bootstrap",
+      "license_record": "Apache-2.0",
+      "license_status": "LICENSE checked at fixed commit during implementation",
       "evidence_path": "docs/design-goals-v1.6-20261021.txt"
     },
     {
@@ -301,17 +301,62 @@
   ],
   "maintenance_skill": {
     "name": "maintain-fnos-music-hub",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "files": {
-      "skills/maintain-fnos-music-hub/SKILL.md": "43e655beb3b8c1e062d67dc852839320c8ca40b25f81a61b7143178a880d5bf6",
-      "skills/maintain-fnos-music-hub/agents/openai.yaml": "69e9410cd1e9815475e7af57678c44bced5e3044c103aa689689679ed7c6a60c"
+      "skills/maintain-fnos-music-hub/SKILL.md": "82c56ba6d4753b9d3605b38a1e84645c74fb2b834f601a871bfc70ecf9d60cf7",
+      "skills/maintain-fnos-music-hub/agents/openai.yaml": "43f885a269d77d2173f7480c43e58afcab96777c2546511cdaeb4636349ed40d",
+      "skills/maintain-fnos-music-hub/assets/icon.svg": "9be88f8dd4c5e658961515c71389eafd45142ffa68bcae58e8dcff57d178ed91"
     },
-    "personal_skill_git_commit": "635ffaf099850e05477ac443b3285f4855df1937"
+    "personal_skill_git_commit": "b7f3dc80c703d8939c20a600672ba03786e0334c"
   },
   "project_release": {
     "tag": null,
     "commit": null,
     "assets": [],
     "status": "not_released"
+  },
+  "development_version": "0.1.0a1",
+  "implemented_adapters": [
+    {
+      "component": "Hot metadata/download HTTP facade",
+      "source_repository": "lerdb/HotDownloader",
+      "interface_commit": "07e86c3d06243cf1350925c0dd3be704005abd29",
+      "integration_mode": "original thin HTTP client; no copied runtime source",
+      "files": [
+        "modules/catalog/hot.py",
+        "modules/download/hot.py",
+        "hub/worker.py"
+      ],
+      "upstream_patch_files": [],
+      "runtime_isolation": "one private native Hot process/data-directory/port per configured fnOS GUID",
+      "live_search": "passed_two_samples",
+      "live_download": "region_restricted_407",
+      "evidence": "docs/HOT_SMOKE_20261021.json"
+    },
+    {
+      "component": "FnIdentity",
+      "source_repository": "qianlipp/fn-music-bridge",
+      "interface_commit": "ad9ce203cbb7fdb54f9404a7abb2df605893f388",
+      "integration_mode": "original HTTP client; no copied signer/auth implementation",
+      "files": [
+        "modules/fnos/identity.py"
+      ],
+      "upstream_patch_files": [],
+      "validation": "mock contract passed; real NAS pending"
+    }
+  ],
+  "implementation_branch": "feat/core-download-slice",
+  "adoption_policy": "Main-branch source adoption stays null until the implementation is merged. Interface pins on the development branch do not imply NAS/runtime acceptance.",
+  "runtime_dependencies": {
+    "lockfile": "requirements.lock",
+    "python": "3.11+",
+    "platform": "Linux",
+    "external": [
+      "ffmpeg",
+      "ffprobe",
+      "native Hot server",
+      "Yinqiao API"
+    ],
+    "database_schema": 1
   }
 }

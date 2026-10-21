@@ -2,7 +2,7 @@
 
 先读 README、SOURCE_VERSIONS.json、docs/ITERATION.md、docs/VALIDATION.md；模块修改再读 docs/DESIGN.md、docs/CONTRACTS.md 与 docs/ACCOUNTS_AND_FEEDBACK.md。
 
-当前是设计骨架。不要声称已有可运行应用、真实账号验证、Docker/FPK 构建或 Release。接口仍是草案，最小链路验证后才冻结。
+当前已有 0.1.0a1 开发实现。先读 docs/RUNNING.md、docs/HTTP_API.md；不要把 mock/生成音频测试当成真实 NAS、账号、完整音乐下载或 FPK 验收。接口尚未冻结。
 
 - 保持歌单推荐、歌曲下载、飞牛注入三个模块独立；内部组件按包拆分，进程数量按需要决定。
 - 每个协议组件标记一个主上游，锁定完整 SHA；外围适配优先，必要补丁记录文件、原因、验证与回退。观察版本不推进采用基线。
@@ -13,4 +13,4 @@
 - Git 不包含 Cookie、token、账号数据库、用户历史收藏、音频、缓存或临时签名 URL。
 - 本仓库维护 skill 为 `maintain-fnos-music-hub`；旧 `maintain-fnos-music` 的共享账号、只读发现、主音源三选一约束属于旧工程。
 
-纯资料变更运行 `python3 scripts/verify_provenance.py`。实现代码后按改动新增有意义的验证，记录模拟/真实账号/设备/FPK 各层结论；历史测试数字不能作为新代码证据。提交时同步迭代、验证、来源与 skill 摘要；日常工作按会话已有授权推进。
+运行与改动有关的 pytest、ruff、前台 Node/jsdom 检查和 `python3 scripts/verify_provenance.py`；记录模拟/真实账号/设备/FPK 各层结论，历史测试数字不能作为新代码证据。提交时同步迭代、验证、来源与 skill 摘要；日常工作按会话已有授权推进。
