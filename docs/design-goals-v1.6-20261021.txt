@@ -1,0 +1,1235 @@
+音乐项目模块化设计目标 v1.6
+日期：2026-10-21（Asia/Shanghai）
+状态：设计目标，待实现。本文记录需求与源码对比，不表示已有功能完成或真实平台验收通过。
+v1.5 审核结论：三个业务模块的方向保留；外部选型有条件通过，不能直接作为全部功能的交付承诺。
+第十八节保留 Astra 复核的准入条件；第十九节补充飞牛端可复用项目、真实反馈入口和接入路径。
+v1.6 结论：身份与曲库有现成候选；可靠播放反馈仍需补事件适配并通过实机验收。
+本次补充：第十三至十五节按“模块单一主上游、最少修改原文件”重新核对选型；
+保留前三个业务模块，进一步拆分内部组件。观察到的新提交均未因此被采用或合并。
+v1.3 补充：第十六节新增逐飞牛用户绑定网易账号、真实收听反馈和明确的云端收藏操作。
+网易个人推荐与反馈要求本人账号；原“仅本地记录”的设计增加用户可启用的账号联动。
+v1.4 补充：第十七节复核 QQ、酷我、酷狗、咪咕与汽水的账号推荐、云端收藏和播放上报候选。
+
+一、用户确认的产品目标
+后台按业务划分为三个模块：歌单推荐、歌曲下载、飞牛音乐注入。
+前台按飞牛用户展示歌单、推荐和收藏，管理下载任务与已下载歌曲，提供独立的注入设置。
+网易云、QQ、酷我使用统一来源标识和账号授权契约，歌单元数据与下载分别适配。
+部署目标是 J4125 / x86_64 飞牛 NAS、原生 FPK、无需 Docker。
+保留 HotDownloader 已有能力；前台可以复用 ext 清楚的布局，增加统一的多用户视图。
+
+二、来源与能力对比
+1. HotDownloader
+固定源码：07e86c3d06243cf1350925c0dd3be704005abd29。
+优势：QQ/酷我歌曲与歌单搜索、公开歌单读取，QQ 当前账号个人歌单读取，
+下载队列、续传、歌词标签、现有 QQ 歌单监控与本地文件匹配。
+现有服务音乐路由有 playlists/search、playlists/fetch、QQ playlists/created，
+没有发现可直接满足本目标的三平台推荐歌单/排行榜统一路由。
+Web 文档说明目前使用单组账号密码或单访问令牌，适合单管理员。
+选用职责：QQ/酷我下载引擎，尽量复用共享核心；不假设原接口已经支持飞牛多用户。
+证据：
+https://github.com/lerdb/HotDownloader/blob/07e86c3d06243cf1350925c0dd3be704005abd29/crates/hotdownloader-server/src/music.rs
+https://github.com/lerdb/HotDownloader/blob/07e86c3d06243cf1350925c0dd3be704005abd29/crates/hotdownloader-server/README.md
+
+2. go-music-dl / music-lib
+固定源码：2c1cefe7064fba6e46034359791060debbc935e6，发布版本 v1.1.3。
+固定依赖：music-lib v1.1.1-0.20261018010056-7cc4467b4e30。
+优势：网易/QQ/酷我推荐歌单、分类、排行榜，以及登录账号歌单读取。
+源码中 QQ 推荐调用 HotRecommendServer.get_hot_recommend，酷我调用
+getRcmPlayList，属于热门推荐候选，不能直接等同于按飞牛用户生成的个性化推荐。
+其本地 Collection/SavedSong 模型没有飞牛用户归属；管理员登录也不等于用户数据隔离。
+此前 DAYBREAK'S BELL 测试定位到酷我 bitSwitch 误过滤，以及地区错误地址校验问题，
+所以不能因为歌单接口较多，就直接把整个下载服务作为已验证替代品。
+选用职责：参考其歌单推荐、分类、榜单的接口覆盖与交互；推荐和下载分开适配。
+证据：
+https://github.com/guohuiyuan/go-music-dl/blob/2c1cefe7064fba6e46034359791060debbc935e6/core/service.go
+https://github.com/guohuiyuan/go-music-dl/blob/2c1cefe7064fba6e46034359791060debbc935e6/internal/web/collection.go
+https://github.com/guohuiyuan/music-lib/blob/7cc4467b4e30/qq/playlist.go
+https://github.com/guohuiyuan/music-lib/blob/7cc4467b4e30/kuwo/playlist.go
+
+3. 现有 Surc/fnos_music_ext
+固定 main：1d8f4e73945ae51a21cb5bce2202a3f9ee9d4ef6。PR #6 已合并，正式 v2.8.0 未因此更新。
+优势：网易云六类发现、按飞牛用户历史/收藏生成每日推荐、多用户收藏与历史、
+官方接口代理和 Socket 接管/恢复、下载落库、现有管理页与 FPK 生命周期。
+现有网易账号为 NAS 共用账号；云端推荐和 FM 不自动属于各飞牛用户。
+已有的每日歌曲推荐排序，也不等于已经完成个性化的“歌单推荐卡片”。
+选用职责：复用飞牛身份与历史收藏基础、网易能力、注入恢复以及界面布局。
+证据：
+https://github.com/Surc/fnos_music_ext/blob/1d8f4e73945ae51a21cb5bce2202a3f9ee9d4ef6/docs/PERSONALIZATION.md
+https://github.com/Surc/fnos_music_ext/blob/1d8f4e73945ae51a21cb5bce2202a3f9ee9d4ef6/proxy/personalization.py
+
+4. 其他前文候选
+Holly Music 本轮核对 main：2d5e4a136783aaa8f435f63c294eedea38889b85。
+其多用户收藏、歌单、历史和“收藏平台歌单引用”可作为数据模型参考；
+其账号体系不会自动对应飞牛用户，播放还依赖自行配置的洛雪音源。
+Songloft + Starlight 有推荐歌单、搜索、跨平台列表和同步能力，可参考交互；
+本项目目标不引入其洛雪脚本链或额外曲库服务器。
+这些项目是参考来源，不表示其代码已被采用或全部功能已实测。
+https://github.com/redcatH/HollyMusic/blob/2d5e4a136783aaa8f435f63c294eedea38889b85/docs/USER-GUIDE.md
+https://github.com/snakejohn/starlight
+
+三、后台模块边界
+A. 歌单推荐模块
+提供网易/QQ/酷我的公共推荐歌单、分类、榜单、搜索、详情、分页和收藏入口。
+维护用户自建歌单、收藏的歌单与歌曲、云端歌单引用、个人推荐结果。
+个性化同时考虑当前飞牛用户的听歌历史、收藏、歌手/风格偏好。
+分别展示“为我推荐的歌单”和“我的每日推荐歌曲”，避免将歌曲排序冒充歌单个性化。
+公开候选池可共用；个人排序、排除记录、收藏与推荐缓存按用户隔离。
+平台账号原生日推/FM 按实际绑定的网易/QQ 账号归属展示；共享账号明确标识为共享。
+歌单浏览只依赖元数据。取流失败、会员限制或待验证时显示状态，避免错误过滤整个歌单。
+云端歌单以只读引用导入；本地自建歌单可以编辑。收藏歌单与导入快照是不同操作。
+私人收藏和播放行为保存在本地。用户启用账号联动后，真实播放和明确选择的收藏操作
+可同步到本人绑定的平台账号；具体范围、账号隔离与失败处理见第十六节。
+
+B. 歌曲下载模块
+统一接收单曲、选中曲目、整张歌单或专辑的下载任务。
+QQ/酷我复用 HotDownloader；网易云通过独立适配器接入。
+负责队列、并发、暂停恢复、失败重试、真实音质/格式校验、歌词封面标签、命名与目录。
+记录任务发起用户、原平台/歌曲 ID、实际下载来源、文件、音质、状态和入库结果。
+用户查看和控制自己的任务；管理员管理全部任务与共用目录。
+歌曲文件可以去重共享，用户的下载任务和收藏归属分别保存。
+区分“移除任务记录”和“删除实际音乐文件”；共享文件的物理删除执行管理员权限检查。
+提供已下载歌曲列表、搜索筛选、来源/格式/音质/大小/下载时间、元数据和入库状态。
+网易下载失败时可按策略尝试 QQ/酷我，同曲匹配保留歌手、版本、时长和来源证据。
+即使关闭飞牛注入，推荐浏览、下载和已下载歌曲管理仍可独立工作。
+
+C. 飞牛音乐注入模块
+只负责官方接口适配、本地接口透传、在线内容映射、播放流路由、入库联动与生命周期。
+从推荐和下载模块读取结果，并以已验证的飞牛用户身份调用业务接口。
+负责启用/停用、连接检测、状态日志、版本兼容、Socket 接管与恢复。
+注入设置独立于业务设置；停用、卸载或启动失败时可靠恢复官方连接。
+平台搜索、推荐算法、账号登录和下载调度不复制进注入模块。
+在线即播、Range/拖动和加密格式明文交付需要专门接口，属于待实现的主要技术工作；
+不能把现有下载任务 API 直接当作完整的播放器取流接口。
+
+共用基础层
+飞牛身份认证、用户与平台账号绑定、权限、音源能力声明和数据访问由三个模块共用。
+业务模块的划分不强制等同于三个独立常驻进程；进程数量按原生部署需求控制。
+账号凭据留在对应音源服务/受保护存储，前台只能读取是否登录、账号标识与可用能力。
+
+四、前台导航与权限
+1. 歌单推荐
+网易/QQ/酷我平台切换，公共推荐、分类、排行榜、“为我推荐”、我的每日推荐。
+歌单卡片显示来源、封面、简介、曲目数；详情支持收藏、选曲、整单下载与状态提示。
+2. 我的音乐
+我创建的歌单、云端歌单、收藏的歌单、收藏的歌曲，以及相关历史。
+3. 下载管理
+分为“下载任务”和“已下载歌曲”两个视图，下载完成可继续查看、播放和管理文件。
+4. 飞牛注入
+独立设置页，含启用状态、健康检测、注入内容范围、恢复官方连接及日志诊断。
+该页由飞牛管理员操作。
+账号与偏好可以放在用户菜单，存储/并发等全局设置归管理员。
+
+普通用户登录后默认只看自己的歌单、推荐、收藏和下载任务。
+管理员可明确选择某个用户进行只读预览；预览不自动以对方身份收藏或提交下载。
+管理员全局管理与用户视图在接口层区分，前台下拉框不能作为身份认证依据。
+
+五、多用户和账号的约束
+稳定身份使用经服务端验证的 fnOS user GUID/ID，不以用户名作为主键。
+个人歌单、歌曲收藏、歌单收藏、历史、偏好、推荐缓存、任务可见范围均带用户归属。
+网易个人推荐和行为反馈要求绑定用户自己的账号；共享账号仅用于明确标记的兼容读取，
+不作为个人反馈的自动回退。用户未绑定时仍能浏览公共歌单和使用本地推荐。
+未绑定平台账号时仍可浏览公共歌单，并基于该飞牛用户的本地历史/收藏生成推荐。
+共享网易/QQ 登录不会被当作每个飞牛用户各自的平台画像。
+当前选定的 music-lib 酷我适配器未实现账号私人歌单；新增账号候选见第十七节，未验收不标成完整云端同步。
+公共缓存与私人缓存分开；共享音乐文件仍受曲库权限控制。
+HotDownloader 当前单管理员 API 和全量事件流不直接暴露给普通飞牛用户；
+统一后端完成授权和事件过滤。
+
+六、维护和交付目标
+采用新增模块、适配器与独立接口前缀接入，原下载核心和原接口尽量保持可跟随上游。
+分别记录 HotDownloader、ext 原工程、网易云依赖的固定 SHA/版本、采用范围与验收结果。
+参考 go-music-dl 或其他项目的功能时，记录具体来源和采用方式，不直接整套迁入。
+一个原生 FPK 可以包含可选模块；推荐、下载和注入可分别检测状态。
+保留 HotDownloader 原有独立使用能力；按三平台目标裁剪最终包的无关运行依赖。
+未来同步修改设计、用户文档、迭代记录与维护 skill；未实现需求保持 planned。
+现有正式 tag、已发布附件与采用基线不因本设计文档而推进。
+
+七、首版验收目标
+1. A、B 两个飞牛用户的收藏和私人歌单相互隔离。
+2. A、B 的推荐按各自历史/收藏计算，缓存切换不会串用户。
+3. 公共歌单允许相同；网易个人日推使用各自绑定账号，兼容共享读取必须标识为共享且不接个人反馈。
+4. 用户平台账号绑定不覆盖他人的登录态，后台不向普通用户泄露凭据。
+5. 三平台均验证推荐列表、歌单详情、分页、收藏、选曲和整单下载的实际支持范围。
+6. 搜索/歌单展示不因瞬时直链失败或错误 bitSwitch 条件漏掉有效元数据。
+7. 普通用户不能读取或控制他人任务，管理员可统一管理；事件推送也遵守同样规则。
+8. 下载验证实际完整音频，记录真实格式、音质、来源、用户与保存位置。
+9. 两人下载同一歌曲可以复用合格文件，各自任务与收藏仍正确。
+10. 下载任务与已下载文件的删除行为清晰，用户不能误删其他人共用文件。
+11. 注入开关不影响推荐和下载模块独立使用，停用/卸载能恢复官方连接。
+12. 新装、升级、重启及故障恢复保留用户归属、账号绑定、收藏、任务与文件。
+13. 在真实 fnOS 和用户网络/账号条件下完成搜索、播放、下载与多用户验收；
+源码检查、模拟测试或当前外部测试环境的失败不替代真实设备结论。
+
+设计优先级
+第一优先：三模块边界、飞牛用户身份/数据归属、歌单推荐和下载闭环。
+第二优先：账号绑定、个性化歌单排序、下载文件管理和注入生命周期。
+播放取流/Range/加密格式交付作为完整注入能力单独验收，不以“接口已接通”宣称完成。
+
+八、歌单功能逐项对比（2026-10-21 补充）
+核对方式：固定提交的文档、服务路由、数据模型与部分平台实现；并非在真实账号下逐项运行验收。
+此前的比较以入口和职责为主，本节补充收藏语义、导入方式、分页、同步与用户隔离。
+“未提供”指本次查看的现有服务/模型没有该入口，不等于断言整个生态永远不支持。
+
+8.1 HotDownloader
+推荐/分类/榜单：当前 server music.rs 没有完整的统一歌单推荐、分类和排行榜入口；
+hot-keywords 是搜索热词，不能算推荐歌单。
+歌单搜索/详情：QQ、酷我支持。云端个人列表：QQ 当前登录账号可读取自建歌单。
+变化跟踪：已有 QQ 歌单监控、增量下载与本地曲库匹配，适合参考“跟随更新后下载”。
+收藏/自建歌单：现有能力以读取平台歌单和下载监控为主，不能直接当作本项目多用户歌单中心。
+多用户：server 当前是单组访问凭证、单管理员设计；现有登录存储不能直接冒充逐飞牛用户绑定。
+采用结论：保留下载核心和原生功能；推荐及个人收藏由独立歌单模块承担。
+
+8.2 go-music-dl / music-lib
+推荐/分类/榜单：core/service.go 为网易、QQ、酷我分派了相关函数，覆盖较完整。
+个人云端列表：网易、QQ有接口；GetUserPlaylistsFunc 没有酷我分支，不能承诺酷我私人云歌单。
+本地列表：Collection 区分 manual/imported，能保存手动列表与外部引用；
+不能将 imported 字样一律解释成复制了所有曲目的离线快照，需要查看具体存储和刷新路径。
+推荐归属：所查 QQ 热门推荐和酷我热门推荐接口不能等同于按飞牛用户的个人画像。
+多用户：Collection/SavedSong 没有 owner 字段，Web 管理员认证不足以隔离飞牛个人数据。
+采用结论：参考推荐、分类、榜单和来源适配的覆盖；不把整个下载栈并入。
+
+8.3 Holly Music
+推荐/分类/榜单：发现服务直接支持网易、QQ、酷我等平台，包含推荐、标签/排序与榜单；
+元数据发现不要求先装自定义搜索脚本，最终播放可用性仍受启用的音源脚本影响。
+收藏平台歌单：只保存外部引用与展示信息，内容随平台刷新；取消收藏不改云端歌单。
+本地自建歌单：可编辑，歌曲列表与外部引用分开管理；用户收藏、歌单、历史按用户隔离。
+导入：网易 CSV、QQ 公开链接/ID；当前文档未提供酷我 CSV/公开链接导入入口。
+完整性：QQ 导入有分页/数量校验；酷我详情源码也检查总数变化、重复页和缺页。
+外部客户端：收藏的平台歌单通过 Subsonic 只读暴露，删除表示取消本地收藏。
+采用结论：重点参考“外部引用/本地副本/可编辑自建歌单”的区分，以及每用户收藏模型。
+其自有用户体系需要另做飞牛身份映射，不直接部署整套替代本项目。
+
+8.4 Songloft + Starlight
+宿主 Songloft 侧重自有曲库与原生歌单，平台推荐由社区 Starlight 插件提供。
+插件文档列出歌单搜索、推荐、排行榜、外部歌单收藏、跨平台自建列表及原生歌单同步。
+同步到 Songloft 要先建立曲库歌曲，再写原生 song_ids；并非所有平台 ID 可以直接当宿主歌曲 ID。
+插件还带洛雪双向列表同步及下载功能；使用其播放音源需要配置相应 LX 脚本。
+用户隔离：不能由宿主的用户体系推断插件列表已按飞牛用户隔离；所查 CustomPlaylist
+类型没有 owner，插件存储以单个索引键保存，仍需核对宿主 storage 的用户作用域。
+采用结论：参考跨平台列表与同步交互，不引入额外宿主和 LX 脚本链。
+
+8.5 现有 fnos_music_ext
+已有网易六类发现、按飞牛用户历史/收藏排序的每日歌曲，以及官方注入/恢复基础。
+公共内容、NAS 共用网易账号推荐、飞牛个人每日歌曲是三种不同归属。
+现有发现列表只读；文档注明普通歌单默认最多获取 300 首且经过可播过滤。
+新歌单模块需要保留未解析曲目并支持完整分页，不能原样沿用该上限作为“整单下载成功”。
+当前没有完整的 QQ/酷我歌单推荐前台，也没有逐飞牛用户的平台账号绑定。
+采用结论：保留身份、历史收藏与注入经验；新歌单中心是新增模块。
+
+8.6 Navidrome
+适合本地音乐库、多用户自建歌单和收藏，支持 Subsonic 客户端及原生二进制部署。
+所查项目定位和内置功能未提供本目标中的网易/QQ/酷我在线推荐歌单入口。
+采用结论：它可替代本地媒体服务器职责，但不能直接替代本项目的在线歌单模块。
+
+8.7 本项目的选取原则
+不把几个完整服务器叠装进 FPK。歌单模块参考 go-music-dl 的平台覆盖、Holly 的收藏/导入语义、
+ext 的飞牛画像；下载模块先适配 HotDownloader；注入继续独立。
+这些是功能参考和适配方向，尚未决定复制任何外部代码。实际复用前记录来源、固定版本和许可证。
+明确三个不同动作：
+（1）收藏外部歌单：保存引用，显示最新内容，只读；（2）导入副本：固定一份可编辑的本地列表；
+（3）监控下载：周期读取外部列表，对新增/变化项按策略创建下载任务。
+删除云端歌曲不默认删除已下载文件；监控默认只补新增，覆盖和删除需要单独明确的策略。
+
+九、模块替换的接口约定 v1（设计稿，待实现）
+9.1 边界与数据所有权
+歌单模块拥有歌单、曲目条目、收藏、推荐画像、云端引用和列表快照。
+下载模块拥有下载清单副本、任务、执行引擎映射、文件资产和任务/文件授权。
+注入模块拥有官方接口映射、注入状态、官方曲库入库映射与恢复记录。
+身份与账号绑定是共用基础能力，独立于注入开关。关闭注入后仍可验证用户并使用独立前台。
+各模块只能调用公开契约，不直接读写对方的表，也不要求导入对方的语言对象或内部任务结构。
+歌单端 CatalogProvider 提供推荐/分类/榜单/搜索/详情/分页；下载端 DownloadEngine 提供
+能力、接单、查询和控制。两种接口可以使用不同 SDK/实现，替换其中一个不强制替换另一个。
+共用的是稳定标识、数据定义和授权契约，不把某个第三方平台库设为所有模块的强制运行依赖。
+同一进程可用接口调用；不同进程可用本机 HTTP/Unix Socket。业务语义和 JSON 模型保持一致。
+首版不引入 Redis、消息队列服务器或外部数据库，持久化和进程数按 NAS 资源控制。
+
+9.2 稳定曲目身份 TrackRef
+最低必要字段：provider、id_type、id，三个字段均为字符串。
+provider 统一用 netease / qq / kuwo；id_type 分别使用 track_id / song_mid / rid。
+平台数字 ID 也保存为字符串，避免长整数精度丢失；QQ 数字 song_id 与 song_mid 不混用。
+可以附带经过适配器确认的别名，但不能按歌名/歌手相同就把不同平台 ID 合成一个 ID。
+metadata 包含 title、artists[]、album、duration_ms、version_label、cover 等，未知值允许为空。
+同一首歌在一张歌单重复出现时，PlaylistItem 的 item_id 和 position 各自独立，不能丢掉顺序和重复项。
+下架或无法取得详情的条目保留 item_id、位置和原因；数量统计不能静默删掉它们。
+QQ media_mid、引擎私有下载参数由下载适配器补全；前台不负责拼解密参数。
+展示元数据与资源可用性分开：availability=unknown / available / unavailable / restricted，
+附 checked_at 和原因。下载探测失败不从推荐、搜索或歌单结果中抹掉条目。
+临时 CDN URL、Cookie、访问密钥和解密材料不属于歌单交付模型。
+
+9.3 歌单与推荐模型
+Playlist：稳定内部 playlist_id、名称、归属、kind、revision、external_ref、展示元数据。
+kind=local / external_follow / imported_copy；external_follow 只读，另外两种按本地权限编辑。
+external_ref={provider, playlist_id}，与本地 playlist_id、官方飞牛歌单 GUID 分开。
+推荐响应声明 recommendation_kind=public / platform_personal / local_personal，
+并给出 account_scope=none / user / shared、生成时间和画像版本；前台据此准确标注来源。
+公共推荐候选可共享；个人歌单、排序结果与收藏必须按 principal_id 和账号作用域缓存。
+云端私人列表不支持时返回能力状态，不能以公开热门歌单填充后标成“我的歌单”。
+
+9.4 整单下载必须交付固定清单
+薄编排层负责“用户点击整单下载→歌单快照→提交下载”，它是应用入口，不新增第四个业务模块。
+歌单模块先读取全部分页，冻结有序 PlaylistItem 清单，生成 snapshot_id、revision、
+manifest_hash、observed_at、expected_count、resolved_count、unresolved_count 和 complete 标识。
+遇到缺页、重复页或获取期间总数变化应报错/重试；部分读取必须显式标记，默认不按完整歌单提交。
+无法解析的条目进入失败/待处理明细，不可从数量中消失。用户明确选取部分曲目时记录 selection。
+没有原子版本接口的平台只能保证“本次观察到并冻结的清单”，provider_revision=null，
+不能声称获得上游原子快照；本地 snapshot_id 仍保证后续下载内容固定。
+下载模块接收并持久化清单副本，不能只保存歌单 URL 或只保存要回调歌单模块的 snapshot_id。
+一旦接单，歌单服务停机、云端删歌或用户改变列表，不改变这批任务的成员。
+大清单按能力声明的上限提交；超限返回明确错误，不截断。需要分块时使用下载清单暂存接口：
+创建 manifest→按 chunk_index 上传并校验块哈希→finalize 校验总数/总哈希→创建批次。
+暂存清单未 finalize 前不开始下载；中断的暂存有过期清理，重复上传相同块为幂等操作。
+manifest_hash 使用契约确定的规范序列化及有序成员列表计算，包含 item_id、TrackRef 与版本，
+不把临时链接或凭据加入哈希；相同歌曲的不同排列有不同清单哈希。
+
+9.5 下载请求与结果
+请求包含 TrackRef/清单、展示元数据、quality_policy、fallback_policy、library_ref、
+account_refs 和 Idempotency-Key。普通客户端不传可信 owner，服务端从验证后的身份写入。
+library_ref 指管理员配置并授权的保存位置；前台不提交任意绝对路径，也不假定它等于飞牛曲库 ID。
+quality_policy 区分“要求无损”等约束和引擎的音质标签，明确 strict 或 allow_downgrade。
+actual_quality 的容器、编码、采样率、位深和时长以实际文件检测为准。
+lossless 只表示检测到无损编码；原始母带是否曾经有损、是否上采样需独立证据，未知时保持未知。
+不能仅凭 FLAC、较高码率或高采样率就宣称获得更高的原生音质。
+fallback_policy 默认严格同曲；跨平台匹配保留原始 TrackRef、匹配候选和最终来源。
+比较歌手、版本/现场/翻唱标识、时长等；无法可靠匹配时标记 needs_review，避免静默换歌。
+播放权限、会员权限、地区限制、无对应音质和链接临时失效分别返回错误，不混成“空结果”。
+临时链接在执行阶段由下载适配器解析，过期后在适配器内重新获取；前台不续签链接。
+202 Accepted 只在固定清单、逻辑任务和投递记录持久化后返回；它不代表下载或入库完成。
+按 principal_id + Idempotency-Key 去重：同键同内容返回原批次，同键不同内容返回 409。
+超过当前能力/权限的请求在接单前明确拒绝；不悄悄移除未知字段中的约束再执行。
+
+任务状态：queued / resolving / downloading / postprocessing / validating / paused /
+needs_review / completed / failed / canceled。记录 revision、attempt、进度和各阶段时间。
+failed 重试增加 attempt 并保留上次错误；暂停、续传等操作只在引擎声明支持时开放。
+任务完成必须有可读且校验通过的 asset_id；仅拿到 URL、写出空文件或留下加密中间文件不算完成。
+下载完成与飞牛入库分开：asset 完成后可有 indexing=pending / indexed / failed / disabled。
+关闭注入或入库失败不把已经下载好的音频改成下载失败，也不触发重复下载。
+批次汇总分别计数成功、复用、失败、取消、待复核、无法解析的条目；全部结束不等于全部成功。
+
+资产结果：asset_id、requested_track_ref、actual_track_ref、format/codec、lossless、
+bitrate_bps、sample_rate_hz、bit_depth、duration_ms、bytes、sha256、library_ref 和授权访问入口。
+浏览器只拿 asset_id 与受控 URL；NAS 物理路径仅通过管理员或服务间授权接口暴露。
+两用户可以关联同一内容哈希的文件，但复用前仍检查当前用户的文件访问授权和实际音质要求。
+“删除我的记录/关联”和“删除文件”是不同接口；仍被他人引用的文件不可被普通用户物理删除。
+
+示例：歌单向下载模块交付的单曲请求（所有 ID 为示意，不代表真实歌曲）
+{
+  "schema_version": "1.0",
+  "manifest": {
+    "snapshot_id": "ps_example",
+    "complete": true,
+    "items": [{
+      "item_id": "pi_example",
+      "position": 0,
+      "track_ref": {"provider":"kuwo","id_type":"rid","id":"example-rid"},
+      "metadata": {"title":"DAYBREAK'S BELL","artists":[{"name":"L'Arc～en～Ciel"}],"duration_ms":null}
+    }]
+  },
+  "quality_policy": {"lossless_required":true,"mode":"strict"},
+  "fallback_policy": {"mode":"same_track","allowed_providers":["kuwo","qq"]},
+  "library_ref": "library_main",
+  "account_refs": {}
+}
+此示例省略了前文定义的快照计数、哈希等字段，仅展示模块之间传递身份与策略的方式。
+
+9.6 v1 接口清单（概念接口，路径需在实现 OpenAPI 时定稿）
+共用：GET /v1/capabilities、GET /v1/health。
+歌单：GET /v1/recommendations；GET /v1/playlist-categories；GET /v1/charts；
+      GET /v1/playlists（含 source/keyword/kind/cursor）；GET /v1/playlists/{id}/items；
+      POST /v1/playlists；GET/PATCH/DELETE /v1/playlists/{id}；
+      POST /v1/playlists/{id}/items；DELETE /v1/playlists/{id}/items/{item_id}；
+      PATCH /v1/playlists/{id}/item-order；PUT/DELETE /v1/playlist-follows/{id}；
+      PUT/DELETE /v1/track-favorites/{id}；POST /v1/playlists/{id}/snapshots；
+      GET /v1/playlist-snapshots/{snapshot_id}（preparing/ready/partial/failed）。
+      详情/分页返回 next_cursor、总数可信程度、上游变化/缓存状态；编辑带 expected_revision。
+下载：POST /v1/download-batches（内联固定清单或已 finalize 的本模块 manifest_id）；
+      GET /v1/download-batches/{id}；GET /v1/download-tasks；GET /v1/download-tasks/{id}；
+      POST /v1/download-tasks/{id}/actions（pause/resume/retry/cancel，带 expected_revision）；
+      POST /v1/download-manifests；PUT /v1/download-manifests/{id}/chunks/{index}；
+      POST /v1/download-manifests/{id}/finalize；
+      GET /v1/assets；GET /v1/assets/{id}；GET/HEAD /v1/assets/{id}/content；
+      DELETE /v1/assets/{id}/my-link；管理员 DELETE /v1/assets/{id}/file；GET /v1/events。
+服务间需要身份委托时使用受验证且限权限的上下文，不能信任浏览器自填 X-User-ID。
+所有资源查询、批次明细、导出、事件订阅和文件内容入口都执行同样的用户授权。
+
+9.7 事件、失败和恢复
+统一事件字段：schema_version、event_id、resource_id、resource_revision、principal_id、
+event_type、occurred_at、payload。事件类型包括 task.updated、asset.ready、asset.indexing_changed。
+按至少一次投递处理，订阅端以 event_id 去重，以资源 revision 丢弃过期状态。
+SSE/长轮询支持恢复游标；游标过期时返回 resync_required，并从任务查询接口恢复最终状态。
+底层 HotDownloader 的全局事件流只由适配器消费，统一服务按用户过滤后再发布。
+下载引擎负责真实执行队列、并发和下载重试；外围只负责授权、稳定逻辑 ID、命令投递与状态映射。
+不另起一套会和 HotDownloader 抢控制权的下载调度器。适配器重启后查询引擎并恢复映射。
+接单的重复投递需要 external_request_key 或等效唯一约束；若上游没有可靠入口，
+补最小接入钩子，解决“引擎已接单但映射未落盘”导致的重复任务。
+统一错误结构：code、message、retryable、stage、provider、request_id；敏感凭据不入响应/日志。
+约定错误包括 LOGIN_REQUIRED、ENTITLEMENT_REQUIRED、REGION_RESTRICTED、QUALITY_UNAVAILABLE、
+TRACK_NOT_FOUND、PROVIDER_UNAVAILABLE、NETWORK_TIMEOUT、INVALID_AUDIO、STORAGE_ERROR、
+INCOMPLETE_PLAYLIST、UNSUPPORTED_CAPABILITY、REVISION_CONFLICT、IDEMPOTENCY_CONFLICT。
+上游宕机显示来源异常和可识别的旧缓存，不伪装成“歌单为空”。
+
+9.8 在线播放契约与下载契约分开
+GET/HEAD assets/{id}/content 交付已经可用的音频，支持 Range、Content-Type、长度和授权。
+首版即播若要“边解析边播放”，另定义 playback-session 接口与缓冲/超时/取消规则，
+在 capabilities 声明 progressive_streaming；没有通过该能力验收时不向注入端宣称支持。
+注入模块只消费 TrackRef、可播放会话或 asset_id，并维护官方歌曲 GUID 映射。
+它不解析平台 URL、不决定跨平台匹配，也不把官方曲库表直接交给下载引擎维护。
+
+9.9 替换与兼容
+capabilities 按模块和平台声明：public_recommendations、categories、charts、playlist_search、
+playlist_detail、personal_playlists、follow、snapshot、download、pause、resume、
+per_user_credentials、range、progressive_streaming、max_batch_items 等，并区分未支持和暂时故障。
+v1 次版本只新增可选字段/能力；破坏性修改走 v2 并给出数据迁移。未知枚举前台安全显示未知状态。
+永久数据保存本项目定义的 playlist_id / task_id / asset_id 和平台引用，
+不把 HotDownloader 的私有任务 ID 或某个第三方库对象当作公共主键。
+换下载引擎时先排空在途任务或保留旧适配器直至结束；不承诺不同引擎能续传彼此的临时文件。
+已完成资产、用户关联、收藏与下载清单可按开放数据结构导出/迁移；原资产 ID 保持可解析。
+可更换歌单适配器、整套歌单实现或下载引擎；只要满足 v1 契约，前台与飞牛注入无需随之重写。
+
+十、实现前必须验证的接入缺口
+1. HotDownloader 的单账号登录存储需要账号上下文适配；不能通过切换全局 Cookie 服务多人。
+   优先让独立账户存储经参数传入现有核心；原独立模式继续使用默认存储。
+   若某引擎暂时只支持共享账号，明确声明 per_user_credentials=false 并按共享权限运行。
+2. 元数据与下载引擎的 ID 映射、QQ media_mid 补全、可用音质含义，需要固定测试样本验证。
+3. 持久化任务映射和幂等接单、重启恢复要先验证，不能只做一层 HTTP 转发就称为可替换。
+4. 网易下载适配器、统一独立前台登录、飞牛官方入库与在线播放接口仍是新增实现工作。
+5. 首版不把未验证的酷我私人账号歌单、平台收藏写回或真正个性化平台歌单推荐列为已有能力。
+
+十一、接口验收标准（尚未执行）
+1. 歌单模块关闭后，已接收批次仍能完成、查询和在重启后恢复；可用资产仍可访问。
+2. 替换一个假下载适配器和真实 HotDownloader 适配器，前台/注入消费相同的任务与资产模型。
+3. 超过单页的歌单下载保持顺序和计数；缺页、重复页、未知曲目和上游变化均有明确结果。
+4. 同一幂等键重复提交只产生一批任务；接单前后进程崩溃和重复事件不会重复下载。
+5. 临时链接过期在执行端刷新；非音频响应、空文件和音质不足不能进入 completed。
+6. 两飞牛用户的歌单、批次、任务、事件、缓存和资产权限在 API 层隔离，不能改 URL 越权。
+7. 本地列表编辑、外部收藏、导入副本和监控下载各自符合定义，外部删歌不自动删本地文件。
+8. 注入停用时独立歌单/下载正常；下载成功而入库失败时可单独重试入库。
+9. 不支持的平台/音质/操作通过能力协商明确显示，不返回假成功或静默裁剪请求。
+10. 契约测试覆盖替换和故障场景；真实账号/网络下另做三平台歌单及下载验收。
+
+十二、本次补充核对的固定来源
+核对日期：2026-10-21；下列为观察版本，不改变任何已采用上游基线或正式发布版本。
+HotDownloader：07e86c3d06243cf1350925c0dd3be704005abd29。
+go-music-dl：2c1cefe7064fba6e46034359791060debbc935e6（v1.1.3）；
+music-lib：v1.1.1-0.20261018010056-7cc4467b4e30。
+fnos_music_ext：1d8f4e73945ae51a21cb5bce2202a3f9ee9d4ef6。
+Holly Music：2d5e4a136783aaa8f435f63c294eedea38889b85。
+Songloft：52b8ae4ebaa44fb370b23f820d68fa3af547e0e2。
+Starlight：38f05e08549726b907f2f6d0a51d1e9659c4785a。
+Navidrome：df77c462e85dfb732b3a366693088bef2cff4bcb（master 观察提交，非稳定发布选择）。
+维护 skill：maintain-fnos-music 1.0.0；本次仅完善设计，不修改 skill 或推送新代码。
+ext 两源采用记录维持原值：javycoder 6973402df5e180cd49a00af4db48758504303c58 / 2.8.0；
+gzywd 08b0b23486d289619ab73575f42aa0d20e78c2b3 / 2.9.30。
+
+补充源码证据：
+https://github.com/redcatH/HollyMusic/blob/2d5e4a136783aaa8f435f63c294eedea38889b85/lib/services/discovery-service.ts
+https://github.com/redcatH/HollyMusic/blob/2d5e4a136783aaa8f435f63c294eedea38889b85/lib/services/favorite-playlist-service.ts
+https://github.com/redcatH/HollyMusic/blob/2d5e4a136783aaa8f435f63c294eedea38889b85/lib/services/playlist-import.ts
+https://github.com/snakejohn/starlight/blob/38f05e08549726b907f2f6d0a51d1e9659c4785a/README.md
+https://github.com/snakejohn/starlight/blob/38f05e08549726b907f2f6d0a51d1e9659c4785a/src/custom_playlists/types.ts
+https://github.com/snakejohn/starlight/blob/38f05e08549726b907f2f6d0a51d1e9659c4785a/src/custom_playlists/store.ts
+https://github.com/songloft-org/songloft/blob/52b8ae4ebaa44fb370b23f820d68fa3af547e0e2/README.md
+https://github.com/navidrome/navidrome/blob/df77c462e85dfb732b3a366693088bef2cff4bcb/README.md
+
+十三、以单一主上游为目标的组件拆分（2026-10-21 复核）
+13.1 结论与含义
+保持“歌单推荐、歌曲下载、飞牛注入”三个业务模块，在内部划分可独立更新的组件。
+每个外部能力组件指定一个主上游；同一上游可以支撑多个组件，组件与进程不一一对应。
+运行中也不强制把所有组件拆成服务，仍以单个原生 FPK、少量常驻进程为部署目标。
+首轮基础候选为 music-lib、HotDownloader、NetEase-MusicBox、fnos_music_ext；QQMusicApi 为 QQ 推荐/收藏客户端候选。
+这些是按职责选择的依赖，不强制一组件一进程，也不因某库列出能力就锁定为生产依赖。
+用户隔离、统一契约和适配器是本项目必要的集成代码；不为这些小功能额外部署一套音乐服务器。
+Holly Music、Songloft/Starlight、Navidrome 保留为功能参考或备选，不进入当前推荐运行依赖。
+本节是选型建议，不表示这些组合已联调；music-lib 的完整歌单能力仍有下文列出的准入缺口。
+
+13.2 推荐组件及唯一主来源
+A1. 公共歌单目录 catalog-public —— 待验证主来源 guohuiyuan/music-lib。
+提供网易/QQ/酷我公共推荐、分类、榜单、歌单搜索与元数据；不负责下载、NAS 用户收藏和文件。
+用新建的薄 Go 包装器调用独立平台包，输出 CatalogProvider 契约，不启动完整 go-music-dl Web。
+不引入它的桌面端、全局 Cookie 管理器、下载队列或本地 Collection 数据库。
+网易账号专有的日推/FM/私人列表走 A2；QQ 私人列表与推荐通过统一账号门面取得。
+QQ 首轮优先复用 B1 的登录/刷新所有权，QQMusicApi 仅消费指定账号的凭据快照，见第十八节。
+酷我歌曲搜索继续走 B1，避免调用 music-lib 中已确认的 bitSwitch 过滤路径。
+
+A2. 网易账号与取链 source-netease —— 主来源 darknessomi/musicbox（NetEase-MusicBox）。
+负责网易登录态、账号原生日推/FM/私人列表、歌曲信息与显式音质取链。
+继续复用 ext 已有 musicbox-service 包装思路；网易接口适配跟随 MusicBox，推荐算法由网易平台决定。
+新增账号上下文在外层处理；MusicBox 未实现的上报/订阅协议需要独立验证与明确维护责任。
+本模块交付源信息/取链能力，不把其简单 CLI download 命令当作已完成统一队列、续传与完整音频校验。
+平台原生日推明确 account_scope=user/shared；不与飞牛本地画像推荐混为一谈。
+
+A3. 本地歌单与收藏 user-collections —— 本项目自有组件。
+只维护飞牛用户的自建列表、歌曲收藏、外部歌单引用、导入副本和固定快照。
+不维护各平台网络协议，不继承某个下载引擎的表结构。
+现有 ext 用户数据可以经迁移适配读取；新模型显式带稳定 principal_id。
+
+A4. 个人画像与重排 recommend-local —— 主来源本项目现有 Surc/fnos_music_ext 扩展。
+复用 proxy/personalization.py 的纯排序/画像函数及既有按用户隔离的经验。
+通过 ProfileReader 接口取得历史和收藏，通过 CatalogProvider 得到候选；不 import 大型 proxy/app.py。
+已有的是每日歌曲排序；按个人偏好对歌单卡片排序仍属于新增实现，不能直接宣称已有。
+
+A5. 来源账号交互 account-feedback —— 本项目维护通用事件与结果层，各平台协议由对应适配器承担。
+接收可信播放会话、明确的云端红心/收藏/取消操作，向本人绑定账号提交并记录结果。
+本地事件收集、反馈持久化与平台请求分别隔离；不把反馈逻辑放进歌单读取或下载引擎。
+网易暂复用 A2 的 MusicBox 能力，QQ 评估 QQMusicApi 业务接口；它们不在此另建登录态所有者。
+缺失的协议单独登记维护成本和验收，不以通用 FeedbackProvider 接口存在推断所有平台已经支持。
+能力与接入缺口见第十六至十八节，当前均属于设计，未执行真实账号写入。
+
+B1. QQ/酷我引擎 source-qqkw —— 主来源 lerdb/HotDownloader。
+负责 QQ/酷我歌曲搜索、原有歌单读取、QQ 登录与个人歌单、队列、取链、解密、标签和监控。
+优先直接调用独立 server 的 /api/music、/api/tasks、/api/events、/api/login、监控等现有接口。
+保留原生前端和独立运行方式；我们的前台通过 HotTaskAdapter 转换模型和过滤用户可见事件。
+不把网易实现加进其 Platform 枚举，不将统一 NAS 用户归属字段侵入其历史任务 JSON。
+Hot 原有 QQ 监控继续由 Hot 调度；未来三平台监控若由统一模块调度，同一规则必须只有一个调度者。
+
+B2. 统一任务接口 download-facade —— 本项目自有薄组件。
+负责 principal_id、固定清单、幂等键、逻辑任务 ID、实际引擎 ID 映射和按权限发布任务状态。
+QQ/酷我真实执行仍由 B1 负责，不复制其并发、暂停恢复、解密和重试算法。
+网易通过独立 NeteaseDownloadAdapter 执行，消费 A2 的取链结果并经过统一音频校验。
+网易执行/重启恢复不是现成已验证能力，需要单独实现和验收，不能因 MusicBox 支持下载命令而略过。
+同曲跨平台匹配采用独立 RecordingMatcher；参考 ext download_fallback.py 的纯匹配/校验逻辑，
+不让下载任务依赖注入模块中的全局状态或官方 Socket 是否被接管。
+
+B3. 已下载资产 asset-library —— 本项目自有薄组件。
+负责所有平台的 asset_id、实际文件信息、质量与哈希、用户关联、访问授权和入库状态。
+它是本项目下载结果索引，不承担一套完整媒体服务器的转码、播放器与庞大曲库维护。
+Hot 的 library.sqlite3 主要服务现有文件匹配/QQ 监控，不能直接冒充三平台多用户资产目录。
+资产登记只通过下载结果接口发生；物理文件可复用，任务和访问归属分别保存。
+
+C1. 飞牛身份适配 fnos-identity —— 主来源 fnos_music_ext 的现有官方用户验证路径。
+把官方确认的用户身份转换为 principal_id，给独立前台和其他模块提供身份上下文。
+它与注入开关分离；仅凭前台 user_id 或浏览器可伪造的请求头不能获得身份。
+现有管理页授权不等于独立多用户前台已实现，独立登录会话与权限桥接仍要新增。
+
+C2. 飞牛内容注入 fnos-injection —— 主来源 javycoder/fnos_music_ext，经 Surc 集成分支跟进。
+负责官方接口适配、虚拟歌单/歌曲 GUID 映射、Socket 接管/恢复与在线播放接口映射。
+它只消费 CatalogProvider、用户歌单和任务/资产契约，不运行平台推荐、下载或账号管理算法。
+新增 OnlineProviderAdapter/路由入口，保留官方透传和恢复行为；不重写整个 proxy/app.py。
+
+C3. 飞牛文件入库 fnos-indexer —— 与 C2 相同主来源，逻辑上单独。
+消费 asset.ready，处理官方曲库识别、下载文件与官方歌曲 ID 的绑定以及入库结果回报。
+注入关闭时可按设置独立启停；入库失败可单独重试，不让下载引擎重下文件。
+现有绑定实现部分位于 proxy/app.py；这并不表示已经存在可直接独立导入的索引 SDK。
+首轮通过小型适配入口复用已验证路径，不为追求目录整齐搬移整段旧业务代码。
+
+D1. 前台与部署 —— 本项目入口层，布局与 FPK 生命周期以 ext 为唯一主参考。
+前台按歌单、我的音乐、下载任务/文件、注入设置分页面和数据访问模块。
+新页面/静态资源单独增加，现有页面只接导航、挂载和配置入口，避免在旧 app.js 中大面积拼接。
+部署层新增二进制和服务声明，复用原生 systemd/supervisor 与 FPK 升级恢复。
+模块划分比进程更细；构建时控制所选依赖，运行不依赖 Docker，也不要求 NAS 安装 Go/Rust 编译器。
+
+13.3 组件间最小接口
+CatalogProvider：recommendations / categories / charts / search_playlists / playlist_items。
+AccountProvider：login / status / private_playlists / native_recommendations / resolve_track。
+FeedbackProvider：report_listen / set_track_like / set_playlist_subscription / submit_native_dislike。
+UserCollectionStore：lists / follows / favorites / snapshot；数据带已验证的 principal_id。
+DownloadEngine：capabilities / prepare_track / submit / query / control / events。
+DownloadFacade：接收固定清单、统一任务与授权，不暴露引擎内部结构。
+AssetRepository：register / list / inspect / open / unlink / delete；按用户/管理员分别授权。
+FnOSBridge：identity / map_content / takeover / restore；FnOSIndexer：index_asset / query_indexing。
+这些是端口职责，不是要求所有主上游都已经直接实现这些同名函数。
+平台和引擎适配器负责转换；公共 v1 契约继续使用第九节定义的 TrackRef、快照、任务与资产模型。
+跨模块不读取私有数据库；A1 不写任务，B1 不读歌单收藏表，C2 不决定平台切换与同曲匹配。
+
+13.4 最小修改与更新方式
+music-lib：以固定 Go module 版本/SHA 引入，新增包装器在我们的目录；升级依赖后跑歌单契约验收。
+HotDownloader：优先固定提交构建独立 server，外层用现有 API；不要把其他仓库历史 merge 进其核心。
+NetEase-MusicBox：以固定包版本和源码 SHA/制品摘要记录，保留外层包装，平台取链代码不在本项目重写。
+fnos_music_ext：只有同一历史的 javycoder 上游走普通 merge；gzywd 继续选定语义移植。
+自有组件：新增包/目录、路由注册、前台挂载、服务启动和打包清单是主要改动位置。
+若上游缺少必要扩展点，优先做小型、可单独审查的新增接口补丁，记录文件、原因和上游反馈状态；
+不通过运行时 monkey patch、自动字符串替换或把多个项目函数复制进同一文件来隐藏维护成本。
+不能预先承诺所有上游零改动：实际改动数量要以验证后的补丁 diff 为准。
+按组件记录 repo/ref/observed_head/adopted_commit/integration_mode/patches/data_schema/contract_version。
+观察记录不能推进 adopted_commit；每次只升级一个主来源，验证通过后再进入集成分支。
+
+十四、本轮源码核对发现的实际缺口
+14.1 music-lib 最新 main 仍不是无条件可直接接入
+本次最新提交 6353508e84cd357b5bc3acf32d95a16e01bbe20c；go-music-dl 当前仍固定到
+7cc4467b4e300547edd5d3d5bf0eff1c21ffc2ec。两者差异仅 go.mod/go.sum，平台函数没有随之修复。
+最新 go.mod 要求 Go 1.25.0，库没有 UI，仅依赖 golang.org/x/text，许可证 AGPL-3.0。
+采用前应记录并核对实际发行组合与对应许可文件；本设计没有将外部库代码改写归为 MIT。
+provider/interface.go 已将歌单、推荐、分类、榜单和用户歌单分成独立接口，适合外包一层。
+但是：
+（1）kuwo/song.go 仍固定首屏 10 条并跳过 BitSwitch==0；所以本方案不把 QQ/酷我歌曲搜索切给它。
+（2）kuwo/kuwo.go 详情有分页，但按歌曲 ID 去重、最多 500 页，结束时未强制核对声明总数。
+     去重后的数组无法由外层还原合法重复条目；不应宣称已经满足完整快照语义。
+（3）qq/qq.go 当前公开歌单详情所查路径是一次请求返回列表，没有显式逐页补齐逻辑，
+     大歌单总数与返回条目需要校验，不能把一次非空响应直接标为“整单完整”。
+（4）utils/request.go 使用默认两分钟 HTTP 超时，公开方法没有 context 参数；
+     外层先超时返回并不意味着底层请求已经取消。必须控制并发，必要时补可注入客户端/context 扩展点。
+准入结论：推荐作公共歌单主来源，但完整分页/重复条目/超时语义属于阻断正式锁定的验收项。
+优先给这一主上游提交小型分页/原始条目接口扩展；若改动失控，替换整个 CatalogProvider，
+不要在同一歌单组件里暗中混入 Holly、Hot 等多个项目的解析函数。
+
+14.2 HotDownloader 的接口边界
+Platform 目前只有 qqmusic、kuwo，不能直接提交 netease 任务；DownloadLinkProvider 也使用该枚举。
+独立 server 已有任务/控制/SSE/登录接口，适合先外接，无需为 FPK 引入 Tauri 桌面运行时。
+CreateTaskRequest 接收的是完整 SongInput：平台、ID/MID、media_mid、音质文件名和大小等。
+它不是只给 TrackRef 就会自行补齐所有下载参数的通用任务接口。
+因此 HotTaskAdapter.prepare_track 必须按准确 ID 补齐品质/媒体身份，不能只按歌名重新搜一首代替。
+现有查询 API 不足时，应独立新增按 ID 准备下载描述的入口；这属于需要评估的小补丁，而非已有能力。
+CreateTaskRequest 没有外部幂等键或账户上下文字段，外围映射需处理接单回执丢失和重复提交。
+不要把有限的重复歌曲规则等同于严格 Idempotency-Key 语义；必要时补可选 external_request_key 接口。
+当前登录文件按运行时 data_dir 固定，不能在一实例内反复切全局 Cookie 来模拟多账号。
+对比两个受控方案：按账号隔离运行时，以及利用现有 LoginCredentialStore/下载凭据接口增加账号作用域。
+验证期可用有限隔离实例证明正确性；正式部署按维护成本、进程资源与任务调度结果再选，不能预先锁定每用户一进程。
+账户拥有独立凭据、任务授权与缓存；多实例写同目录的命名、去重和并发仍需验证。
+现有存储 trait 只是扩展点，不代表 server 已实现多账号、任务绑定或统一凭据刷新。
+
+14.3 MusicBox 的下载与账号能力
+NetEase-MusicBox 0.5.3 的 CLI 确有 download --songs / --playlist / --path / --json，
+但 cmd_download 主要是顺序请求并写文件，不能直接等同于持久化队列、断点续传和真实音质验收。
+它也不是本设计的完整 DownloadEngine；取链与执行/验证应分层。
+如果调用 CLI 下载，只传冻结后的 --songs，不能再传实时 --playlist 让它重新决定批次成员。
+账号数据通过 XDG 路径隔离；ext 现有 NEMbox 全局实例/缓存也需要相同账户作用域，
+不能只替换一个请求参数而继续共用常驻登录实例。
+
+14.4 ext 原工程在本次核对时已有重要新增
+javycoder main 已到 22122adebb9b526e297b00d028486c66e76ad989，VERSION=2.9.0；
+比本项目当前已采用的 6973402df5e180cd49a00af4db48758504303c58 多 50 个可达提交。
+v2.9.0 tag 解析到 c397b7e1706fcb10e80bd4b7793262fcb9038d98，main 另有后续界面更新。
+新增 proxy/publicplaylists.py、musicbox-service/playback.py，包含公共歌单、网易歌单常驻、
+有界共享取链、反代/封面/落盘修复，以及后续深色主题与设置页调整。
+原工程的公共目录覆盖网易与 LX 相关入口，不代表无需 LX 就已实现目标中的 QQ/酷我全套歌单模块。
+这些变更与我们要动的代理、musicbox 包装、前台和生命周期高度相关；接入新模块前应单独同步评审，
+避免先在旧 app.py/app.js 上大量修改后，再解决 2.9.0 的相同位置冲突。
+gzywd main 为 f5b2db85bf6d00ebb2966ccd8e37e81699e35571，VERSION 仍为 2.9.30；
+相比已移植基线多一个看门狗修复提交，只改 fpk/payload/bin/fnmusic-lib.sh（19 增/4 删）。
+它解决外网断开误杀健康代理，但部署布局不同，仍按语义评估，不整套合并参考分支。
+Surc main 的 SOURCE_VERSIONS.json/ITERATION.md 仍保留 PR #6 未合并的部分旧说明，
+实际主分支已有合并提交。本轮结构校验通过并不能证明交接文字已与远端状态完全同步。
+正式接入前应一并校正来源交接记录；本次仅记录发现，不更改仓库采用基线。
+
+十五、复核记录与后续实施顺序
+本轮实际动作：只读核对远端源码，克隆独立审查副本、获取双来源 refs、比较提交和接口，更新设计。
+没有把上述新主来源或新增上游提交合并到用户项目，没有执行平台下载/账号/真实 fnOS 联调。
+现有 ext scripts/verify_provenance.py 通过：2 sources、2 release snapshots、1 skill、VERSION 2.8.0。
+审查副本的运行代码保持未修改；与用户既有 main/正式 Release 分开。
+
+建议实施顺序：
+1. 单独评审并同步 javycoder 2.9.0 及后续相关修复，解决现有扩展兼容和交接记录，再建立接入基线。
+2. 固定本文 v1 端口，先完成 CatalogProvider / HotTaskAdapter 的小型可替换性验证，
+   检查大歌单、重复条目、准确 ID 转换、实际音质、幂等接单和账户隔离所需的最小补丁。
+3. 验证通过后锁定每组件的主上游；新增用户歌单、任务归属、资产索引和独立页面。
+4. 最后接官方注入与入库，保留停用恢复；分别验证原生新装、升级和故障恢复后再准备 FPK 发布。
+本轮待办保持 planned；不把源码对比、固定 SHA 或健康接口当作实机功能通过。
+
+本轮主要观察来源（完整 SHA）：
+music-lib main：6353508e84cd357b5bc3acf32d95a16e01bbe20c。
+go-music-dl main：2c1cefe7064fba6e46034359791060debbc935e6；其 music-lib 固定依赖见上文。
+HotDownloader main：07e86c3d06243cf1350925c0dd3be704005abd29。
+NetEase-MusicBox master：9c405f4bae2384d0410e63f8b816a707553d72d3（pyproject 0.5.3）。
+javycoder main：22122adebb9b526e297b00d028486c66e76ad989（VERSION 2.9.0）。
+gzywd main：f5b2db85bf6d00ebb2966ccd8e37e81699e35571（VERSION 2.9.30）。
+Surc main：1d8f4e73945ae51a21cb5bce2202a3f9ee9d4ef6；既有双来源采用基线及 skill 1.0.0 均不推进。
+
+补充证据：
+https://github.com/guohuiyuan/music-lib/blob/6353508e84cd357b5bc3acf32d95a16e01bbe20c/provider/interface.go
+https://github.com/guohuiyuan/music-lib/blob/6353508e84cd357b5bc3acf32d95a16e01bbe20c/kuwo/kuwo.go
+https://github.com/guohuiyuan/music-lib/blob/6353508e84cd357b5bc3acf32d95a16e01bbe20c/kuwo/song.go
+https://github.com/guohuiyuan/music-lib/blob/6353508e84cd357b5bc3acf32d95a16e01bbe20c/qq/qq.go
+https://github.com/guohuiyuan/music-lib/blob/6353508e84cd357b5bc3acf32d95a16e01bbe20c/utils/request.go
+https://github.com/lerdb/HotDownloader/blob/07e86c3d06243cf1350925c0dd3be704005abd29/crates/hotdownloader-core/src/task/contract.rs
+https://github.com/lerdb/HotDownloader/blob/07e86c3d06243cf1350925c0dd3be704005abd29/crates/hotdownloader-core/src/platforms/platform.rs
+https://github.com/darknessomi/musicbox/blob/9c405f4bae2384d0410e63f8b816a707553d72d3/NEMbox/cli.py
+https://github.com/darknessomi/musicbox/blob/9c405f4bae2384d0410e63f8b816a707553d72d3/pyproject.toml
+https://github.com/javycoder/fnos_music_ext/blob/22122adebb9b526e297b00d028486c66e76ad989/CHANGELOG.md
+https://github.com/javycoder/fnos_music_ext/blob/22122adebb9b526e297b00d028486c66e76ad989/proxy/publicplaylists.py
+https://github.com/javycoder/fnos_music_ext/blob/22122adebb9b526e297b00d028486c66e76ad989/musicbox-service/playback.py
+https://github.com/gzywd/fnos_music_ext/commit/f5b2db85bf6d00ebb2966ccd8e37e81699e35571
+
+十六、逐用户网易账号与来源反馈闭环（v1.3 新需求，planned）
+16.1 目标与推荐归属
+用户明确希望：在飞牛中听到自己偏好的网易歌单后，网易账号能收到真实行为反馈，
+后续继续获取该账号的原生日推、推荐歌单和私人 FM；不同飞牛用户使用各自网易账号。
+这增加了本项目向来源提交行为的能力，覆盖此前“扩展不向网易写回行为”的纯本地设计约束。
+账号联动由各用户配置，管理员不以预览他人视图的方式代替该用户提交反馈。
+想使用网易个人推荐和反馈时必须绑定本人网易账号；未绑定不影响公共歌单、下载和本地画像。
+推荐读取、播放反馈、红心和歌单订阅使用同一个 account_ref / 网易 UID，不能读 A 的推荐而写 B 的反馈。
+云端算法、更新周期和对反馈的实际采用由网易决定；本项目不保证某次收听后立即出现相似歌单。
+“已提交并被接口接受”和“推荐已经学习/改变”是两个不同结论，前台不能把前者显示成后者。
+
+16.2 每个飞牛用户绑定自己的账号
+账户绑定记录包含 principal_id、provider、account_ref、provider_user_id、binding_generation、状态。
+二维码登录会话归当前验证后的飞牛用户；登录完成后由服务端核验实际网易 UID 再保存绑定。
+登录态、Cookie、刷新状态、账号资料、推荐缓存、私人歌单缓存与反馈队列按 account_ref 隔离。
+一份账户凭据有一个账号服务所有者，其他模块只用 account_ref 调用，不复制可修改的全局登录态。
+同一网易账号若被多个飞牛用户使用，其云端画像天然共用；个人模式下默认阻止重复绑定。
+需要共享时单独标记为共享画像，不能声称它仍是多份独立个人推荐，也不自动启用个人反馈。
+MusicBox 当前依赖全局 Storage/XDG/常驻实例；首选评估账号隔离的工作进程或明确的存储上下文。
+不能在并发请求中修改进程级 os.environ、切全局 Cookie 或复用上一个账号的常驻缓存。
+登出/解绑/切号使旧 binding_generation 失效；旧反馈不能改投到新绑定账号。
+
+16.3 需要支持的用户交互
+（1）个人推荐：从本人网易账号读取每日歌曲、推荐歌单和 FM，显示网易账号和最近刷新时间。
+（2）真实收听：记录播放会话、实际累计听歌时长、歌曲 ID、真实列表来源与播放结束原因后提交。
+（3）喜欢歌曲：明确的“同步喜欢到网易云/取消喜欢”动作写入本人账号，可复用 MusicBox song_like。
+（4）收藏歌单：提供“收藏到网易云/取消网易云收藏”，与“收藏到本地”和“导入本地副本”分开。
+（5）不感兴趣：按来源的能力提供网易日推或 FM 对应操作；普通跳过不自动等同于负反馈。
+本地收藏按钮默认维护本地状态；用户可以启用收藏联动，此时界面同时呈现本地与云端同步结果。
+自动监控、下载、预取、直链探测、打开歌单详情和服务端缓存命中不产生收听反馈。
+反馈归属是实际播放者，与文件最初由谁下载、任务属于谁分别处理。
+
+16.4 必须先解决真实播放证据
+当前 Surc main 的 /music/api/v1/event/report 只选择 track_play/TrackPlay 写入本地在线历史；
+其中 payload.duration 被当成歌曲长度使用，未实现可信的累计收听秒数、暂停和结束会话闭环。
+所以不能将 track_play 条数、歌曲总时长、音频下载字节数或 HTTP Range 请求数直接换成听歌时长。
+独立网页播放器可以产生播放/暂停/进度心跳/结束事件，按有效活动时间累计并扣除暂停和拖动。
+飞牛 Web、手机 App、其他客户端的实际事件字段需要分别实机采集确认，不能因路径相同就假定能力相同。
+若某客户端没有可信时长信号，暂不开该客户端的自动听歌上报；仍可读取个人推荐并支持明确的云端收藏动作。
+真实时长不超过实际观察到的有效播放；缺失时不拿总时长或固定秒数补值。
+会话保留 recommendation_context（存在时）、网易 track_ref、实际音源、external_playlist_ref 和来源类型。
+网易歌单使用 Hot 补源时，只有严格确认同一录音且保留合法网易曲目 ID，才可按同一曲目的真实收听反馈；
+实际音源继续记录 QQ/酷我，不能把其 RID/MID 当网易 ID，或只按歌名猜一个 ID 回传。
+没有可靠网易身份映射的歌曲只进入本地画像；不伪造网易推荐 token、歌单来源或播放完成状态。
+
+16.5 独立反馈接口与处理顺序
+在共用基础层增加 AccountBindingStore，在 A5 增加 FeedbackOutbox 和 FeedbackProvider。
+播放事件先由客户端/飞牛事件适配器转换为内部 PlaybackSession，再经过身份、会话与账号策略检查。
+反馈记录包括 event_id、session_id、principal_id、account_ref、provider_user_id、binding_generation、
+track_ref、实际听歌毫秒数、来源上下文、发生时间、事件序号、状态和错误码，不保存临时音频直链。
+凭据由账号服务临时取用；浏览器和反馈消息不携带明文 Cookie，诊断日志不输出完整登录信息。
+歌单读取和下载不等待反馈请求完成；提交失败不阻断播放，停止注入也不删除尚有效的用户账号数据。
+概念接口：
+  POST /v1/accounts/netease/login-sessions；GET /v1/accounts/login-sessions/{id}；
+  GET /v1/accounts；DELETE /v1/accounts/{account_ref}；
+  PATCH /v1/accounts/{account_ref}/feedback-policy；
+  POST /v1/playback-sessions；POST /v1/playback-sessions/{id}/events；
+  POST /v1/playback-sessions/{id}/finish；
+  PUT /v1/accounts/{account_ref}/netease/liked-tracks/{track_id}（目标 liked 状态）；
+  PUT /v1/accounts/{account_ref}/netease/playlist-subscriptions/{playlist_id}（目标 subscribed 状态）；
+  GET /v1/feedback/{event_id}。
+全部接口从已验证会话推导 principal_id，并检查 account_ref 和资源属于该用户。
+播放模块、账号反馈和下载三个执行链独立；反馈只消费事实事件，不重新触发歌曲下载。
+
+16.6 防止串用户、重复上报和假成功
+ext 当前 _probe_upstream_auth 在部分异常路径返回 shared；云端写入不能直接继承这种兼容回退。
+新增严格个人身份校验：无法确认稳定飞牛用户、返回 shared 或账号代次不符时暂停反馈，明确报告原因。
+不改旧接口的透传语义；严格条件放在新的个人账号/写入入口，减少对现有代理行为的影响。
+事件收集按 event_id/session 序号去重；账户内保持操作顺序，迟到的旧取消动作不能覆盖新收藏。
+内部持久化去重不能保证来源接口端到端恰好一次。播放上报超时且是否被接收未知时标为 unknown，
+不无限盲重试；红心/订阅尽量使用目标状态设置并回读对账。保存结果以供用户查看或重试。
+账号失效时请求重新登录本人账号，不切到管理员或其他家庭成员的账号。
+停用反馈或解绑时冻结/取消未提交记录，不把历史积压改发到之后登录的账号。
+响应区分 queued / sending / accepted_by_api / rejected / unknown / canceled，另记录平台业务码。
+不能只检查 HTTP 200 或封装最外层 code；需检查实际动作的响应，必要时回读喜欢/订阅状态。
+个人推荐缓存按账号和代次隔离，反馈后可标记待刷新并有界重取；不强制每次切歌都刷新日推。
+
+16.7 本次核对到的来源能力与缺口
+MusicBox 固定 master：9c405f4bae2384d0410e63f8b816a707553d72d3（0.5.3）。
+NEMbox/api.py 已有 recommend_resource、recommend_playlist、personal_fm、song_like、fm_like、fm_trash，
+并有通用 request/eapi_request；所查文件没有完整的 scrobble 播放记录或歌单订阅封装。
+music-lib 的网易部分已有个人列表和扫码登录读取能力，本次所查接口没有上述完整反馈链。
+社区协议参考 NeteaseCloudMusicApiEnhanced/api-enhanced，固定提交：
+19c7dad6db7d660954c7a615a686ff0acb030f91；本次只读参考，未采用为新的运行服务。
+该项目有 module/scrobble.js、scrobble_v1.js、playlist_subscribe.js、recommend_songs_dislike.js 等。
+scrobble.js 构造 startplay/play 两段日志；其封装最外层直接返回 code=200，
+结果明细还包含各次实际响应，适配器不能据外层 success 字样判定云端动作完成。
+playlist_subscribe.js 还有 checkToken 相关处理，不能假设调用一个 URL 即已稳定完成歌单订阅。
+这些是社区实现与参考协议，接口存在不等于当前账号、网络及网易推荐链路已实测有效。
+推荐先在 A2/A5 的 MusicBox 包装层新增小型反馈接口，复用现有账号和请求能力，必要时向其上游贡献扩展。
+若实际需要更完整的 SDK 才能稳定反馈，应单独评审整个网易 AccountProvider 的替换，
+不在同一个账号组件里长期混用两套互不一致的登录、缓存和写入实现。
+本次没有向网易账号提交任何播放、喜欢或订阅记录，也没有尝试登录用户账号。
+
+16.8 新增验收与维护要求
+1. 飞牛 A 绑定网易 A、飞牛 B 绑定网易 B；推荐读取、收藏和听歌反馈均进入相应账号。
+2. 两人播放同一共享文件时按实际播放者反馈，不串用下载者、首个访问者或管理员的账号。
+3. 暂停、拖动、重播、重复心跳、客户端重连和下载预取不会夸大有效播放时长。
+4. 支持的飞牛客户端逐一证明真实时长来源；没有进度证据时不生成假完成事件。
+5. 红心、取消、歌单订阅和取消在云端可回读确认，单独显示失败/未知状态。
+6. 切号、解绑、登录过期、请求超时和进程重启不会把旧记录投到新账号，也不重复补报计数。
+7. 网易账号的最近记录/听歌记录在平台允许观察的范围内验证，不以推荐立即变化作为唯一成功标准。
+8. QQ/酷我反馈独立声明能力，当前不因为网易反馈设计而承诺它们也已支持。
+后续实现时同步更新维护 skill 中原“避免将本地播放记录写回网易云”的旧约束，
+改为“仅向本人绑定且启用联动的账号提交真实行为”；用户本轮明确需求优先于旧约束。
+本次只更新设计，skill 1.0.0、SOURCE_VERSIONS.json 双来源采用基线及正式版本保持原记录。
+
+本节源码证据：
+https://github.com/darknessomi/musicbox/blob/9c405f4bae2384d0410e63f8b816a707553d72d3/NEMbox/api.py
+https://github.com/NeteaseCloudMusicApiEnhanced/api-enhanced/blob/19c7dad6db7d660954c7a615a686ff0acb030f91/module/scrobble.js
+https://github.com/NeteaseCloudMusicApiEnhanced/api-enhanced/blob/19c7dad6db7d660954c7a615a686ff0acb030f91/module/playlist_subscribe.js
+https://github.com/NeteaseCloudMusicApiEnhanced/api-enhanced/blob/19c7dad6db7d660954c7a615a686ff0acb030f91/module/recommend_songs_dislike.js
+https://github.com/Surc/fnos_music_ext/blob/1d8f4e73945ae51a21cb5bce2202a3f9ee9d4ef6/proxy/app.py
+
+十七、QQ、酷我及其他平台的账号交互复核（v1.4，2026-10-21，planned）
+17.1 本轮范围与结论口径
+用户要求继续核对 QQ、酷我和其他平台，重点是本人账号推荐、云端收藏/订阅与真实播放反馈。
+本节为固定提交的文档和源码核对，未登录真实用户账号，未提交云端操作，未做运行验收。
+下述“有实现”只说明候选上游存在对应代码，不表示本项目已接入或接口当前可用。
+“未核实”表示本轮没有取得充分实现证据，不等于平台永远不支持或接口不存在。
+
+平台 | 本人账号推荐 | 云端歌曲喜欢/歌单订阅 | 真实听歌时长上报 | 接入建议
+QQ | 有候选实现，猜你喜欢/雷达等 | 有候选实现 | 本轮未核实成熟方案 | 首轮做个人推荐与明确收藏操作
+酷我 | 本轮未核实个性化推荐 | TuneWeave 有账号收藏/歌单读写候选 | 本轮未核实 | 保留公共歌单/下载，独立验证账号候选
+酷狗 | 有账号每日推荐实现 | 有账号云歌单操作，喜欢列表映射待验收 | 有开始/结束及实际毫秒时长实现 | 三平台之外最值得优先验证
+咪咕 | 有账号今日推荐实现 | 有喜欢歌曲、收藏歌单/专辑实现 | 本轮未核实 | 后续按需接入
+汽水 | 本轮未核实个人推荐 | TuneWeave 有账号收藏/歌单写入候选 | 本轮未核实 | 登录与运行依赖需验证，暂后置
+
+公共热门歌单、个人日推、账号历史读取、写播放历史、真实时长上报是不同能力。
+有登录或收藏接口，不能推出已形成“听歌后持续改善推荐”的闭环。
+任何平台接口接受反馈，均不保证推荐算法立即改变；沿用第十六节的结果状态与实际播放证据要求。
+
+17.2 QQ：保留 Hot 下载，账号交互优先评估 QQMusicApi
+候选主上游：L-1124/QQMusicApi。
+固定 main：27861e51432ea6b6e88dc35c4e8c8e239c0339e8，提交时间 2026-10-05。
+Python SDK，README 标注 GPL-3.0-or-later；若采用，另记录实际纳入文件、版本与许可证要求。
+源码/作者文档已核对：
+- modules/recommend.py 有首页推荐、猜你喜欢、雷达、推荐歌单；猜你喜欢等有凭据调用路径。
+- modules/songlist.py 的 like_song/unlike_song 操作喜欢列表 dirid=201，并检查业务返回码。
+- modules/user.py 有个人创建/收藏列表、fav_songlist/unfav_songlist、add_dislike/cancel_dislike。
+- 本轮所查模块没有建立可靠的播放开始/结束与实际听歌时长上报方案，不能提前宣称支持。
+
+HotDownloader 当前保留 QQ 登录、个人歌单读取、搜索与下载；其音乐路由没有上述完整的推荐/写回接口。
+Hot 登录源码已引用 QQMusicApi 的较早提交作为参考；这有助于核对凭据，但不等于新 SDK 可直接共用登录态。
+建议新增独立 QQAccountAdapter，QQMusicApi 作为个人推荐、账号列表和明确云端喜欢/订阅的客户端候选。
+首轮登录/刷新优先保留 Hot 的已有实现，由统一账号门面管理归属；SDK 仅消费该账号凭据快照。
+是否改由 QQMusicApi 接管登录/刷新需要独立迁移验证；不能同时启用两个刷新所有者。HotTaskAdapter 继续负责下载。
+不把 SDK 源码大段移入 Hot Rust 核心，也不新增一套与账号组件相互覆盖的全局登录文件。
+
+必须验证账号凭据结构、刷新与退出语义、真实 QQ UID、Cookie/令牌有效期及 Hot 所需凭据转换。
+同一个 account_ref 的凭据只有账号组件负责更新；下载引擎按隔离上下文取用受控凭据，
+不能让两个上游同时修改同一登录文件。若凭据不能可靠桥接，应报告能力缺口并评审最小补丁。
+首轮能力可声明个人推荐与云端收藏；播放记录写入、真实时长上报分别保持关闭/待验证。
+QQ “猜你喜欢”是账号歌曲推荐能力，不能将歌曲列表包装成已证实的个人歌单推荐算法。
+
+17.3 酷我：现有选型缺账号写入，但 TuneWeave 出现可单独验证的候选
+现有 HotDownloader + music-lib 继续承担酷我搜索、公共目录和下载。
+music-lib main 6353508e84cd357b5bc3acf32d95a16e01bbe20c 的酷我用户歌单实现仍返回
+ErrUserPlaylistsUnsupported；这只是该实现的缺口，不能概括成“酷我平台没有私人歌单能力”。
+
+新候选主上游：MOPELotus/TuneWeave。
+固定 main：b6e35c0999965d56ba61b2cfc146218b5763b343，提交时间 2026-10-18。
+Rust 项目，实际 LICENSE 为 MIT OR Apache-2.0；本轮只读候选，未替换现有选型。
+crates/tuneweave-provider-kuwo/src/provider.rs 的能力声明与实现包含：
+密码/手机登录、调用方管理凭据、账号资料与歌单、收藏、歌曲订阅写入、歌单订阅写入和歌单编辑；
+set_track_subscription/set_playlist_subscription 分别转入对应原生写入函数。
+作者 API 文档还描述本人收藏歌单、订阅/取消及写后回读验证。
+所查酷我 provider 当前没有声明 Recommendations、RecommendationFeedback 或 ScrobbleWrite。
+因此可进一步验证 KuwoAccountAdapter 的账号歌单/收藏读写，但还不能承诺个性化推荐或实际听歌上报。
+
+接入方式先评估最小账号适配组件，而非整套 TuneWeave 与 Hot、music-lib 重复接管所有职责。
+其 HTTP/v1、账户别名、凭据管理与能力接口可作为边界参考；实际 fnOS 编译、依赖、
+账号会话隔离、当前接口有效性、失败业务码和收藏回读均需验证。
+酷我公共推荐可以先提供，本人账号推荐只有在获得充分实现和实测证据后才开启。
+
+17.4 酷狗：后续播放上报的验证候选，尚非完整反馈模块
+候选主上游：MakcRe/KuGouMusicApi。
+固定 main：514f870db7e60ca37bc5535be5da36d32b571c6f，提交时间 2026-10-18，MIT，Node.js。
+实际核对 module/everyday_recommend.js、playlist_add.js、playhistory_upload.js、
+user_listen_report.js 及作者文档。
+已有账号每日推荐、账号云歌单操作与播放历史上传；喜欢列表的具体映射和取消语义仍需单独验收。
+
+关键区别：user_listen_report 接收真实播放开始/结束，结束 duration 为实际累计播放毫秒数，
+需扣除暂停、等待和拖动跳过部分；依赖本人 token/userid、设备 uuid/mid 以及平台 mixsongid。
+源码维护会话上下文，并区分 playback_accepted 与 grade_synced。
+只有积分同步成功时也可能返回外层成功，不能按 HTTP 200 或 grade_synced 判定播放上报已接受。
+独立 playhistory_upload 仅说明可以写历史，不替代上述真实播放时长流程。
+文档要求避免缓存和盲目重试，设备上下文、并发会话及平台返回都须遵守实际实现。
+
+若以后扩展第四个平台，可优先验证酷狗的上报协议；目前只确认发送开始/结束报告的实现。
+第十八节发现其来源字段固定、完整播放为默认值，且不负责校验实际播放会话，接入前仍需适配。
+这不是本项目已打通推荐闭环的结论，也不因此把酷狗加入首轮。
+独立 Node 服务会增加运行时和维护面，首轮三平台范围不因此自动扩张；
+先评估可复用模块/最小原生服务形态，并在真实 fnOS 客户端证明播放证据可取得。
+
+17.5 咪咕与汽水：记录候选，暂不进入首轮
+咪咕候选主上游：Domdkw/miguMusic-api-enhanced。
+固定 main：87a4c2ffd2e35a878d2d60894893e35a00074afb，提交时间 2026-10-06，MIT，Node/Hono/TypeScript。
+README 与实际模块包含手机/短信登录、账号歌单、pacmtoken 下的今日推荐、
+user_like_add 喜欢歌曲、user_collect_add 收藏歌单/专辑；写入返回可能包含更新后的 token。
+个人令牌刷新应交给账号组件统一管理，不能由各功能分别覆盖。
+user_listenRank 是记录/排行读取，不能作为真实听歌上报已实现的证据；本轮未建立实际时长反馈方案。
+可作为后续可选平台，暂不增加首轮常驻服务。
+
+汽水：现有 music-lib 所述扫码未调通等限制仍属于其当前实现；
+TuneWeave 则有扫码/验证、调用方凭据、会话、账号列表和歌曲/歌单订阅写入候选。
+所查 tuneweave-provider-soda/src/provider.rs 没有声明个人推荐和 ScrobbleWrite 能力。
+候选能力不能反向证明现有 music-lib 汽水已经可用，也不说明 fnOS 登录、签名依赖和云端写入已验收。
+保留为后置试验，不承诺通过加入一个平台名称即可获得稳定的推荐反馈。
+
+17.6 AccountProvider 与能力接口细化
+每个平台保留一个账号组件主上游，CatalogProvider、DownloadEngine 和 AccountProvider 的职责分别记录。
+允许 QQ 账号组件用 QQMusicApi、下载用 Hot；这属于职责拆分，不让两者各自成为互相竞争的账号所有者。
+平台契约沿用 TrackRef/account_ref/binding_generation；新增能力作为版本化的可选字段，
+缺失字段按不支持处理，不改变已经冻结的下载任务/歌单快照字段含义。
+能力至少分开表达：
+- personal_recommendations：本人账号推荐读取，另说明歌曲/歌单/FM 等实际内容类型；
+- cloud_liked_tracks_read / cloud_liked_tracks_write：云端喜欢列表读写；
+- cloud_playlist_subscriptions_read / cloud_playlist_subscriptions_write：云端歌单订阅读写；
+- playback_history_read：读平台播放历史；
+- playback_history_write：写平台播放历史；
+- listening_duration_report：真实播放会话、开始/结束及实际时长上报；
+- recommendation_feedback：平台明确支持的“不感兴趣”等推荐反馈，按具体上下文细分。
+
+候选上游的能力声明只是调研证据；本项目运行时只有接入并通过对应验收后才公布该能力为可用。
+未登录、账号失效、平台未支持、暂时故障和能力尚未实现应分开显示。
+前台按已绑定账号和当前能力展示“同步到 QQ/酷我”等明确动作，不把本地收藏等同于云端收藏。
+播放反馈沿用第十六节的本人绑定、真实时长、事件去重、账号代次、未知结果和结果回读约束。
+不能用“多了云端历史”替代“上报了真实听歌时长”，也不能据此直接标注推荐已学习。
+平台的原生曲目 ID、设备状态和来源上下文必须在适配层转换，不能跨平台误传 ID。
+同曲跨平台补源仍保留实际音源；没有可靠原平台曲目映射时，仅记本地播放历史。
+
+17.7 首轮范围与新增验收
+原定网易、QQ、酷我三平台目标不扩大；酷狗/咪咕/汽水仅为后续候选。
+建议首轮：
+网易：完成第十六节的本人账号推荐、明确云端操作，并验证真实播放报告所需的最小适配。
+QQ：优先本人账号推荐、云端喜欢和歌单订阅；真实时长上报独立待验证。
+酷我：公共歌单/推荐与 Hot 下载先行；单独验证 TuneWeave 账号收藏/歌单组件后再开启云端操作。
+未提供平台个人推荐时可显示公共歌单与飞牛本地画像推荐，并清楚标明来源。
+
+新增验收必须包括：
+1. 两个飞牛用户分别绑定两个 QQ/酷我账号，列表、推荐、写入和缓存互不串用。
+2. 同一账号跨账号组件与下载组件的凭据桥接、刷新、切号和退出不会覆盖他人或产生旧代次写入。
+3. 喜欢/取消、订阅/取消成功后能按平台读取接口核验；业务失败与结果未知不显示成已同步。
+4. 对候选平台逐项验证真实支持的登录方式、私人列表完整性、推荐归属及当前接口可用性。
+5. 如验证酷狗：实际时长单位、暂停拖动扣除、start/end 会话、设备参数与 playback_accepted 分开验收；
+   grade_synced、历史读取或写入成功均不能替代播放报告验收。
+6. FPK 仍原生部署、无需 Docker；新增运行时的体积、常驻资源、升级和故障隔离单独评估。
+7. 保持每组件一个主上游，只有必要适配补丁；先验证接口再锁定采用版本，避免堆叠完整应用。
+
+本轮来源记录（全部为 observed/candidate，非 adopted）：
+L-1124/QQMusicApi：27861e51432ea6b6e88dc35c4e8c8e239c0339e8。
+MOPELotus/TuneWeave：b6e35c0999965d56ba61b2cfc146218b5763b343。
+MakcRe/KuGouMusicApi：514f870db7e60ca37bc5535be5da36d32b571c6f。
+Domdkw/miguMusic-api-enhanced：87a4c2ffd2e35a878d2d60894893e35a00074afb。
+HotDownloader：07e86c3d06243cf1350925c0dd3be704005abd29，本轮复核未见 head 推进。
+music-lib：6353508e84cd357b5bc3acf32d95a16e01bbe20c，本轮复核未见 head 推进。
+本次仅更新设计文档；没有修改用户仓库、合并上游、发布版本或提交任何平台账号行为。
+既有双来源采用 SHA、skill 1.0.0 和正式版本保持原记录，实施时再同步来源记录与维护 skill。
+
+本节主要证据：
+https://github.com/L-1124/QQMusicApi/blob/27861e51432ea6b6e88dc35c4e8c8e239c0339e8/qqmusic_api/modules/recommend.py
+https://github.com/L-1124/QQMusicApi/blob/27861e51432ea6b6e88dc35c4e8c8e239c0339e8/qqmusic_api/modules/songlist.py
+https://github.com/L-1124/QQMusicApi/blob/27861e51432ea6b6e88dc35c4e8c8e239c0339e8/qqmusic_api/modules/user.py
+https://l-1124.github.io/QQMusicApi/reference/modules/recommend/
+https://l-1124.github.io/QQMusicApi/reference/modules/user/
+https://github.com/MOPELotus/TuneWeave/blob/b6e35c0999965d56ba61b2cfc146218b5763b343/crates/tuneweave-provider-kuwo/src/provider.rs
+https://github.com/MOPELotus/TuneWeave/blob/b6e35c0999965d56ba61b2cfc146218b5763b343/crates/tuneweave-provider-soda/src/provider.rs
+https://github.com/MOPELotus/TuneWeave/blob/b6e35c0999965d56ba61b2cfc146218b5763b343/docs/api-v1.md
+https://github.com/MakcRe/KuGouMusicApi/blob/514f870db7e60ca37bc5535be5da36d32b571c6f/module/user_listen_report.js
+https://github.com/MakcRe/KuGouMusicApi/blob/514f870db7e60ca37bc5535be5da36d32b571c6f/module/playhistory_upload.js
+https://github.com/MakcRe/KuGouMusicApi/blob/514f870db7e60ca37bc5535be5da36d32b571c6f/module/everyday_recommend.js
+https://github.com/MakcRe/KuGouMusicApi/blob/514f870db7e60ca37bc5535be5da36d32b571c6f/docs/README.md
+https://github.com/Domdkw/miguMusic-api-enhanced/blob/87a4c2ffd2e35a878d2d60894893e35a00074afb/README.md
+https://github.com/Domdkw/miguMusic-api-enhanced/blob/87a4c2ffd2e35a878d2d60894893e35a00074afb/src/modules/user_recom_today.ts
+https://github.com/Domdkw/miguMusic-api-enhanced/blob/87a4c2ffd2e35a878d2d60894893e35a00074afb/src/modules/user_like_add.ts
+https://github.com/Domdkw/miguMusic-api-enhanced/blob/87a4c2ffd2e35a878d2d60894893e35a00074afb/src/modules/user_collect_add.ts
+
+十八、Astra 独立复核与实施准入（v1.5，2026-10-21）
+18.1 审核结论
+保留三项后台业务模块：歌单推荐、歌曲下载、飞牛音乐注入。
+保留按飞牛用户隔离、平台账号独立绑定、可替换适配器、来源固定提交以及原生 FPK 的目标。
+对现稿的结论是“架构方向通过，选型与交付能力有条件通过”，不建议把候选能力表直接转成全部开发承诺。
+本轮重点复查了 QQ/酷我/酷狗实现、Hot 登录与运行时、music-lib 分页、MusicBox 接口、飞牛身份和事件入口。
+咪咕、汽水维持上一轮候选观察；本次没有追加真实账号验证，也不进一步承诺其能力。
+
+本轮确认的关键点：
+（1）飞牛当前身份兼容回退不能直接用于个人账号写入；当前播放事件没有可信的实际累计时长。
+（2）Hot 与 QQMusicApi 的登录态所有权需要明确决策，不能只约定 account_ref 而保留两个自动刷新者。
+（3）酷我候选有实际网络调用实现与模拟测试，但作者明确保留真实账号验收，尚不宜锁定为首轮必交付。
+（4）酷狗上报模块是协议发送层，来源上下文和默认结束状态不能原样用于本项目真实行为反馈。
+（5）music-lib 的原始条目完整性问题不会被外围统一接口自动修复。
+（6）细分职责有利于维护，但一期应限制进程、协议和依赖数量，先验证必要链路再冻结接口。
+
+18.2 先解决可信身份与真实播放证据（阻断自动反馈上线）
+固定 Surc 提交 1d8f4e73945ae51a21cb5bce2202a3f9ee9d4ef6：
+proxy/app.py 的 _probe_upstream_auth 在上游异常、无法解析或缺少 GUID 等路径会返回 True/shared。
+这是既有兼容行为；新的个人列表、账号凭据、云端写入和用户下载授权必须使用严格身份入口，
+未知身份应拒绝或暂停该操作，不能回退到管理员、家庭共享账号或上一个用户。
+仅在写入口增加校验仍不足：私人列表读取、账号状态、事件流及文件访问也必须采用同一严格身份约束。
+独立前台应验证官方会话/明确的认证桥接；关闭注入后它依然要有可靠的身份验证路径。
+
+当前 event_report 只为在线曲目的 track_play 写入本地历史，duration 作为曲目资料使用。
+不能从一次事件、文件读取字节或播放请求成功推断用户真实听了多久。
+按 fnOS Web、官方 App、第三方客户端分别验证真实事件；箭头音乐也不能仅因能播放本地库就默认支持反馈。
+没有可信暂停/进度/结束信息时，继续提供账号推荐和明确云端喜欢/订阅，关闭该客户端的自动收听上报。
+原生推荐内容能否在飞牛 App 展示和播放，与独立前台能否展示也是两项验收，不互相代替。
+
+18.3 QQ：调整登录态所有权，先验证推荐与云端操作
+Hot core 已有 LoginCredentialStore，download_auth 会检查登录态并在明确过期时调用刷新和保存。
+server runtime 为登录与下载配置同一个 qq-credentials.json 路径，现有 server 的运行时仍以单份凭据为单位。
+因此“QQMusicApi 管理登录，Hot 原样运行并读取同一账号”不是已经完成的最小方案；
+不协调刷新时，两个实现可能持有不同代次的令牌或覆盖新状态。
+
+首轮优先方案：
+- 统一账号门面保存 fnOS principal 与平台账号的绑定关系；
+- 登录/刷新协议暂委托 Hot 已有实现，评估账号作用域扩展或有限隔离运行时；
+- QQMusicApi 只作为推荐、个人列表、云端喜欢和订阅的客户端，不独立调用登录/刷新写入；
+- 服务端向业务客户端提供该账号、该代次的不可变 Credential 快照；不向浏览器交付凭据；
+- SDK 中未提供逐调用 credential 参数的方法使用按账号隔离的 Client，不能并发切一个共享 Client.credential。
+
+Hot 字段 loginUin/authst 与 SDK musicid/str_musicid/musickey 及 refresh 字段需要显式转换；
+不能只复制两个字符串就认定所有 QQ/微信登录类型与刷新行为均兼容。
+binding_generation 用于解绑/换号等归属失效；credential_revision 用于同一账号令牌轮换与条件写入，
+两者分开，避免正常刷新把同一账号所有在途任务误认为换了用户。
+刷新应按账号串行并保留新旧版本校验，旧响应不能覆盖新凭据。
+现有 trait 有助于减小补丁范围，但不证明任务入口、私人请求和恢复逻辑已经支持多账号。
+
+QQ 推荐模块确有猜你喜欢、雷达和推荐歌单入口；前两项输出歌曲，不能据此承诺个性化歌单卡片。
+推荐请求须确认使用本人凭据并验证账号归属、无匿名回退；两账号结果偶然相同不构成串号证据，
+结果不同也不能单独证明平台已学习了本项目反馈。
+验证通过后保留 QQMusicApi 为推荐/收藏业务组件的主上游；登录所有者迁移另作一个可回退变更。
+
+18.4 酷我：TuneWeave 只进入验证清单
+固定 TuneWeave 提交 b6e35c0999965d56ba61b2cfc146218b5763b343。
+KuwoProvider 的订阅方法实际调用 native management，包含身份核验、写入、回读与并发代次检查；
+这不是仅有函数名称的空壳。
+但 docs/authentication.md 在酷我私人列表、喜欢、普通歌单读写等段落明确说明：
+当前验证主要为本地模拟协议/HTTP 契约，真实账户与写后状态仍待最终验收。
+查看到的发布记录最近为 v1.0.0-beta.1，标记 prerelease；本节审查的是更后的固定源码，不能混同发行包能力。
+
+修订选型结论：酷我公共歌单和 Hot 搜索/下载继续原计划；私人账号读写为可选验证项，
+不以“已找到实现”为理由把整个 TuneWeave 纳入首轮必装依赖。
+最小验证先做本人身份、非空私人列表、一次明确的喜欢/取消与回读，再测切号/过期/重启。
+登录方式按原生/Web/短信实际支持分别处理；不能把支持密码/短信写成已支持 QQ 那样的扫码登录。
+真实验收未通过时，界面显示公共内容和本地收藏，不展示可点击但无法工作的云端同步功能。
+这一结论不否定该项目的工程结构，只限制当前证据所能支持的采用承诺。
+
+18.5 酷狗：上报协议存在，但来源与会话仍需本项目控制
+固定 KuGouMusicApi 提交 514f870db7e60ca37bc5535be5da36d32b571c6f。
+user_listen_report.js 确实发送 start/end 与 duration；源码还存在以下接入条件：
+- source 固定为 46，开始/结束的页面路径固定为专辑页/自建歌单页，并未消费本项目真实推荐或歌单上下文；
+- state 省略时默认完整播放，调用方必须根据实际结束原因显式处理，不能拿该默认值代表听完；
+- sessions Map 管理的是账号/设备的 CSCC 协议会话，不是逐首歌曲的实际播放会话；
+- 模块接受调用方给出的时长，没有验证其与本次真实播放过程相符；本项目必须自行去重和验证时长；
+- playback_accepted 与 grade_synced 是不同结果；无等级同步时返回结构不同，适配器需分别解析。
+
+本次在 Node v24.19.0 执行离线协议检查：所有网络与加解密边界均由本地模拟替换，未向酷狗发请求。
+仅调用一次 event=end、duration=60000、不先调用 start，模拟上游成功后该模块返回 200；
+提取出的报文 state=完整播放、source=46、fo=我的音乐/主态/自建歌单/RU。
+该结果证明调用方必须补充实际会话与来源控制，不证明真实平台会接纳、记账或改变推荐。
+
+如果以后接入，先确认平台认可的结束状态及未知来源表达；必要时提出小型可选上下文接口补丁，
+不能伪造推荐 token、歌单页面或已听完状态来凑完整反馈。
+通用事件层不启用无关的等级/积分同步。保留不盲目重发未知结果的规则。
+修订结论：酷狗是后续上报研究的优先候选，尚不能因为接口较全就认定整体接入成本最低或立即增加第四个平台。
+
+18.6 目录完整性与网易接口的既有缺口仍是准入条件
+music-lib 固定提交 6353508e84cd357b5bc3acf32d95a16e01bbe20c：
+本轮再次确认酷我详情读取使用 seen 按 RID 去重；外围无法还原被删除的合法重复条目。
+所以“有完整快照契约”和“某适配器实际满足契约”必须分别标注。
+公共推荐浏览可先验证，整单下载只有在原始条目、分页、总数、变化与超时验收通过后才开放完整成功状态。
+适配器补丁不可控时再整体更换该 CatalogProvider；不能暗中拼入另一项目解析器却仍声明单一上游。
+
+MusicBox 固定提交 9c405f4bae2384d0410e63f8b816a707553d72d3：
+已有网易推荐、FM 与喜欢；未建立完整 scrobble/歌单订阅封装的事实仍成立。
+fm_like/fm_trash 含 time=25 默认参数，不应把这个协议默认值当作本项目观察到的实际收听秒数。
+新增反馈协议属于需要维护的实现；优先验证一个最小扩展，不预先承诺零改动。
+若必须引入第二套网易 SDK，先比较替换整个账号协议组件与长期混用的维护成本；
+保留现有下载/展示能力，不为一次审核直接改换全部运行栈。
+
+18.7 收敛实现范围，避免把模块拆分变成服务膨胀
+以现有 ext 为应用壳和 FPK 基础，自有身份、歌单、任务归属、资产索引、反馈事件按代码包分开。
+同进程组件通过接口调用；只有语言或故障隔离确有需要时增加进程。
+Hot 独立 Rust 服务继续作为下载执行候选；QQMusicApi 可在已有 Python 环境评估，
+music-lib 如通过目录准入再加入薄 Go 组件。TuneWeave、酷狗和咪咕服务不同时进入首轮。
+“每组件有主上游”是为了明确协议维护责任，不要求每个小类都找一个新仓库或新常驻进程。
+
+一期保留必要契约：稳定 TrackRef、服务端用户归属、账号代次、完整有序清单、幂等接单、
+任务恢复、下载文件校验、asset 授权、独立入库状态和错误语义。
+大清单分块上传、自建通用事件总线、多进程存储服务等列为扩展设计；未出现实际容量需求前，
+先使用有明确项数/字节上限的内联清单与简单查询/进程内事件，超限明确拒绝，绝不截断。
+既有 Hot 事件接口仍可复用；不因精简而删除接单幂等、持久化和隔离要求。
+第九节当前是概念草案；完成最小端到端验证后再冻结第一份可执行 OpenAPI 与迁移规则。
+NAS 不安装 Rust/Go 编译器；FPK 包内所需运行依赖、构建产物、数据目录和升级行为应可复现。
+
+18.8 下一步验证顺序与通过条件
+A. 身份和绑定：两个 fnOS 用户能够独立认证并绑定各自平台账号；异常不退回 shared。
+B. 最小歌曲链路：用已知酷我 RID 142276943 的 DAYBREAK'S BELL 验证搜索保留元数据、
+   按准确 ID 交付 Hot、下载完整音频、登记实际来源/格式、展示文件与单独反馈入库结果；
+   同时保留其他样本验证，单首成功不代表所有音质和账号均通过。
+C. QQ 账号链路：两账号的推荐/私人列表、明确喜欢与取消、凭据刷新、并发与退出隔离；
+   真实云端操作只在用户选择的测试账号和明确动作下进行，本次审核没有执行。
+D. 大歌单链路：分页、重复曲目、未知项、上游变化、任务重启与去重；通过后冻结接口。
+E. 网易反馈：先以能提供可靠进度的客户端验证真实时长与账号一致，再评估飞牛各客户端。
+F. 酷我私人账号与酷狗：分别做可选验证，不阻塞上述基础三模块的形成。
+G. 真实 fnOS 的安装、升级、停用恢复、资源使用与凭据保留验收后，才准备正式 FPK 发布。
+
+本次验证记录：
+- 当前设计文档 v1.4 全文读取；固定源码与相关作者文档重新检查。
+- 酷狗离线协议检查通过；仅证明报告模块的输入/报文行为，真实接口和推荐效果均未测试。
+- 未登录用户平台、未写云端收藏、未下载音乐、未修改或合并 GitHub 运行代码、未发布 FPK。
+- 不沿用此前 CI/实机结果作为本次设计可用的证明；SOURCE_VERSIONS.json 和 skill 1.0.0 均不推进。
+- 实施时必须同步仓库中的设计入口、迭代状态与 skill 的旧行为约束，避免只有对话文档记录新需求。
+
+本节新增核对的固定证据：
+https://github.com/lerdb/HotDownloader/blob/07e86c3d06243cf1350925c0dd3be704005abd29/crates/hotdownloader-core/src/platforms/qqmusic/login.rs
+https://github.com/lerdb/HotDownloader/blob/07e86c3d06243cf1350925c0dd3be704005abd29/crates/hotdownloader-server/src/runtime.rs
+https://github.com/L-1124/QQMusicApi/blob/27861e51432ea6b6e88dc35c4e8c8e239c0339e8/qqmusic_api/core/client.py
+https://github.com/L-1124/QQMusicApi/blob/27861e51432ea6b6e88dc35c4e8c8e239c0339e8/qqmusic_api/models/request.py
+https://github.com/MOPELotus/TuneWeave/blob/b6e35c0999965d56ba61b2cfc146218b5763b343/docs/authentication.md
+https://github.com/MOPELotus/TuneWeave/blob/b6e35c0999965d56ba61b2cfc146218b5763b343/crates/tuneweave-provider-kuwo/src/provider/auth/management.rs
+https://github.com/MOPELotus/TuneWeave/blob/b6e35c0999965d56ba61b2cfc146218b5763b343/crates/tuneweave-provider-kuwo/src/provider/auth/management/favorite_tests.rs
+https://github.com/MOPELotus/TuneWeave/releases/tag/v1.0.0-beta.1
+https://github.com/MakcRe/KuGouMusicApi/blob/514f870db7e60ca37bc5535be5da36d32b571c6f/module/user_listen_report.js
+https://github.com/MakcRe/KuGouMusicApi/blob/514f870db7e60ca37bc5535be5da36d32b571c6f/docs/README.md
+https://github.com/Surc/fnos_music_ext/blob/1d8f4e73945ae51a21cb5bce2202a3f9ee9d4ef6/proxy/app.py
+https://github.com/guohuiyuan/music-lib/blob/6353508e84cd357b5bc3acf32d95a16e01bbe20c/kuwo/kuwo.go
+https://github.com/darknessomi/musicbox/blob/9c405f4bae2384d0410e63f8b816a707553d72d3/NEMbox/api.py
+
+十九、飞牛端现成方案核对与接入路径（v1.6，2026-10-21）
+本节回答“飞牛端目前是否可结合其他开源项目解决”。结论：身份、曲库、歌单和第三方
+播放器接入已有可复用实现；可靠的逐用户真实收听反馈仍需要补充事件适配与实机验收。
+第十八节的两个门槛可以拆开推进，不应再表述为飞牛端完全没有现成基础。
+以下均为观察/候选，不表示已采用、已合并、已部署或已经验证平台推荐变化。
+
+19.1 本轮固定来源与发行证据
+- qianlipp/fn-music-bridge，main：
+  ad9ce203cbb7fdb54f9404a7abb2df605893f388，AGPL-3.0。
+  观察到 Release tag 为“3-修复端口识别，支持手动调整”，附件 yinqiao-1.0.7.fpk，
+  发布时间 2026-08-04T02:21:25Z，非 prerelease。tag 字符串与应用版本分别记录。
+  README 要求 fnOS 1.2.0300+、x86_64、官方飞牛音乐及有曲库权限的音乐账号。
+- dtapps/fnmusic-sync，main：
+  5b843dab69c7811365ba323627195257e88eea25，MIT。
+  最近列出的 v0.1.27 是 prerelease（2026-10-19），v0.1.26 是非 prerelease（2026-10-10），
+  两者均列出 amd64/arm64 的 FPK 和 deb。观察的 main 提交晚于 v0.1.27；
+  本次没有确认该 main 与任一发行附件的字节一致性。
+- QiaoKes/fn-music-tv，main：
+  f25f1aceb5617bf20e94f97190a0b6229083a5c1，GPL-3.0。
+  是可审阅源码的 Android TV 客户端，作为飞牛登录/会话和播放器接入参考。
+- finamp-app/finamp，默认分支 redesign：
+  2e58f89ab6e91245c02fb826eb6cbe930d151804，MPL-2.0。
+  作为 Jellyfin 协议下真实播放器事件的可审阅对照客户端，不替换用户已选的箭头音乐。
+- amcfy-music/amcfy-music，main：
+  cfc519fb7e107671fd6fe08605f1badcd6af9e51。
+  当前树只有 LICENSE、README.md、README-ZH.md、home-1.webp。
+  即使仓库标注 MIT，也不能把没有公开在此仓库的播放器实现当作已取得的开源代码。
+  作者 App Store 产品说明已明确列出飞牛音乐、Jellyfin、Subsonic 等支持；
+  这只证明产品声明支持连接，不证明特定版本/平台会发送完整播放事件。
+- OpenSubsonic 文档：playbackReport 扩展版本 1；页面记录新增提交
+  b42b2f2（2026-03-14，文档显示的短 SHA）。本次读取在线标准，不推断所有客户端已实现。
+
+原工程采用基线仍为 javycoder 6973402df5e180cd49a00af4db48758504303c58、
+gzywd 08b0b23486d289619ab73575f42aa0d20e78c2b3；skill 仍为 1.0.0。
+Surc 既有观察提交 1d8f4e73945ae51a21cb5bce2202a3f9ee9d4ef6 不因本次研究而推进。
+
+19.2 音桥：优先复用身份协议与曲库接口
+源码 api/internal/api/routes.go 已封装密码登录、fnOS OAuth 登录入口、当前用户、
+退出登录、个人收藏/历史、歌单创建/修改/曲目增删、曲库与音频流。
+service 的认证模块按账号缓存音乐 token，支持协议账号登录与凭据重新登录。
+api 的 upstream.go 对具体请求重新计算 authx，并在密码登录时选择 fnOS Web 网关，
+其他音乐请求可走 Unix Socket。它比把另一个请求的签名原样带给 /user/me 更合适。
+
+接入建议：
+- 把音桥作为 FnIdentity/FnLibraryAdapter 的同一主上游，先用独立接口边界接入；
+  若原样启动所需进程更便于更新，保留其 api/service 结构，不为减少一个进程大量改源码。
+  NAS 使用预构建产物；可沿用原生 FPK 路线，不要求 Docker。
+- 对新模块明确建立严格身份门面：受信上游返回有效用户 GUID 才建立用户归属；
+  无效 token、上游错误、缺 GUID 均不降级到 shared。
+- 账号归属用实例命名空间内的稳定 GUID；原始 token、用户名和昵称均不作为永久主键。
+  飞牛音乐用户与 fnOS 系统用户若有独立账号模式，需显式核对映射，不能按同名自动绑定。
+- 音桥的路由 Access 标签和账号登录实现不自动覆盖本项目的任务、文件、平台账号权限。
+  新模块仍自行做 owner 校验、撤销/失效处理和账号代次检查。
+- 音桥处理的是飞牛曲库。网易/QQ/酷我推荐和账号反馈继续留在独立 Catalog/Account/Feedback
+  组件，不写入音桥核心。飞牛收藏也不自动等价于用户授权的某云平台“喜欢”。
+- 当前已能核对源码路径，真实 NAS 的两用户隔离、注销撤销、音乐 token 过期及网关适配仍待验证。
+
+19.3 fnmusic-sync：有事件采集基础，但不能直接满足本项目的真实时长要求
+该项目已实现透明代理、token/用户名识别、Last.fm/ListenBrainz 按账号配置推送，
+并能把这两个平台的推荐或统计歌单同步回飞牛。它不是网易/QQ/酷我反馈适配器。
+
+关键源码核对：
+- detector.go 从 track_play、曲目元数据、Content-Range 或 HLS 分片推算播放；
+  track_play 先变为候选，取流佐证后或超时回退再建会话。
+- manager.go 用取流推算位置与从 StartedAt 起的墙钟时间取较小值，
+  并设置达到阈值后的定时兜底。暂停后计时仍可能到达阈值，缓存/下载不是实际收听证明。
+  recorder.go 的注释明确描述其观察到的输入只有 track_play，缺 pause/stop/end。
+  这属于该实现的观察与处理范围，不能扩展成所有飞牛版本和所有客户端永远没有其他事件。
+- manager.go 只有一个 current *Session；同曲目去重只比较 Track.GUID，
+  main.go 正常运行路径创建一个 Manager。因此“平台凭据按用户配置”
+  不等于已实现多人、多设备同时播放的独立会话；此处存在互相覆盖/漏记风险。
+- user.go 主要按用户名映射，并存在宽松名称字段匹配；可借鉴登录响应识别和失效处理，
+  不能照搬为严格授权边界，也不能沿用 token 为稳定用户身份的注释假设。
+
+采用范围：只作为飞牛事件观察、元数据和生命周期的协议参考。若需要代码复用，
+先以小型事件导出接口接入现有唯一代理，再独立实现会话管理；
+目前不把整个项目列为必装模块，更不直接把它估算的时长交给网易等平台。
+
+它和 ext 都接管官方音乐 Socket。不得直接并排启动两个接管者；
+接入时保留一个 Socket 所有者，并验证官方音乐重启、停用和升级恢复。
+README 也提示官方音乐重启可能绕过代理，需要重新接管。
+
+19.4 可靠播放反馈的两个协议入口
+A. Jellyfin 播放会话入口（优先做小样验证）
+音桥 jellyfin.go 已路由 /Sessions/Playing、/Progress、/Stopped。
+但当前 jellyfinPlaybackEvent 只在 stopped 时转成飞牛 track_play，
+开始/进度直接返回 204；没有持续保存 PositionTicks/IsPaused 等状态。
+因此它给出了扩展入口，但“能接收路径”不等于“已计算真实收听时长”。
+
+Finamp 的 jellyfin_api.dart 定义上述三个接口；playback_history_service.dart
+确实随播放器状态生成 itemId、sessionId、isPaused、positionTicks，并调用开始、
+进度和停止上报。可作为可审阅的对照客户端验证音桥补丁，不能据此声称箭头也发送相同数据，
+或 Finamp 的全部场景已与音桥兼容。
+
+建议在音桥认证成功后的协议入口加一个可选事件出口，默认关闭；
+把原始已认证身份、设备/客户端、曲目、会话标识、状态、位置、接收时间传给自有收听组件。
+此组件累计可信播放区间，处理暂停、缓冲、跳播、重复/乱序、重连、同曲循环与设备并发；
+不能用最后位置或停止时的位置直接当作累计听歌秒数。
+对没有可靠播放会话 ID 的客户端，由服务端建立受认证连接/设备约束的会话，
+不能仅按歌曲 ID 合并，也不能把队列 ID 永久当作每首播放唯一 ID。
+未达到可信度的记录只用于本地历史，不产生平台时长反馈。
+桥接代码只导出通用事件，不直接引用网易、QQ、酷我 SDK。
+
+B. OpenSubsonic playbackReport 扩展（标准化候选）
+普通 scrobble 的 time 是播放发生的 Unix 毫秒时间戳，不是收听时长；
+其 id/time/submission 不能单独提供暂停、跳播和有效播放区间。
+新 playbackReport v1 提供 /rest/reportPlayback，字段包括
+mediaId、mediaType、positionMs、state、playbackRate、ignoreScrobble。
+state 包含 starting/playing/paused/stopped；starting 不应开始累加缓冲期，
+ignoreScrobble=true 时不得触发 scrobble/播放次数副作用。
+
+当前音桥 server.go 没有 reportPlayback 分支，其 getOpenSubsonicExtensions
+也未声明 playbackReport；传统 handleScrobble 仅把 id/time 转成 track_play，
+没有按 submission 区分 now-playing 与正式提交。
+所以不应宣传“Subsonic 已经能提供完整反馈”。需先补能力声明/接口/状态处理，
+再用实际支持此扩展的客户端验收。旧客户端保留原有播放能力，但能力不足时不推算精确时长。
+标准文档允许状态间位置估算；本项目用于外部反馈的累计策略应更保守，
+设置心跳/断线边界并避免在缺停止事件时无限计时。
+
+19.5 箭头音乐与前台的选择
+箭头继续作为移动端客户端；先验证它的飞牛原生连接，再验证音桥的 Jellyfin 连接。
+只有抓到已认证、归属明确且能区分暂停/进度的事件，才启用对应客户端的反馈能力。
+若其飞牛连接只有 track_play，可正常浏览/播放/本地历史，外部时长反馈暂不开放；
+若 Jellyfin 模式可发送完整事件，使用音桥事件入口，不必为此维护整套手机 App。
+OpenSubsonic 模式需单独检测 playbackReport，不能从“支持 Subsonic”推导出支持该扩展。
+
+自有 Web 前台可直接从播放器状态采集真实播放事件，作为最先可控的端到端验证渠道。
+QiaoKes/fn-music-tv 是可审阅的 TV 客户端参考；本次检查的 TrimMusicApi.kt
+有密码登录和 user/me，没有建立完整 event/report 遥测链路的证据，不称为即插即用的反馈方案。
+不为首轮手机使用目标新增维护 TV 客户端的工作。
+
+19.6 最小维护落地顺序
+第一步：现有 ext 保留应用壳、注入和 Socket 生命周期；
+        验证音桥身份/曲库适配器，完成两个用户登录及收藏、歌单、下载归属隔离。
+第二步：在音桥已认证的 Jellyfin 事件入口增加薄事件出口，
+        用可控 Web 播放器/Finamp 对照验证，再检验箭头实际数据。
+第三步：可靠会话事件与资产 TrackRef 映射相接，交给已绑定平台的 FeedbackProvider；
+        不因为知道本地歌名就自动向未经确认的外部歌曲 ID 上报。
+第四步：视客户端支持情况增加 playbackReport；Last.fm/ListenBrainz 联动作为可选扩展。
+三业务模块继续独立，FnIdentity/Library 与注入开关也解耦；
+关闭在线注入后，登录、歌单和下载管理仍应可用。
+
+本轮验证边界：检查固定源码、作者文档、发布元数据与 OpenSubsonic 标准；
+没有安装这些 FPK、没有连接真实 NAS/箭头、没有登录平台或写云端播放记录，
+没有运行这些项目的实机或全套测试；不存在“已经打通”或“即装即用”的验收结论。
+没有修改、提交、合并原工程，也没有推进任何 adopted/ported 基线。
+
+固定证据链接：
+https://github.com/qianlipp/fn-music-bridge/blob/ad9ce203cbb7fdb54f9404a7abb2df605893f388/api/internal/api/routes.go
+https://github.com/qianlipp/fn-music-bridge/blob/ad9ce203cbb7fdb54f9404a7abb2df605893f388/api/internal/api/upstream.go
+https://github.com/qianlipp/fn-music-bridge/blob/ad9ce203cbb7fdb54f9404a7abb2df605893f388/service/internal/service/auth.go
+https://github.com/qianlipp/fn-music-bridge/blob/ad9ce203cbb7fdb54f9404a7abb2df605893f388/service/internal/service/jellyfin.go
+https://github.com/qianlipp/fn-music-bridge/blob/ad9ce203cbb7fdb54f9404a7abb2df605893f388/service/internal/service/server.go
+https://github.com/dtapps/fnmusic-sync/blob/5b843dab69c7811365ba323627195257e88eea25/internal/playback/manager.go
+https://github.com/dtapps/fnmusic-sync/blob/5b843dab69c7811365ba323627195257e88eea25/internal/playback/detector.go
+https://github.com/dtapps/fnmusic-sync/blob/5b843dab69c7811365ba323627195257e88eea25/internal/playback/user.go
+https://github.com/dtapps/fnmusic-sync/blob/5b843dab69c7811365ba323627195257e88eea25/cmd/fnmusic-sync/main.go
+https://github.com/finamp-app/finamp/blob/2e58f89ab6e91245c02fb826eb6cbe930d151804/lib/services/playback_history_service.dart
+https://github.com/finamp-app/finamp/blob/2e58f89ab6e91245c02fb826eb6cbe930d151804/lib/services/jellyfin_api.dart
+https://github.com/QiaoKes/fn-music-tv/blob/f25f1aceb5617bf20e94f97190a0b6229083a5c1/core/data/src/main/kotlin/com/fnmusic/tv/core/data/api/TrimMusicApi.kt
+https://github.com/amcfy-music/amcfy-music/tree/cfc519fb7e107671fd6fe08605f1badcd6af9e51
+https://apps.apple.com/cn/app/箭头音乐-自建音乐服务客户端/id6758010612
+https://opensubsonic.netlify.app/docs/extensions/playbackreport/
+https://opensubsonic.netlify.app/docs/endpoints/reportplayback/
+https://opensubsonic.netlify.app/docs/endpoints/scrobble/
