@@ -66,7 +66,8 @@ for path, digest in skill["files"].items():
 
 links = 0
 for doc in ROOT.rglob("*.md"):
-    if ".git" in doc.parts:
+    if any(part in {".git", "node_modules", "build", "dist", ".pytest_cache", ".ruff_cache"}
+           or part.startswith(".venv") for part in doc.relative_to(ROOT).parts):
         continue
     for match in re.finditer(r"\[[^\]]*\]\(([^\s)]+)\)", doc.read_text(encoding="utf-8")):
         link = match.group(1)
