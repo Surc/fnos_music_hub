@@ -371,6 +371,43 @@
       "R-KW-002"
     ],
     "historical_evidence": "docs/HOT_SMOKE_20261021.json",
-    "local_retest_evidence": null
+    "local_retest_evidence": null,
+    "responsive_ui": {
+      "required_contexts": [
+        "pc_landscape",
+        "pc_portrait_and_narrow_window",
+        "mobile_portrait",
+        "mobile_landscape"
+      ],
+      "platform_cases": [
+        "P-WEB-PC-L",
+        "P-WEB-PC-P",
+        "P-WEB-MOB-P",
+        "P-WEB-MOB-L"
+      ],
+      "functional_cases": [
+        "F-UI-04",
+        "F-UI-05",
+        "F-UI-06"
+      ],
+      "status": "documented_pending_implementation_and_real_device_validation",
+      "preserve_on_rotation": [
+        "page",
+        "provider",
+        "query_and_filters",
+        "selection",
+        "form_values",
+        "idempotency_key",
+        "task_id"
+      ],
+      "checks": [
+        "low_height",
+        "soft_keyboard",
+        "safe_area",
+        "touch_targets",
+        "no_horizontal_overflow",
+        "keyboard_and_zoom"
+      ]
+    }
   }
 }
