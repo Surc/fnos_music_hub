@@ -358,5 +358,19 @@
       "Yinqiao API"
     ],
     "database_schema": 1
+  },
+  "acceptance": {
+    "recorded_on": "2026-10-21",
+    "functional_checklist": "docs/ACCEPTANCE_FUNCTIONS.md",
+    "platform_checklist": "docs/ACCEPTANCE_PLATFORMS.md",
+    "ui_proposal": "docs/UI_REVIEW.md",
+    "ui_review_status": "pending_user_review",
+    "kuwo_live_download_status": "environment_limited_pending_user_local_retest",
+    "local_retest_cases": [
+      "R-KW-001",
+      "R-KW-002"
+    ],
+    "historical_evidence": "docs/HOT_SMOKE_20261021.json",
+    "local_retest_evidence": null
   }
 }

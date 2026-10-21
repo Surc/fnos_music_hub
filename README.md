@@ -6,6 +6,8 @@
 
 运行方式见 [原生启动说明](docs/RUNNING.md)，已实现端点见 [开发接口](docs/HTTP_API.md)。本环境实际搜索能找到 DAYBREAK'S BELL，但两首样本的真实下载均被酷我以地区限制 407 拒绝；不把它计作完整音乐下载验收通过。
 
+地区限制由用户稍后在本地环境复测，历史失败证据保留；当前为“环境受限，待用户本地复测”。步骤、固定样本与判定标准见 [平台验收清单](docs/ACCEPTANCE_PLATFORMS.md)。
+
 ## 产品目标
 
 - 网易云、QQ、酷我统一浏览歌单、推荐与搜索；歌曲元数据不因下载链接失败而消失。
@@ -25,6 +27,8 @@
 | [来源清单](SOURCE_VERSIONS.json) / [更新流程](docs/UPSTREAM.md) | 观察版本、候选状态、旧工程基线、skill 摘要 |
 | [迁移说明](docs/MIGRATION.md) | 与旧工程的关系、数据与 Socket 生命周期 |
 | [验证记录](docs/VALIDATION.md) | 本次检查与未执行的实机验收 |
+| [功能点验收清单](docs/ACCEPTANCE_FUNCTIONS.md) / [平台验收清单](docs/ACCEPTANCE_PLATFORMS.md) | 分功能/平台签收，地区限制与用户本地复测 |
+| [界面评审稿](docs/UI_REVIEW.md) | 页面布局、关键流程与待确认方案 |
 | [研究原文](docs/design-goals-v1.6-20261021.txt) | 完整 v1.6 对比及 Astra 复核，历史提议保留 |
 | [维护 skill](skills/maintain-fnos-music-hub/SKILL.md) | 后续开发、来源同步和交接工作流 |
 
