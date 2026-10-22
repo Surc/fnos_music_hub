@@ -3,6 +3,14 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { JSDOM } from "jsdom";
 import { fixture, apiFixture, song, track } from "./web-fixture.mjs";
+
+const action = (r, text) => {
+  const b = [...r.d.querySelectorAll("button")].find(
+    (b) => b.textContent === text && !b.disabled,
+  );
+  assert.ok(b, text);
+  b.click();
+};
 const html = await readFile(
   new URL("../apps/web/index.html", import.meta.url),
   "utf8",
@@ -391,6 +399,231 @@ test("verified files distinguish stored audio from unsupported fnOS indexing", a
       r.d.querySelector(".asset-file-link").getAttribute("href"),
       "/api/assets/asset-1/file",
     );
+  } finally {
+    r.close();
+  }
+});
+
+test("QQ QR confirmation is separate from binding; rotation keeps the attempt", async () => {
+  const r = await boot({ qqEnabled: true });
+  try {
+    r.click('[data-view="accounts"]');
+    await waitFor(() => r.calls.some((c) => c.path === "/api/accounts"));
+    action(r, "扫码登录 QQ");
+    await waitFor(() => r.d.querySelector(".qq-login img"));
+    assert.equal(r.calls.filter((c) => c.path.endsWith("/bind")).length, 0);
+    const path = r.d.querySelector(".qq-login img").getAttribute("src");
+    const before = r.calls.length;
+    r.dom.window.dispatchEvent(new r.dom.window.Event("resize"));
+    assert.equal(r.calls.length, before);
+    assert.equal(r.d.querySelector(".qq-login img").getAttribute("src"), path);
+    action(r, "检查扫码状态");
+    await waitFor(() =>
+      r.d.querySelector(".qq-login").textContent.includes("10001"),
+    );
+    assert.equal(r.calls.filter((c) => c.path.endsWith("/bind")).length, 0);
+    action(r, "确认关联此 QQ 账号");
+    await waitFor(
+      () => !r.d.querySelector("#detail-dialog").hasAttribute("open"),
+    );
+    assert.match(
+      r.d.querySelector(".account-grid").textContent,
+      /已关联 · QQ 10001/,
+    );
+    const bind = r.calls.find((c) => c.path.endsWith("/bind"));
+    assert.equal(bind.headers["X-CSRF-Token"], "synthetic-csrf");
+    assert.ok(
+      !r.calls.some((c) => c.path === "/api/tasks" && c.method === "POST"),
+    );
+    assert.equal(r.dom.window.localStorage.length, 0);
+  } finally {
+    r.close();
+  }
+});
+
+test("QQ unbound recommendations fail visibly without anonymous fallback or fnOS logout", async () => {
+  const r = await boot({ qqEnabled: true });
+  try {
+    r.click('[data-provider="qq"]');
+    r.click('[data-discovery="playlists"]');
+    await waitFor(() => !r.d.querySelector("#page-error").hidden);
+    assert.match(
+      r.d.querySelector("#page-error").textContent,
+      /请先关联本人 QQ/,
+    );
+    assert.equal(r.d.querySelector("#shell").hidden, false);
+    assert.equal(r.d.querySelectorAll(".song-card").length, 0);
+    assert.ok(!r.calls.some((c) => /search|public|popular/.test(c.path)));
+  } finally {
+    r.close();
+  }
+});
+
+test("QQ playlists and guess songs stay distinct; detail preserves page-only integrity", async () => {
+  const r = await boot({
+    qqEnabled: true,
+    qqAccount: {
+      provider: "qq",
+      state: "bound",
+      account_ref: "own",
+      uin: "10001",
+      binding_generation: 2,
+      credential_revision: 1,
+    },
+  });
+  try {
+    r.click('[data-provider="qq"]');
+    r.click('[data-discovery="playlists"]');
+    await waitFor(
+      () => r.d.querySelector(".song-card h3")?.textContent === "合成推荐歌单",
+    );
+    action(r, "查看歌单");
+    await waitFor(() =>
+      r.calls.some(
+        (c) => c.path === "/api/catalog/qq/playlists/77?dirid=9&page=1",
+      ),
+    );
+    await waitFor(
+      () => r.d.querySelector(".song-card h3")?.textContent === song.title,
+    );
+    assert.match(
+      r.d.querySelector("#view-content").textContent,
+      /分页预览，未验证整单完整性/,
+    );
+    assert.equal(
+      [...r.d.querySelectorAll(".song-card .primary")].every((b) => b.disabled),
+      true,
+    );
+    action(r, "下一页歌曲");
+    await waitFor(() => r.calls.some((c) => c.path.includes("dirid=9&page=2")));
+    action(r, "收藏到本地");
+    await waitFor(() =>
+      r.calls.some((c) => c.path === "/api/favorites" && c.method === "POST"),
+    );
+    r.click('[data-view="discover"]');
+    r.click('[data-discovery="songs"]');
+    await waitFor(
+      () => r.d.querySelector(".song-card h3")?.textContent === song.title,
+    );
+    assert.ok(
+      r.calls.some((c) => c.path.includes("recommendations?kind=songs&page=1")),
+    );
+    assert.match(
+      r.d.querySelector("#source-notice").textContent,
+      /推荐歌单与猜你喜欢歌曲分开/,
+    );
+    assert.ok(
+      !r.calls.some((c) => c.path === "/api/tasks" && c.method === "POST"),
+    );
+  } finally {
+    r.close();
+  }
+});
+
+test("unlink clears QQ content and revokes the visible generation explicitly", async () => {
+  const r = await boot({
+    qqEnabled: true,
+    qqAccount: {
+      provider: "qq",
+      state: "bound",
+      account_ref: "own",
+      uin: "10001",
+      binding_generation: 3,
+      credential_revision: 2,
+    },
+  });
+  try {
+    r.click('[data-provider="qq"]');
+    r.click('[data-discovery="playlists"]');
+    await waitFor(() => r.d.querySelector(".song-card"));
+    r.click('[data-view="accounts"]');
+    await waitFor(() =>
+      r.d
+        .querySelector(".account-grid")
+        .textContent.includes("已关联 · QQ 10001"),
+    );
+    action(r, "解除 QQ 关联");
+    await waitFor(() => r.rig.qqAccount.state === "unbound");
+    const request = r.calls.find((c) => c.path.endsWith("/unlink"));
+    assert.deepEqual(JSON.parse(request.body), { binding_generation: 3 });
+    r.click('[data-view="discover"]');
+    await waitFor(() => !r.d.querySelector("#page-error").hidden);
+    assert.equal(r.d.querySelectorAll(".song-card").length, 0);
+    assert.ok(
+      !r.d.querySelector("#view-content").textContent.includes("合成推荐歌单"),
+    );
+  } finally {
+    r.close();
+  }
+});
+
+test("late QR polling cannot replace a different details dialog", async () => {
+  let release;
+  const gate = new Promise((resolve) => {
+    release = resolve;
+  });
+  const r = await boot({
+    qqEnabled: true,
+    hook: async (path) => {
+      if (path === "/api/accounts/qq/login/synthetic-attempt") {
+        await gate;
+        return {
+          status: 200,
+          body: {
+            id: "synthetic-attempt",
+            status: "confirmed",
+            uin: "10001",
+            binding_generation: 1,
+          },
+        };
+      }
+    },
+  });
+  try {
+    r.click('[data-view="accounts"]');
+    await waitFor(() => r.calls.some((c) => c.path === "/api/accounts"));
+    action(r, "扫码登录 QQ");
+    await waitFor(() => r.d.querySelector(".qq-login img"));
+    action(r, "检查扫码状态");
+    r.click("#detail-dialog [data-close]");
+    assert.equal(r.d.querySelector("#detail-body").textContent, "");
+    release();
+    await new Promise((resolve) => setTimeout(resolve, 15));
+    assert.equal(r.d.querySelector("#detail-body").textContent, "");
+    assert.equal(
+      r.d.querySelector("#detail-dialog").hasAttribute("open"),
+      false,
+    );
+  } finally {
+    release();
+    r.close();
+  }
+});
+
+test("QQ recommendation continuation uses the server cursor", async () => {
+  const r = await boot({
+    qqEnabled: true,
+    qqNextCursor: 35,
+    qqAccount: {
+      provider: "qq",
+      state: "bound",
+      account_ref: "own",
+      uin: "10001",
+      binding_generation: 1,
+      credential_revision: 1,
+    },
+  });
+  try {
+    r.click('[data-provider="qq"]');
+    r.click('[data-discovery="playlists"]');
+    await waitFor(() => r.d.querySelector(".song-card"));
+    r.click("#next-page");
+    await waitFor(() =>
+      r.calls.some((c) =>
+        c.path.includes("recommendations?kind=playlists&page=2&cursor=35"),
+      ),
+    );
+    assert.ok(!r.calls.some((c) => c.path.includes("cursor=20")));
   } finally {
     r.close();
   }

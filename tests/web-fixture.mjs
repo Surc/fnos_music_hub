@@ -9,7 +9,7 @@ export const song = {
   qualities: [{ quality: "320kmp3" }, { quality: "128kmp3" }],
 };
 export function fixture(options = {}) {
-  return {
+  const result = {
     loggedIn: true,
     isAdmin: true,
     guid: "test-user-a",
@@ -20,6 +20,31 @@ export function fixture(options = {}) {
     manifests: [],
     calls: [],
     searchMore: false,
+    qqAccount: {
+      provider: "qq",
+      state: "unbound",
+      binding_generation: 0,
+      credential_revision: 0,
+      account_ref: null,
+      uin: null,
+    },
+    qqAttempt: null,
+    qqPoll: "confirmed",
+    qqRecommendations: [
+      {
+        playlist: { provider: "qq", id: "77", dirid: "9" },
+        title: "合成推荐歌单",
+        creator: "测试创建者",
+        song_count: 205,
+      },
+    ],
+    qqSongs: [
+      {
+        ...structuredClone(song),
+        track: { provider: "qq", id_type: "songmid", id: "syntheticMid" },
+        qualities: [],
+      },
+    ],
     capabilities: {
       search: ["kuwo", "qq"],
       download: ["kuwo"],
@@ -32,6 +57,15 @@ export function fixture(options = {}) {
     },
     ...options,
   };
+  if (options.qqEnabled) {
+    result.capabilities = {
+      ...result.capabilities,
+      recommendations: ["qq"],
+      cloud_accounts: ["qq"],
+      account_playlists: ["qq"],
+    };
+  }
+  return result;
 }
 export async function apiFixture(rig, path, options = {}) {
   const method = options.method || "GET";
@@ -64,6 +98,103 @@ export async function apiFixture(rig, path, options = {}) {
       targets: [{ id: "private", path: "/synthetic-music/" + rig.guid }],
       capabilities: rig.capabilities,
     });
+  if (url.pathname === "/api/accounts")
+    return ok({ enabled: true, items: [rig.qqAccount] });
+  if (url.pathname === "/api/accounts/qq/login") {
+    rig.qqAccount = {
+      ...rig.qqAccount,
+      state: "unbound",
+      binding_generation: rig.qqAccount.binding_generation + 1,
+    };
+    rig.qqAttempt = {
+      id: "synthetic-attempt",
+      status: body.kind === "existing" ? "confirmed" : "waiting",
+      uin: body.kind === "existing" ? "10001" : null,
+      binding_generation: rig.qqAccount.binding_generation,
+      qr_path: "/api/accounts/qq/login/synthetic-attempt/qr",
+    };
+    return { status: 201, body: rig.qqAttempt };
+  }
+  if (url.pathname === "/api/accounts/qq/login/synthetic-attempt/qr")
+    return {
+      status: 200,
+      type: "image/png",
+      raw: Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jxVQAAAAASUVORK5CYII=",
+        "base64",
+      ),
+    };
+  if (url.pathname === "/api/accounts/qq/login/synthetic-attempt") {
+    rig.qqAttempt = {
+      ...rig.qqAttempt,
+      status: rig.qqPoll,
+      uin: rig.qqPoll === "confirmed" ? "10001" : null,
+    };
+    return ok(rig.qqAttempt);
+  }
+  if (url.pathname === "/api/accounts/qq/login/synthetic-attempt/bind") {
+    rig.qqAccount = {
+      ...rig.qqAccount,
+      state: "bound",
+      account_ref: "synthetic-account",
+      credential_revision: 1,
+      uin: "10001",
+    };
+    return ok(rig.qqAccount);
+  }
+  if (url.pathname === "/api/accounts/qq/unlink") {
+    rig.qqAccount = {
+      ...rig.qqAccount,
+      state: "unbound",
+      account_ref: null,
+      uin: null,
+      credential_revision: 0,
+      binding_generation: rig.qqAccount.binding_generation + 1,
+    };
+    rig.qqAttempt = null;
+    return ok(rig.qqAccount);
+  }
+  if (url.pathname.startsWith("/api/catalog/qq/")) {
+    if (rig.qqAccount.state !== "bound")
+      return {
+        status: 409,
+        body: {
+          error: {
+            code: "platform_auth_required",
+            message: "请先关联本人 QQ 账号；不会回退公共推荐",
+          },
+        },
+      };
+    const base = {
+      provider: "qq",
+      scope: "account",
+      account: rig.qqAccount,
+      personalization: "unverified",
+    };
+    if (url.pathname.endsWith("recommendations"))
+      return ok({
+        ...base,
+        items:
+          url.searchParams.get("kind") === "songs"
+            ? rig.qqSongs
+            : rig.qqRecommendations,
+        page: Number(url.searchParams.get("page")),
+        cursor: Number(url.searchParams.get("cursor")),
+        next_cursor: rig.qqNextCursor || null,
+        has_more: Boolean(rig.qqNextCursor),
+      });
+    if (url.pathname === "/api/catalog/qq/playlists")
+      return ok({ ...base, items: rig.qqRecommendations, complete: true });
+    return ok({
+      ...base,
+      items: rig.qqSongs,
+      page: Number(url.searchParams.get("page")),
+      source_total: 205,
+      has_more: true,
+      complete: false,
+      integrity: "page_only",
+    });
+  }
   if (url.pathname === "/api/search") {
     const provider = url.searchParams.get("provider");
     return ok({
@@ -87,7 +218,9 @@ export async function apiFixture(rig, path, options = {}) {
     if (method === "POST") {
       if (body.enabled)
         rig.favorites.push(
-          rig.songs.find((s) => s.track?.id === body.track.id),
+          [...rig.songs, ...rig.qqSongs].find(
+            (s) => s.track?.id === body.track.id,
+          ),
         );
       else
         rig.favorites = rig.favorites.filter(

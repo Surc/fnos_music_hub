@@ -38,8 +38,10 @@ const server = http.createServer(async (req, res) => {
           "X-CSRF-Token": req.headers["x-csrf-token"],
         },
       });
-      res.writeHead(result.status, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(result.body));
+      res.writeHead(result.status, {
+        "Content-Type": result.type || "application/json",
+      });
+      res.end(result.raw || JSON.stringify(result.body));
       return;
     }
     res.writeHead(404);
@@ -120,6 +122,7 @@ try {
   for (const [name, width, height, mobile] of sizes) {
     current = fixture({
       loggedIn: false,
+      qqEnabled: true,
       songs: [
         song,
         {
@@ -247,6 +250,87 @@ try {
     await page.locator("#view-content .account-grid").waitFor();
     await layout(page);
     await page
+      .getByRole("button", { name: "扫码登录 QQ", exact: true })
+      .click();
+    await page.getByAltText("QQ 音乐登录二维码", { exact: true }).waitFor();
+    await layout(page);
+    const attemptId = current.qqAttempt.id;
+    const loginMutations = () =>
+      current.calls.filter(
+        (c) => c.method === "POST" && c.path.startsWith("/api/accounts/"),
+      ).length;
+    const beforeRotation = loginMutations();
+    if (name === "mobile-portrait") {
+      await page.setViewportSize({ width: 844, height: 390 });
+      await layout(page);
+      await page.setViewportSize({ width, height });
+      assert.equal(current.qqAttempt.id, attemptId);
+      assert.equal(
+        loginMutations(),
+        beforeRotation,
+        "QR rotation cannot create or bind a second attempt",
+      );
+    }
+    // Periodic status polling may have completed; never recreate the attempt.
+    if (
+      await page
+        .getByRole("button", { name: "检查扫码状态", exact: true })
+        .count()
+    )
+      await page
+        .getByRole("button", { name: "检查扫码状态", exact: true })
+        .click();
+    await page.getByText("待关联 QQ：10001", { exact: true }).waitFor();
+    assert.equal(current.qqAccount.state, "unbound");
+    await page
+      .getByRole("button", { name: "确认关联此 QQ 账号", exact: true })
+      .click();
+    await page.getByText("已关联 · QQ 10001", { exact: true }).waitFor();
+    await page.getByRole("button", { name: "发现", exact: true }).click();
+    await page.getByRole("button", { name: "QQ 音乐", exact: true }).click();
+    await page.getByRole("tab", { name: "账号推荐歌单", exact: true }).click();
+    await page
+      .getByRole("heading", { name: "合成推荐歌单", exact: true })
+      .waitFor();
+    await layout(page);
+    if (
+      [
+        "pc-landscape",
+        "pc-portrait",
+        "mobile-portrait",
+        "mobile-landscape",
+      ].includes(name)
+    )
+      await page.screenshot({
+        path: `test-results/qq-${name}.png`,
+        fullPage: true,
+      });
+    await page.getByRole("button", { name: "查看歌单", exact: true }).click();
+    await page.getByText(/当前为分页预览，未验证整单完整性/).waitFor();
+    await page.locator(".song-card h3").waitFor();
+    await layout(page);
+    await page.getByRole("button", { name: "下一页歌曲", exact: true }).click();
+    await page.getByText(/第 2 页 · 来源总数 205/).waitFor();
+    assert.ok(current.calls.some((c) => c.path.includes("dirid=9&page=2")));
+    await page.getByRole("button", { name: "发现", exact: true }).click();
+    await page.getByRole("tab", { name: "猜你喜欢歌曲", exact: true }).click();
+    await page.locator(".song-card h3").waitFor();
+    assert.equal(
+      await page
+        .getByRole("button", { name: "下载待接入", exact: true })
+        .isDisabled(),
+      true,
+    );
+    await layout(page);
+    await page
+      .getByRole("button", { name: "我的与平台账号", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "解除 QQ 关联", exact: true })
+      .click();
+    await page.getByText("尚未关联", { exact: true }).waitFor();
+    assert.equal(current.qqAccount.state, "unbound");
+    await page
       .locator("#view-content")
       .getByRole("button", { name: "下载与曲库", exact: true })
       .click();
@@ -266,6 +350,7 @@ try {
       .waitFor();
     await layout(page);
     await page.getByRole("button", { name: "我的歌单", exact: true }).click();
+    await page.getByRole("tab", { name: "本地收藏", exact: true }).click();
     await page.getByText("还没有本地收藏", { exact: true }).waitFor();
     await layout(page);
     await page.getByRole("button", { name: "退出", exact: true }).click();
@@ -280,7 +365,7 @@ try {
       touch: mobile,
       status: "passed",
       coverage:
-        "login/search/unknown metadata/bulk/confirmation/tasks/region details/files/accounts/storage/injection/collections/logout/overflow",
+        "login/search/unknown metadata/bulk/confirmation/tasks/region details/files/QQ QR confirmation and explicit binding/QQ recommendations and guess songs/QQ playlist page-only details/unlink/storage/injection/collections/logout/overflow",
     });
     console.log("PASS", name, `${width}x${height}`);
     await context.close();
