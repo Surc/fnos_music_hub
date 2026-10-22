@@ -1,9 +1,10 @@
 # 来源与许可证记录
 
-本仓库自有代码使用 MIT（见 LICENSE）。当前网关通过 HTTP 调用 HotDownloader 和音桥，没有导入它们的运行源码或修改上游；Python/前台测试依赖另见 requirements.lock / package-lock.json。源码比较和完整证据链接保存在 [研究原文](docs/design-goals-v1.6-20261021.txt)，固定 SHA 见 [来源清单](SOURCE_VERSIONS.json)。
+本仓库自有代码使用 MIT（见 LICENSE）。当前网关通过 HTTP 调用 HotDownloader 和音桥，没有导入它们的运行源码或修改上游；可选 QQ 目录通过固定 QQMusicApi Python 库接入，版本 0.8.2 / 27861e51432ea6b6e88dc35c4e8c8e239c0339e8（GPL-3.0-or-later）；QQ SDK 的源码未复制或修改。运行闭包见 requirements.lock、requirements-qq.lock，前台开发依赖见 package-lock.json。源码比较和完整证据链接保存在 [研究原文](docs/design-goals-v1.6-20261021.txt)，固定 SHA 见 [来源清单](SOURCE_VERSIONS.json)。
 
 | 已核对来源 | 记录的许可证 | 当前使用范围 |
 | --- | --- | --- |
+| L-1124/QQMusicApi | GPL-3.0-or-later，固定 LICENSE/包元数据已核对 | 可选库：账号验证、推荐与本人歌单只读请求；组合发行另保留其许可证与固定源码 |
 | qianlipp/fn-music-bridge | AGPL-3.0 | 身份/曲库与协议入口候选 |
 | dtapps/fnmusic-sync | MIT | 事件采集与生命周期研究参考 |
 | guohuiyuan/music-lib | AGPL-3.0 | 公共目录候选，完整性待验证 |

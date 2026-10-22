@@ -1,6 +1,6 @@
 # fnos_music_hub 开发约定
 
-先读 README、SOURCE_VERSIONS.json、docs/ITERATION.md、docs/VALIDATION.md；模块修改再读 docs/DESIGN.md、docs/CONTRACTS.md 与 docs/ACCOUNTS_AND_FEEDBACK.md。
+先读 README、SOURCE_VERSIONS.json、docs/ITERATION.md、docs/VALIDATION.md；模块修改再读 docs/DESIGN.md、docs/CONTRACTS.md 与 docs/ACCOUNTS_AND_FEEDBACK.md；QQ 业务先读 docs/QQ_ACCOUNTS.md，保留扫码确认与显式关联的边界。
 
 当前已有 0.1.0a1 开发实现。先读 docs/RUNNING.md、docs/HTTP_API.md；不要把 mock/生成音频测试当成真实 NAS、账号、完整音乐下载或 FPK 验收。接口尚未冻结。
 

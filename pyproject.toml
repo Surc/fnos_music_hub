@@ -10,6 +10,9 @@ license = "MIT"
 requires-python = ">=3.11"
 dynamic = ["dependencies"]
 
+[project.optional-dependencies]
+qq = ["qqmusic-api-python @ git+https://github.com/L-1124/QQMusicApi.git@27861e51432ea6b6e88dc35c4e8c8e239c0339e8"]
+
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
 

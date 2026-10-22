@@ -12,5 +12,6 @@
       "engine_token_env": "HUB_HOT_USER_A_TOKEN",
       "download_root": "/absolute/allowed/music/user-a"
     }
-  }
+  },
+  "qq_accounts_enabled": false
 }
