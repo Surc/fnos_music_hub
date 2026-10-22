@@ -64,6 +64,27 @@ check(bool(re.fullmatch(r"\d+\.\d+\.\d+", skill["version"])), "Invalid skill ver
 for path, digest in skill["files"].items():
     check_file_digest(path, digest)
 
+for adapter in manifest.get("implemented_adapters", []):
+    source = next((s for s in manifest["sources"] if s["repository"] == adapter["source_repository"]), None)
+    check(source is not None and source["observed_commit"] == adapter["interface_commit"],
+          f"Adapter pin differs from fixed source: {adapter['component']}")
+    for path in adapter["files"]:
+        check((ROOT / path).is_file(), f"Missing adapter file: {path}")
+
+optional = manifest.get("runtime_dependencies", {}).get("optional_qq")
+if optional:
+    check_file_digest(optional["lockfile"], optional["lockfile_sha256"])
+    dependency = f"git+https://github.com/{optional['sdk_repository']}.git@{optional['sdk_commit']}"
+    for path in (optional["lockfile"], "pyproject.toml"):
+        check(dependency in (ROOT / path).read_text(), f"QQ dependency pin missing: {path}")
+
+for evidence in (
+    manifest.get("acceptance", {}).get("responsive_ui", {}),
+    manifest.get("acceptance", {}).get("qq_accounts_and_catalog", {}),
+):
+    for path, digest in evidence.get("evidence_files_sha256", {}).items():
+        check_file_digest(path, digest)
+
 links = 0
 for doc in ROOT.rglob("*.md"):
     if any(part in {".git", "node_modules", "build", "dist", ".pytest_cache", ".ruff_cache"}
