@@ -2,6 +2,16 @@
 
 ## 2026-10-22：QQ 业务页接入
 
+Chromium 合成 API 下的实际页面截图与 [十视口报告](qq-ui-screenshots/browser-report.json) 已保存。截图不是来源平台私人歌单或真实扫码验收。
+
+| PC 横屏 | PC 竖屏 |
+| --- | --- |
+| ![PC 横屏](qq-ui-screenshots/qq-pc-landscape.png) | ![PC 竖屏](qq-ui-screenshots/qq-pc-portrait.png) |
+
+| 手机竖屏 | 手机横屏 |
+| --- | --- |
+| ![手机竖屏](qq-ui-screenshots/qq-mobile-portrait.png) | ![手机横屏](qq-ui-screenshots/qq-mobile-landscape.png) |
+
 本轮在已授权布局中接入 QQ 扫码/核对/显式关联与解除、账号推荐歌单/猜你喜欢分栏、本人创建歌单及分页详情。关联由服务端代次保护，关闭弹层可继续原尝试；旋转不创建第二次扫码或绑定。猜你喜欢不是每日推荐；详情注明“分页预览，未验证整单完整性”，QQ 下载继续禁用。真实账号与手机设备验收另列，不用合成接口页面代替。
 
 

@@ -73,7 +73,9 @@ Web 详细布局见 [界面评审稿](UI_REVIEW.md)。四项分别执行登录�
 
 旋转回归必须在未提交选曲、已打开下载确认、账号绑定、下载进行中分别执行：保持当前页面/来源/筛选/选曲/表单与任务 ID，不能重新登录、重复下单或云端写入。仿真尺寸检查与真实手机旋转/软键盘各自记录，不相互替代。
 
-本轮自动证据：提交 `15e5998e31c636b114d6890000a00a7e5f07ab87`，CI 运行 39581211945 的 web/browser/core 3.11/core 3.12 全部通过。Chromium 使用合成同源 API，报告见 [浏览器报告](ui-screenshots/browser-report.json)，范围与未覆盖条件见 [验证记录](VALIDATION.md)。未实现的远端歌单、私人绑定、入库/注入执行不因其状态页可见而签收。
+QQ 扩展自动证据：提交 `017d3b74a475e7fe5232128a8dbdc22ab3c7b7d4` 的运行 [39751963284](https://github.com/Surc/fnos_music_hub/actions/runs/39751963284) 六项通过；浏览器十视口报告见 [QQ 扩展报告](qq-ui-screenshots/browser-report.json)，包含合成扫码候选/显式关联、QQ 目录与解绑，不是平台真测。
+
+前轮自动证据：提交 `15e5998e31c636b114d6890000a00a7e5f07ab87`，CI 运行 39581211945 的 web/browser/core 3.11/core 3.12 全部通过。Chromium 使用合成同源 API，报告见 [浏览器报告](ui-screenshots/browser-report.json)，范围与未覆盖条件见 [验证记录](VALIDATION.md)。未实现的远端歌单、私人绑定、入库/注入执行不因其状态页可见而签收。
 
 ## 地区限制历史记录
 
