@@ -33,7 +33,7 @@ class Store:
         self.path = directory / "hub.sqlite3"
         with self.db() as db:
             version = db.execute("PRAGMA user_version").fetchone()[0]
-            if version not in (0, 1):
+            if version not in (0, 1, 2):
                 raise RuntimeError(
                     "unsupported database schema; restore a compatible backup"
                 )
@@ -55,7 +55,13 @@ class Store:
               CREATE TABLE IF NOT EXISTS favorites (
                 owner TEXT NOT NULL, track_key TEXT NOT NULL, payload TEXT NOT NULL,
                 PRIMARY KEY(owner, track_key));
-              PRAGMA user_version=1;
+              CREATE TABLE IF NOT EXISTS accounts (
+                owner TEXT NOT NULL, provider TEXT NOT NULL, payload TEXT NOT NULL,
+                PRIMARY KEY(owner, provider));
+              CREATE TABLE IF NOT EXISTS account_attempts (
+                id TEXT PRIMARY KEY, owner TEXT NOT NULL, session TEXT NOT NULL,
+                payload BLOB NOT NULL);
+              PRAGMA user_version=2;
             """)
         os.chmod(self.path, 0o600)
 
@@ -113,6 +119,7 @@ class Store:
     def logout(self, sid):
         with self.db() as db:
             db.execute("DELETE FROM sessions WHERE id=?", (self.session_hash(sid),))
+            db.execute("DELETE FROM account_attempts WHERE session=?", (self.session_hash(sid),))
 
     def cache_song(self, owner, song):
         from .domain import TrackRef

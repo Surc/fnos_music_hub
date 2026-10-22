@@ -18,11 +18,14 @@ from pydantic import BaseModel, ConfigDict, Field
 from starlette.background import BackgroundTask
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from modules.accounts.hot_qq import HotQqCredentials
 from modules.catalog.hot import HotCatalog, public_song
+from modules.catalog.qq import QqCatalog, QqProtocol
 from modules.download.assets import open_asset
 from modules.download.hot import HotEngines
 from modules.fnos.identity import BridgeIdentity
 
+from .accounts import Accounts
 from .config import Settings
 from .domain import (
     ManifestInput,
@@ -52,6 +55,16 @@ class FavoriteInput(BaseModel):
 class ControlInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     action: Literal["pause", "resume", "retry"]
+
+
+class AccountLoginInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["qr", "existing"] = "qr"
+
+
+class UnlinkInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    binding_generation: int = Field(ge=0, strict=True)
 
 
 def public_task(task):
@@ -123,13 +136,26 @@ class BodyLimit:
         await self.app(scope, bounded_receive, send)
 
 
-def create_app(settings: Settings, *, transport=None, start_worker=True):
+def create_app(
+    settings: Settings, *, transport=None, start_worker=True, qq_protocol=None
+):
     store = Store(settings.data_dir)
     identity, engines = (
         BridgeIdentity(settings, transport),
         HotEngines(settings, transport),
     )
     catalog = HotCatalog(engines, store)
+    protocol = qq_protocol or QqProtocol()
+    if (
+        settings.qq_accounts_enabled
+        and qq_protocol is None
+        and not protocol.available()
+    ):
+        raise RuntimeError(
+            "QQ accounts require the pinned optional QQMusicApi dependency"
+        )
+    accounts = Accounts(settings, store, HotQqCredentials(settings, engines), protocol)
+    qq_catalog = QqCatalog(accounts, protocol, store)
     reconciler = Reconciler(store, engines)
     attempts = defaultdict(deque)
 
@@ -176,6 +202,7 @@ def create_app(settings: Settings, *, transport=None, start_worker=True):
         openapi_url=None,
     )
     app.state.store, app.state.reconciler = store, reconciler
+    app.state.accounts, app.state.qq_catalog = accounts, qq_catalog
     app.add_middleware(BodyLimit)
     app.add_middleware(
         TrustedHostMiddleware, allowed_hosts=[urlsplit(settings.public_origin).hostname]
@@ -294,8 +321,9 @@ def create_app(settings: Settings, *, transport=None, start_worker=True):
                 "search": ["kuwo", "qq"] if cfg else [],
                 "download": ["kuwo"] if cfg else [],
                 "local_favorites": True,
-                "recommendations": False,
-                "cloud_accounts": False,
+                "recommendations": ["qq"] if accounts.enabled(owner) else [],
+                "cloud_accounts": ["qq"] if accounts.enabled(owner) else [],
+                "account_playlists": ["qq"] if accounts.enabled(owner) else [],
                 "injection": False,
                 "indexing": False,
                 "playback_feedback": False,
@@ -309,6 +337,74 @@ def create_app(settings: Settings, *, transport=None, start_worker=True):
         if not q.strip() or len(q) > 200 or not 1 <= page <= 1000:
             raise HubError("invalid_request", "搜索词或页码不合法")
         return await catalog.search(context[0], provider, q.strip(), page)
+
+    @app.get("/api/accounts")
+    async def account_status(context=Depends(authenticated)):
+        return await accounts.status(context[0])
+
+    @app.post("/api/accounts/qq/login", status_code=201)
+    async def account_login(body: AccountLoginInput, context=Depends(authenticated)):
+        return await accounts.start(*context, body.kind)
+
+    @app.get("/api/accounts/qq/login/{attempt_id}")
+    async def account_poll(attempt_id: str, context=Depends(authenticated)):
+        return await accounts.poll(*context, attempt_id)
+
+    @app.get("/api/accounts/qq/login/{attempt_id}/qr")
+    async def account_qr(attempt_id: str, context=Depends(authenticated)):
+        return Response(
+            await accounts.image(*context, attempt_id), media_type="image/png"
+        )
+
+    @app.post("/api/accounts/qq/login/{attempt_id}/bind")
+    async def account_bind(attempt_id: str, context=Depends(authenticated)):
+        return await accounts.bind(*context, attempt_id)
+
+    @app.post("/api/accounts/qq/unlink")
+    async def account_unlink(body: UnlinkInput, context=Depends(authenticated)):
+        return await accounts.unlink(context[0], body.binding_generation)
+
+    @app.get("/api/catalog/qq/recommendations")
+    async def recommendations(
+        kind: Literal["playlists", "songs"] = "playlists",
+        page: int = 1,
+        cursor: int = 0,
+        context=Depends(authenticated),
+    ):
+        if (
+            not 1 <= page <= 50
+            or not 0 <= cursor <= 100000
+            or (kind == "songs" and (page != 1 or cursor != 0))
+        ):
+            raise HubError("invalid_request", "推荐页码不合法")
+        return await qq_catalog.recommendations(context[0], kind, page, cursor)
+
+    @app.get("/api/catalog/qq/playlists")
+    async def account_playlists(context=Depends(authenticated)):
+        return await qq_catalog.playlists(context[0])
+
+    @app.get("/api/catalog/qq/playlists/{playlist_id}")
+    async def playlist_page(
+        playlist_id: str,
+        dirid: str = "0",
+        page: int = 1,
+        context=Depends(authenticated),
+    ):
+        if (
+            not playlist_id.isascii()
+            or not playlist_id.isdecimal()
+            or len(playlist_id) > 20
+            or not dirid.isascii()
+            or not dirid.isdecimal()
+            or len(dirid) > 20
+            or not 0 <= int(playlist_id) < 2**64
+            or not 0 <= int(dirid) < 2**64
+            or int(playlist_id) == 0
+            and int(dirid) == 0
+            or not 1 <= page <= 100
+        ):
+            raise HubError("invalid_request", "歌单引用或页码不合法")
+        return await qq_catalog.playlist_page(context[0], playlist_id, dirid, page)
 
     @app.get("/api/favorites")
     async def favorites(context=Depends(authenticated)):

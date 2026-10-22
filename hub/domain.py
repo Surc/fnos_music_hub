@@ -75,7 +75,7 @@ def make_manifest(owner: Principal, songs: list[dict]):
         "snapshot_id": uuid4().hex,
         "owner": owner.model_dump(),
         "captured_at": now(),
-        "source": {"kind": "explicit_selection", "adapter": "hot-http-v1"},
+        "source": {"kind": "explicit_selection", "adapter": "explicit-selection-v1"},
         "complete": True,
         "source_total": len(songs),
         "fetched_count": len(songs),
