@@ -170,6 +170,38 @@
               </button>
             </div>
             <p id="source-notice" class="notice"></p>
+            <div
+              id="discovery-tabs"
+              class="page-tabs"
+              role="tablist"
+              aria-label="QQ 发现内容"
+              hidden
+            >
+              <button
+                type="button"
+                role="tab"
+                data-discovery="search"
+                aria-selected="true"
+              >
+                歌曲搜索
+              </button>
+              <button
+                type="button"
+                role="tab"
+                data-discovery="playlists"
+                aria-selected="false"
+              >
+                账号推荐歌单
+              </button>
+              <button
+                type="button"
+                role="tab"
+                data-discovery="songs"
+                aria-selected="false"
+              >
+                猜你喜欢歌曲
+              </button>
+            </div>
           </section>
           <div
             id="collection-tabs"
@@ -186,8 +218,15 @@
               id="local-collection-tab"
             >
               本地收藏</button
-            ><button type="button" role="tab" aria-selected="false" disabled>
-              平台歌单 · 待接入
+            ><button
+              type="button"
+              role="tab"
+              aria-selected="false"
+              id="qq-collection-tab"
+              aria-controls="view-content"
+              disabled
+            >
+              QQ 本人歌单
             </button>
           </div>
           <div

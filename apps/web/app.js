@@ -43,6 +43,15 @@ const state = {
   tasks: [],
   assets: [],
   injection: null,
+  qqAccount: null,
+  qqLogin: null,
+  qqBusy: false,
+  qqDialog: false,
+  discovery: "search",
+  collectionTab: "local",
+  personal: null,
+  cloudPlaylists: null,
+  playlist: null,
   selected: { discover: new Set(), collections: new Set() },
   drafts: new Map(),
   download: null,
@@ -121,7 +130,10 @@ function closeDialog(id, force = false) {
     $("#download-tracks").replaceChildren();
     $("#download-error").textContent = "";
   }
-  if (id === "detail-dialog") $("#detail-body").replaceChildren();
+  if (id === "detail-dialog") {
+    state.qqDialog = false;
+    $("#detail-body").replaceChildren();
+  }
   if (state.lastFocus?.isConnected && !force) state.lastFocus.focus();
 }
 function showDialog(id) {
@@ -131,6 +143,7 @@ function showDialog(id) {
   else el.setAttribute("open", "");
 }
 function showDetails(title, body) {
+  state.qqDialog = false;
   $("#detail-title").textContent = title;
   $("#detail-body").replaceChildren(body);
   showDialog("detail-dialog");
@@ -146,6 +159,15 @@ function signedOut() {
   state.tasks = [];
   state.assets = [];
   state.injection = null;
+  state.qqAccount = null;
+  state.qqLogin = null;
+  state.qqBusy = false;
+  state.qqDialog = false;
+  state.personal = null;
+  state.cloudPlaylists = null;
+  state.playlist = null;
+  state.discovery = "search";
+  state.collectionTab = "local";
   state.selected.discover.clear();
   state.selected.collections.clear();
   state.drafts.clear();
@@ -231,9 +253,19 @@ function downloadable(song) {
   );
 }
 function visibleRows() {
-  return state.view === "collections"
-    ? state.favorites.map((song, i) => ({ id: "favorite:" + i, song }))
-    : state.rows;
+  if (state.view === "collections") {
+    const songs =
+      state.collectionTab === "qq"
+        ? state.playlist?.data?.items || []
+        : state.favorites;
+    return songs.map((song, i) => ({ id: "collection:" + i, song }));
+  }
+  if (state.discovery === "songs")
+    return (state.personal?.items || []).map((song, i) => ({
+      id: "recommend:" + i,
+      song,
+    }));
+  return state.discovery === "search" ? state.rows : [];
 }
 function selection() {
   return state.selected[state.view];
@@ -565,13 +597,66 @@ function accountsPage() {
         "p",
         provider === "kuwo"
           ? "公共模式；私人账号、歌单推荐尚未开放。"
-          : "本人账号绑定、私人歌单和推荐尚未开放。",
+          : provider === "qq" && capability("cloud_accounts", "qq")
+            ? "本人创建歌单、账号推荐歌单和猜你喜欢可读取；下载与云端写入尚未开放。"
+            : "本人账号绑定、私人歌单和推荐尚未开放。",
         "small muted",
       ),
     );
-    const bind = node("button", "绑定账号 · 待接入");
-    bind.disabled = true;
-    p.append(bind);
+    if (provider === "qq" && capability("cloud_accounts", "qq")) {
+      const account = state.qqAccount;
+      const names = {
+        bound: "已关联",
+        expired: "平台登录已失效",
+        binding_changed: "Hot 账号已变化，请重新关联",
+        unbound: "尚未关联",
+      };
+      p.append(
+        node(
+          "p",
+          `${names[account?.state] || "正在读取账号状态"}${account?.uin ? " · QQ " + account.uin : ""}`,
+          "break-text",
+        ),
+      );
+      p.append(
+        node(
+          "p",
+          "扫码完成后核对 QQ 账号，再确认关联。解除关联会撤销本中心的私人读取授权。",
+          "small muted",
+        ),
+      );
+      if (account?.state === "bound") {
+        p.append(
+          button("解除 QQ 关联", unlinkQq),
+          button("查看 QQ 歌单", async () => {
+            state.collectionTab = "qq";
+            state.playlist = null;
+            await navigate("collections");
+          }),
+        );
+      } else {
+        p.append(
+          button(
+            state.qqLogin ? "继续 QQ 登录" : "扫码登录 QQ",
+            async () => {
+              if (state.qqLogin) {
+                state.qqDialog = true;
+                renderQqLogin();
+                showDialog("detail-dialog");
+              } else await startQqLogin("qr");
+            },
+            "primary",
+          ),
+        );
+        p.append(button("关联已有 Hot 登录", () => startQqLogin("existing")));
+        if (account?.binding_generation > 0)
+          p.append(button("重置登录尝试", unlinkQq));
+      }
+    } else {
+      const bind = node("button", "绑定账号 · 待接入");
+      bind.disabled = true;
+      p.append(bind);
+    }
     grid.append(p);
   }
   result.append(grid);
@@ -606,6 +691,211 @@ function accountsPage() {
   preferences.append(button("退出当前飞牛账号", logout));
   result.append(preferences);
   return result;
+}
+
+function clearQqContent() {
+  state.personal = null;
+  state.cloudPlaylists = null;
+  state.playlist = null;
+}
+async function loadAccounts() {
+  const data = await api("/api/accounts");
+  const next = data.items?.find((a) => a.provider === "qq") || null;
+  if (
+    state.qqAccount &&
+    (next?.account_ref !== state.qqAccount.account_ref ||
+      next?.binding_generation !== state.qqAccount.binding_generation)
+  )
+    clearQqContent();
+  state.qqAccount = next;
+}
+async function unlinkQq() {
+  if (!state.qqAccount) return;
+  const result = await api("/api/accounts/qq/unlink", {
+    method: "POST",
+    body: JSON.stringify({
+      binding_generation: state.qqAccount.binding_generation,
+    }),
+  });
+  state.qqAccount = result;
+  state.qqLogin = null;
+  clearQqContent();
+  state.load++;
+  closeDialog("detail-dialog");
+  render();
+  if (
+    (state.view === "discover" && state.discovery !== "search") ||
+    (state.view === "collections" && state.collectionTab === "qq")
+  )
+    pageError("QQ 关联已解除，请先重新关联本人账号。");
+}
+async function startQqLogin(kind) {
+  state.qqLogin = await api("/api/accounts/qq/login", {
+    method: "POST",
+    body: JSON.stringify({ kind }),
+  });
+  await loadAccounts();
+  state.qqDialog = true;
+  renderQqLogin();
+  showDialog("detail-dialog");
+  render();
+}
+function renderQqLogin(message) {
+  const attempt = state.qqLogin;
+  if (!attempt || !state.qqDialog) return;
+  const result = node("div", undefined, "qq-login");
+  const labels = {
+    waiting: "请用 QQ 音乐扫码",
+    scanned: "已扫码，请在手机上确认",
+    confirmed: "扫码已确认，请核对账号",
+    bound: "关联完成",
+    expired: "二维码已过期",
+    canceled: "已取消扫码",
+    error: "扫码结果无法确认，请重新开始",
+  };
+  result.append(node("p", labels[attempt.status] || "正在确认登录"));
+  if (["waiting", "scanned"].includes(attempt.status) && attempt.qr_path) {
+    const image = node("img");
+    image.src = attempt.qr_path;
+    image.alt = "QQ 音乐登录二维码";
+    image.width = 220;
+    image.height = 220;
+    result.append(image);
+  }
+  if (attempt.uin)
+    result.append(node("p", "待关联 QQ：" + attempt.uin, "break-text"));
+  result.append(
+    node("p", "只有点击确认关联后，本中心才读取该账号的歌单和推荐。", "notice"),
+  );
+  if (message) result.append(node("p", message, "error"));
+  if (["waiting", "scanned"].includes(attempt.status))
+    result.append(button("检查扫码状态", pollQqLogin));
+  if (attempt.status === "confirmed")
+    result.append(
+      button(
+        "确认关联此 QQ 账号",
+        async () => {
+          const current = state.qqLogin;
+          state.qqAccount = await api(
+            `/api/accounts/qq/login/${encodeURIComponent(current.id)}/bind`,
+            { method: "POST" },
+          );
+          state.qqLogin = null;
+          clearQqContent();
+          closeDialog("detail-dialog");
+          render();
+          toast("QQ 账号已关联，可读取本人歌单和账号推荐。");
+        },
+        "primary",
+      ),
+    );
+  result.append(button("取消本次关联", unlinkQq));
+  $("#detail-title").textContent = "关联本人 QQ 账号";
+  $("#detail-body").replaceChildren(result);
+}
+async function pollQqLogin() {
+  if (!state.qqLogin || state.qqBusy) return;
+  state.qqBusy = true;
+  const epoch = state.epoch,
+    id = state.qqLogin.id;
+  try {
+    const data = await api(`/api/accounts/qq/login/${encodeURIComponent(id)}`);
+    if (state.qqLogin?.id !== id) return;
+    state.qqLogin = data;
+    renderQqLogin();
+  } catch (error) {
+    if (!(error instanceof StaleRequest) && state.qqLogin?.id === id)
+      renderQqLogin(error.message);
+  } finally {
+    if (epoch === state.epoch) state.qqBusy = false;
+  }
+}
+function playlistCards(data) {
+  if (!data?.items?.length)
+    return empty(
+      "暂无歌单",
+      "关联本人 QQ 后读取平台返回的歌单；不会改用公共热门。",
+    );
+  const grid = node("div", undefined, "results");
+  for (const item of data.items) {
+    const card = node("article", undefined, "song-card");
+    card.append(
+      badge("QQ · 本人账号请求"),
+      node("h3", item.title || "未知歌单"),
+    );
+    if (item.playlist) {
+      card.append(
+        node(
+          "p",
+          `${item.creator || "创建者未知"} · ${item.song_count || 0} 首`,
+        ),
+      );
+      card.append(
+        button("查看歌单", async () => {
+          state.playlist = {
+            ref: item.playlist,
+            title: item.title,
+            page: 1,
+            data: null,
+          };
+          state.collectionTab = "qq";
+          await navigate("collections");
+        }),
+      );
+    } else
+      card.append(node("p", "来源条目无法识别，保留原位置。", "small muted"));
+    grid.append(card);
+  }
+  return grid;
+}
+function qqCollectionPage() {
+  if (!state.playlist) {
+    const box = node("div");
+    box.append(
+      node("p", "QQ 本人创建的歌单；云端收藏/订阅另行接入。", "notice"),
+      playlistCards(state.cloudPlaylists),
+    );
+    return box;
+  }
+  const current = state.playlist;
+  const box = node("div");
+  box.append(
+    button("返回 QQ 歌单", async () => {
+      state.playlist = null;
+      render();
+      await loadView();
+    }),
+    node("h2", current.title),
+  );
+  box.append(
+    node(
+      "p",
+      `第 ${current.page} 页 · 来源总数 ${current.data?.source_total ?? "待读取"}。当前为分页预览，未验证整单完整性。`,
+      "notice",
+    ),
+  );
+  box.append(
+    current.data?.items?.length
+      ? songCards(visibleRows())
+      : empty("当前页暂无歌曲", "未知条目保留，歌曲下载不会在读取歌单时触发。"),
+  );
+  const actions = node("div", undefined, "song-actions");
+  if (current.page > 1)
+    actions.append(
+      button("上一页歌曲", async () => {
+        current.page--;
+        await loadView();
+      }),
+    );
+  if (current.data?.has_more)
+    actions.append(
+      button("下一页歌曲", async () => {
+        current.page++;
+        await loadView();
+      }),
+    );
+  box.append(actions);
+  return box;
 }
 function storagePage() {
   const result = node("div");
@@ -662,6 +952,22 @@ function render() {
   $("#page-description").textContent = titles[view][1];
   $("#discover-controls").hidden = view !== "discover";
   $("#collection-tabs").hidden = view !== "collections";
+  $("#qq-collection-tab").disabled = !capability("account_playlists", "qq");
+  $("#qq-collection-tab").setAttribute(
+    "aria-selected",
+    String(state.collectionTab === "qq"),
+  );
+  $("#local-collection-tab").setAttribute(
+    "aria-selected",
+    String(state.collectionTab === "local"),
+  );
+  $("#discovery-tabs").hidden =
+    state.provider !== "qq" || !capability("recommendations", "qq");
+  for (const b of document.querySelectorAll("[data-discovery]"))
+    b.setAttribute(
+      "aria-selected",
+      String(b.dataset.discovery === state.discovery),
+    );
   $("#download-tabs").hidden = view !== "downloads";
   $("#download-filters").hidden = view !== "downloads";
   $("#task-filter-label").hidden = state.downloadTab !== "tasks";
@@ -682,9 +988,13 @@ function render() {
     opt.disabled = !capability("search", opt.value);
   $("#provider").value = state.provider;
   $("#source-notice").textContent = capability("search", state.provider)
-    ? `${providers[state.provider]} · 公共歌曲搜索。本地收藏可独立使用；推荐歌单和私人账号尚未接入。`
+    ? state.discovery === "search"
+      ? `${providers[state.provider]} · 公共歌曲搜索。本地收藏可独立使用；平台私人内容需要本人账号关联。`
+      : "QQ · 本人账号请求。推荐歌单与猜你喜欢歌曲分开显示；个性化效果待与来源客户端对照。不会自动上报播放反馈。"
     : "当前用户尚未配置可用的搜索引擎，请联系管理员。";
-  $("#pagination").hidden = view !== "discover" || !state.hasMore;
+  $("#pagination").hidden =
+    view !== "discover" ||
+    !(state.discovery === "search" ? state.hasMore : state.personal?.has_more);
   $("#view-content").removeAttribute("role");
   $("#view-content").removeAttribute("aria-labelledby");
   if (view === "discover")
@@ -697,15 +1007,33 @@ function render() {
             : "搜索酷我或 QQ 的歌曲，选择收藏与下载。个人推荐和歌单功能将在后续接入。",
         );
   if (view === "collections") {
-    result = state.favorites.length
-      ? songCards(visibleRows())
-      : empty(
-          "还没有本地收藏",
-          "在搜索结果中收藏歌曲，这里仅保存当前用户的记录。",
-        );
+    result =
+      state.collectionTab === "qq"
+        ? qqCollectionPage()
+        : state.favorites.length
+          ? songCards(visibleRows())
+          : empty(
+              "还没有本地收藏",
+              "在搜索结果中收藏歌曲，这里仅保存当前用户的记录。",
+            );
     content.setAttribute("role", "tabpanel");
-    content.setAttribute("aria-labelledby", "local-collection-tab");
+    content.setAttribute(
+      "aria-labelledby",
+      state.collectionTab === "qq"
+        ? "qq-collection-tab"
+        : "local-collection-tab",
+    );
   }
+  if (view === "discover" && state.discovery !== "search")
+    result =
+      state.discovery === "playlists"
+        ? playlistCards(state.personal)
+        : state.personal?.items?.length
+          ? songCards(visibleRows())
+          : empty(
+              "暂无猜你喜欢歌曲",
+              "先关联本人 QQ 账号，再读取本次推荐。此入口不是每日推荐歌曲。",
+            );
   if (view === "downloads") {
     result = state.downloadTab === "tasks" ? taskCards() : assetCards();
     content.setAttribute("role", "tabpanel");
@@ -740,14 +1068,23 @@ async function loadView(quiet = false) {
     tab = state.downloadTab,
     seq = ++state.load,
     epoch = state.epoch;
+  const currentPlaylist = state.playlist;
   const path =
-    view === "collections"
-      ? "/api/favorites"
-      : view === "downloads"
-        ? "/api/" + tab
-        : view === "injection"
-          ? "/api/admin/injection"
-          : null;
+    view === "discover" && state.discovery !== "search"
+      ? `/api/catalog/qq/recommendations?kind=${state.discovery}&page=${state.personal?.page || 1}&cursor=${state.personal?.cursor || 0}`
+      : view === "accounts" && capability("cloud_accounts", "qq")
+        ? "/api/accounts"
+        : view === "collections"
+          ? state.collectionTab === "local"
+            ? "/api/favorites"
+            : currentPlaylist
+              ? `/api/catalog/qq/playlists/${encodeURIComponent(currentPlaylist.ref.id)}?dirid=${encodeURIComponent(currentPlaylist.ref.dirid)}&page=${currentPlaylist.page}`
+              : "/api/catalog/qq/playlists"
+          : view === "downloads"
+            ? "/api/" + tab
+            : view === "injection"
+              ? "/api/admin/injection"
+              : null;
   if (!path) return;
   if (!quiet) {
     $("#page-status").textContent = "正在刷新…";
@@ -758,7 +1095,20 @@ async function loadView(quiet = false) {
     guard(epoch);
     if (seq !== state.load || view !== state.view || tab !== state.downloadTab)
       return;
-    if (view === "collections") {
+    if (view === "accounts") {
+      const next = data.items?.find((a) => a.provider === "qq") || null;
+      if (
+        state.qqAccount &&
+        (next?.account_ref !== state.qqAccount.account_ref ||
+          next?.binding_generation !== state.qqAccount.binding_generation)
+      )
+        clearQqContent();
+      state.qqAccount = next;
+    } else if (view === "discover") state.personal = data;
+    else if (view === "collections" && state.collectionTab === "qq") {
+      if (currentPlaylist) currentPlaylist.data = data;
+      else state.cloudPlaylists = data;
+    } else if (view === "collections") {
       state.favorites = data.items;
       state.selected.collections.clear();
     } else if (view === "downloads") state[tab] = data.items;
@@ -770,8 +1120,13 @@ async function loadView(quiet = false) {
       !(e instanceof StaleRequest) &&
       epoch === state.epoch &&
       seq === state.load
-    )
+    ) {
+      if (path.startsWith("/api/catalog/qq/")) {
+        clearQqContent();
+        render();
+      }
       pageError(e.message);
+    }
   } finally {
     if (epoch === state.epoch && seq === state.load)
       $("#page-status").hidden = true;
@@ -958,6 +1313,9 @@ async function search(append = false) {
 function chooseProvider(provider) {
   if (!capability("search", provider) || provider === state.provider) return;
   state.provider = provider;
+  state.discovery = "search";
+  state.personal = null;
+  state.load++;
   state.searchRequest++;
   state.searchBusy = false;
   state.rows = [];
@@ -1048,10 +1406,42 @@ $("#search-form").addEventListener("submit", async (event) => {
   if (state.searchBusy) return;
   state.search = $("#query").value.trim();
   if (!state.search) return;
+  state.discovery = "search";
+  state.personal = null;
   await navigate("discover");
   await search();
 });
-$("#next-page").addEventListener("click", () => search(true));
+$("#next-page").addEventListener("click", () => {
+  if (state.discovery === "search") search(true);
+  else {
+    state.personal = {
+      ...state.personal,
+      page: (state.personal?.page || 1) + 1,
+      cursor: state.personal.next_cursor,
+    };
+    loadView();
+  }
+});
+for (const b of document.querySelectorAll("[data-discovery]"))
+  b.addEventListener("click", async () => {
+    if (b.dataset.discovery === state.discovery) return;
+    state.discovery = b.dataset.discovery;
+    state.personal = null;
+    state.selected.discover.clear();
+    render();
+    await loadView();
+  });
+for (const [id, collectionTab] of [
+  ["local-collection-tab", "local"],
+  ["qq-collection-tab", "qq"],
+])
+  $("#" + id).addEventListener("click", async () => {
+    state.collectionTab = collectionTab;
+    state.playlist = null;
+    state.selected.collections.clear();
+    render();
+    await loadView();
+  });
 $("#select-all").addEventListener("change", (event) => {
   const set = selection();
   for (const row of visibleRows().filter((r) => downloadable(r.song))) {
@@ -1076,9 +1466,31 @@ $("#download-dialog").addEventListener("cancel", (event) => {
   event.preventDefault();
   closeDialog("download-dialog");
 });
-$("#detail-dialog").addEventListener("close", () =>
-  $("#detail-body").replaceChildren(),
-);
+$("#detail-dialog").addEventListener("close", () => {
+  if (!$("#detail-dialog").open) {
+    state.qqDialog = false;
+    $("#detail-body").replaceChildren();
+  }
+});
+for (const id of ["collection-tabs", "discovery-tabs"])
+  $("#" + id).addEventListener("keydown", (event) => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    const tabs = [...$("#" + id).querySelectorAll('[role="tab"]')].filter(
+      (b) => !b.disabled,
+    );
+    if (!tabs.length) return;
+    event.preventDefault();
+    const index = tabs.indexOf(document.activeElement);
+    const next =
+      event.key === "Home"
+        ? 0
+        : event.key === "End"
+          ? tabs.length - 1
+          : (index + (event.key === "ArrowLeft" ? -1 : 1) + tabs.length) %
+            tabs.length;
+    tabs[next].focus();
+    tabs[next].click();
+  });
 for (const b of document.querySelectorAll("[data-download-tab]"))
   b.addEventListener("click", async () => {
     state.downloadTab = b.dataset.downloadTab;
@@ -1102,7 +1514,9 @@ $("#download-tabs").addEventListener("keydown", (event) => {
 $("#task-filter").addEventListener("change", render);
 $("#asset-filter").addEventListener("input", render);
 $("#retry-page").addEventListener("click", () =>
-  state.view === "discover" ? search() : loadView(),
+  state.view === "discover" && state.discovery === "search"
+    ? search()
+    : loadView(),
 );
 $("#refresh-list").addEventListener("click", () => loadView());
 function viewportChanged() {
@@ -1121,6 +1535,14 @@ window.visualViewport?.addEventListener("resize", viewportChanged);
 window.visualViewport?.addEventListener("scroll", viewportChanged);
 viewportChanged();
 setInterval(() => {
+  if (
+    state.me &&
+    state.qqDialog &&
+    $("#detail-dialog").open &&
+    !document.hidden &&
+    ["waiting", "scanned"].includes(state.qqLogin?.status)
+  )
+    pollQqLogin();
   if (
     state.me &&
     state.view === "downloads" &&

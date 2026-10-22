@@ -1331,3 +1331,12 @@ body:has(dialog[open]) {
     scroll-behavior: auto !important;
   }
 }
+.qq-login img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1rem auto;
+}
+.qq-login > button {
+  margin: 0.25rem;
+}
