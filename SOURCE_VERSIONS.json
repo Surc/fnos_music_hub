@@ -489,8 +489,25 @@
       "full_playlist_export": false,
       "qq_download_enabled": false,
       "native_hot_refresh_cas": "pending_upstream_extension",
-      "browser_validation": "pending_current_revision_ci",
-      "local_account_evidence": null
+      "browser_validation": "chromium_10_viewports_and_qq_workflows_passed_synthetic_api",
+      "local_account_evidence": null,
+      "validation_commit": "017d3b74a475e7fe5232128a8dbdc22ab3c7b7d4",
+      "workflow_run": 39751971329,
+      "evidence": "docs/qq-ui-screenshots/browser-report.json",
+      "artifact_id": 12413852917,
+      "artifact_sha256": "9ba08b09dca01678dbd2715002611a636a36512227077dc9144512ceaf4a5112",
+      "evidence_files_sha256": {
+        "docs/qq-ui-screenshots/browser-report.json": "f34ac788fc1cbaeb1061c26b2352744c30a28cce38e0bceb20530ef605eca65f",
+        "docs/qq-ui-screenshots/qq-mobile-landscape.png": "80974eff862899feda52a946ef07188f304524f527223642b557951d8409453a",
+        "docs/qq-ui-screenshots/qq-mobile-portrait.png": "78352a5117ff39c20730b486acf798caca4f6d95246f3e490900486a1921fbe3",
+        "docs/qq-ui-screenshots/qq-pc-landscape.png": "c2d321e0916ac96e42221b8ad49e359cd1df5b9d39ccc3a7679d6199a82a5331",
+        "docs/qq-ui-screenshots/qq-pc-portrait.png": "77118373d1dfff7be494c4b5ef66a658713d2f9c3f16c8de28cb0cfc2501c7b8"
+      },
+      "full_validation_workflow_run": 39751963284,
+      "full_validation_jobs": 6,
+      "python_qq_test_count": 54,
+      "python_base_test_count": 44,
+      "frontend_test_count": 18
     }
   }
 }
