@@ -23,7 +23,21 @@
 | `GET /api/admin/injection` | 管理员可读；当前 available=false，不修改官方 Socket |
 | `GET /` | 独立前台，静态资源在 /static |
 
-首次实现仅提交酷我下载，QQ 提供公共搜索；网易与三个来源的私人账号业务未开放。无音质或未知时长的条目仍能浏览和收藏，但不能通过本版严格下载准入。
+下载仍仅提交酷我。QQ 公共搜索独立于可选账号模块；启用账号模块后提供以下私人只读链路，网易与酷我私人账号未开放。
+
+| 方法 / 路径 | 实现行为 |
+| --- | --- |
+| `GET /api/accounts` | 本人平台关联与绑定代次/凭据修订；不返回凭据摘要、令牌或原生二维码 ID |
+| `POST /api/accounts/qq/login` | kind=qr/existing；创建 180 秒、当前 Hub 会话专属尝试；已经关联先解绑 |
+| `GET /api/accounts/qq/login/{id}` | 轮询扫码；confirmed 仅代表候选，尚未获得私人读取授权 |
+| `GET /api/accounts/qq/login/{id}/qr` | 认证、会话归属与期限检查后的同源 PNG |
+| `POST /api/accounts/qq/login/{id}/bind` | 用户核对 QQ 后显式确认；平台验证后提交代次，重复已确认操作返回原关联 |
+| `POST /api/accounts/qq/unlink` | body.binding_generation 为所见代次；条件撤销 Hub 授权，不注销原生 Hot |
+| `GET /api/catalog/qq/recommendations` | kind=playlists/songs，page=1..50；歌单按 next_cursor 继续请求 cursor，歌曲仅 page=1/cursor=0；猜你喜欢不是每日推荐 |
+| `GET /api/catalog/qq/playlists` | 本人创建的歌单目录；未知摘要仍保留占位 |
+| `GET /api/catalog/qq/playlists/{id}` | dirid、page；每页 100，source_total/has_more；complete=false、integrity=page_only |
+
+QQ 平台失效返回 `platform_auth_required`（409），不退出飞牛会话、不回退公共内容。私人响应带 AccountRef/绑定代次/修订；网络请求后重新核对原生凭据和绑定，旧响应返回 binding_changed 且不缓存。recommendations 的 personalization=unverified，不能据此声称私人算法已验证。详细存储/上游/竞态边界见 [QQ 模块](QQ_ACCOUNTS.md)。无音质或未知时长的条目仍能浏览和收藏，但不能通过本版严格下载准入。
 
 清单上限 1000 项 / 512 KiB，请求体上限 600 KiB；超限明确拒绝。此处的 complete 只适用于用户明确选择的完整输入，不能用于宣称远端分页歌单已完整抓取。任务保存独立清单副本及请求哈希。
 
