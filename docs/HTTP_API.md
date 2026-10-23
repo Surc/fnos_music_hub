@@ -1,5 +1,11 @@
 # 开发接口 v0.1
 
+## 本地快照历史补充
+
+- `GET /api/playlist-captures?before=<id>&limit=20`：当前飞牛用户的独立本地读取历史，不调用 QQ。返回 items/next_cursor，limit 1–50，跨用户游标 404。原 `/api/catalog/qq/playlists/{id}/snapshots` 同样支持这两个参数，额外限制来源归属。
+- `DELETE /api/playlist-captures/{id}`：CSRF/Origin/owner 检查；在途 409，重复删除返回原 deleted 记录。事务移除本地远端清单内容、保留幂等键与冷却期限；deleted 句柄运行返回 410，不修改下载任务。
+- 空间复用与删除边界见 [QQ 快照](QQ_SNAPSHOTS.md)。
+
 这些端点已实现，但尚未冻结兼容性；完整大歌单及 NAS 链路验收后再形成稳定 OpenAPI。
 
 登录通过音桥验证用户 GUID。浏览器仅持有 HttpOnly / SameSite=Strict 会话 Cookie，CSRF token 留在页面内存。所有私人请求重新向音桥验证会话；无效身份、缺 GUID、账号归属变化或音桥不可用均拒绝，没有 shared 回退。
