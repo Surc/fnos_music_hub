@@ -301,13 +301,13 @@
   ],
   "maintenance_skill": {
     "name": "maintain-fnos-music-hub",
-    "version": "1.4.0",
+    "version": "1.4.1",
     "files": {
-      "skills/maintain-fnos-music-hub/SKILL.md": "26f0ea88cca6ea01f83bc9fb802bfcba3d68fa73ec716dace8b069e290dca3bd",
+      "skills/maintain-fnos-music-hub/SKILL.md": "0e11440346566270ab7db00c58814db882491085ce177d5f1a58e6b3d6371e37",
       "skills/maintain-fnos-music-hub/agents/openai.yaml": "43f885a269d77d2173f7480c43e58afcab96777c2546511cdaeb4636349ed40d",
       "skills/maintain-fnos-music-hub/assets/icon.svg": "9be88f8dd4c5e658961515c71389eafd45142ffa68bcae58e8dcff57d178ed91"
     },
-    "personal_skill_git_commit": "be914de5323a31df196d7f35ad754fa83c9495b6"
+    "personal_skill_git_commit": "3f7fc35de7576d7c8fe778e92336574ed7e422e7"
   },
   "project_release": {
     "tag": null,
@@ -555,6 +555,15 @@
         "docs/qq-ui-screenshots/qq-snapshot-pc-landscape.png": "6b318ef34608fc7a9eed970f27cd9c978eca281f1fcd8ed0545aa34a95454426",
         "docs/qq-ui-screenshots/qq-snapshot-pc-portrait.png": "fa3c063dbcd15809a740a4a678f26e8dfd27f0988baae4577bb959ab612fd7c2"
       }
+    },
+    "qq_snapshot_recovery": {
+      "status": "local_tests_passed_remote_ci_pending",
+      "baseline_commit": "535ed137c4bcc9827dc74106cdde7b434482a760",
+      "baseline_main_workflow_run": 39948660461,
+      "python_tests": 100,
+      "frontend_jsdom_tests": 27,
+      "real_qq_nas": "pending",
+      "qq_download_enabled": false
     }
   }
 }
