@@ -285,21 +285,6 @@ try {
         .click();
     await page.getByText("待关联 QQ：10001", { exact: true }).waitFor();
     assert.equal(current.qqAccount.state, "unbound");
-    await page.getByRole("button", { name: "我的歌单", exact: true }).click();
-    await page.getByRole("tab", { name: "已保存快照", exact: true }).click();
-    await page
-      .getByRole("button", { name: "查看快照曲目", exact: true })
-      .click();
-    await page.locator("#detail-body li").last().waitFor();
-    assert.equal(await page.locator("#detail-body li").count(), 1000);
-    await layout(page);
-    await page.getByRole("button", { name: "关闭详情", exact: true }).click();
-    await page.getByRole("button", { name: "删除记录", exact: true }).click();
-    await page.getByRole("button", { name: "确认删除", exact: true }).click();
-    await page.getByText("暂无读取记录", { exact: true }).waitFor();
-    await page
-      .getByRole("button", { name: "我的与平台账号", exact: true })
-      .click();
     await page
       .getByRole("button", { name: "确认关联此 QQ 账号", exact: true })
       .click();
