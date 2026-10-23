@@ -28,6 +28,7 @@
 | [来源清单](SOURCE_VERSIONS.json) / [更新流程](docs/UPSTREAM.md) | 观察版本、候选状态、旧工程基线、skill 摘要 |
 | [迁移说明](docs/MIGRATION.md) | 与旧工程的关系、数据与 Socket 生命周期 |
 | [验证记录](docs/VALIDATION.md) | 本次检查与未执行的实机验收 |
+| [Astra 审核修复](docs/ASTRA_REVIEW_FIXES.md) | 整体审核问题、修复复核及后续改进 |
 | [功能点验收清单](docs/ACCEPTANCE_FUNCTIONS.md) / [平台验收清单](docs/ACCEPTANCE_PLATFORMS.md) | 分功能/平台签收，地区限制与用户本地复测 |
 | [界面评审稿](docs/UI_REVIEW.md) | 已授权实施的页面布局、流程与四种布局约束 |
 | [研究原文](docs/design-goals-v1.6-20261021.txt) | 完整 v1.6 对比及 Astra 复核，历史提议保留 |

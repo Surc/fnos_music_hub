@@ -5,7 +5,7 @@
 | 已核对来源 | 记录的许可证 | 当前使用范围 |
 | --- | --- | --- |
 | L-1124/QQMusicApi | GPL-3.0-or-later，固定 LICENSE/包元数据已核对 | 可选库：账号验证、推荐与本人歌单只读请求；组合发行另保留其许可证与固定源码 |
-| qianlipp/fn-music-bridge | AGPL-3.0 | 身份/曲库与协议入口候选 |
+| qianlipp/fn-music-bridge | AGPL-3.0 | 原创 HTTP 身份适配已接入；曲库/其他协议能力仍待实现，真实 NAS 待验 |
 | dtapps/fnmusic-sync | MIT | 事件采集与生命周期研究参考 |
 | guohuiyuan/music-lib | AGPL-3.0 | 公共目录候选，完整性待验证 |
 | QiaoKes/fn-music-tv | GPL-3.0 | TV 登录实现研究参考 |
