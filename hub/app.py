@@ -36,7 +36,7 @@ from .domain import (
 )
 from .errors import HubError
 from .store import Store
-from .worker import Reconciler, matches
+from .worker import Reconciler
 
 COOKIE = "hub_session"
 
@@ -253,6 +253,7 @@ def create_app(
         sid = request.cookies.get(COOKIE)
         session = store.session(sid)
         owner = await identity.current(session["token"])
+        store.check_session(session)
         if owner.key != session["owner"]:
             store.logout(sid)
             raise HubError("auth_required", "会话账号归属已变化，请重新登录", 401)
@@ -339,11 +340,13 @@ def create_app(
     ):
         if not q.strip() or len(q) > 200 or not 1 <= page <= 1000:
             raise HubError("invalid_request", "搜索词或页码不合法")
-        return await catalog.search(context[0], provider, q.strip(), page)
+        return await catalog.search(
+            context[0], provider, q.strip(), page, session=context[1]
+        )
 
     @app.get("/api/accounts")
     async def account_status(context=Depends(authenticated)):
-        return await accounts.status(context[0])
+        return await accounts.status(context[0], context[1])
 
     @app.post("/api/accounts/qq/login", status_code=201)
     async def account_login(body: AccountLoginInput, context=Depends(authenticated)):
@@ -365,7 +368,7 @@ def create_app(
 
     @app.post("/api/accounts/qq/unlink")
     async def account_unlink(body: UnlinkInput, context=Depends(authenticated)):
-        return await accounts.unlink(context[0], body.binding_generation)
+        return await accounts.unlink(context[0], body.binding_generation, context[1])
 
     @app.get("/api/catalog/qq/recommendations")
     async def recommendations(
@@ -380,11 +383,13 @@ def create_app(
             or (kind == "songs" and (page != 1 or cursor != 0))
         ):
             raise HubError("invalid_request", "推荐页码不合法")
-        return await qq_catalog.recommendations(context[0], kind, page, cursor)
+        return await qq_catalog.recommendations(
+            context[0], kind, page, cursor, session=context[1]
+        )
 
     @app.get("/api/catalog/qq/playlists")
     async def account_playlists(context=Depends(authenticated)):
-        return await qq_catalog.playlists(context[0])
+        return await qq_catalog.playlists(context[0], session=context[1])
 
     @app.get("/api/catalog/qq/playlists/{playlist_id}")
     async def playlist_page(
@@ -396,7 +401,9 @@ def create_app(
         playlist_ref(playlist_id, dirid)
         if not 1 <= page <= 100:
             raise HubError("invalid_request", "歌单页码不合法")
-        return await qq_catalog.playlist_page(context[0], playlist_id, dirid, page)
+        return await qq_catalog.playlist_page(
+            context[0], playlist_id, dirid, page, session=context[1]
+        )
 
     @app.post("/api/catalog/qq/playlists/{playlist_id}/snapshots", status_code=201)
     async def create_snapshot(
@@ -406,7 +413,10 @@ def create_app(
         context=Depends(authenticated),
     ):
         return await qq_snapshots.begin(
-            context[0], playlist_ref(playlist_id, dirid), idempotency_key
+            context[0],
+            playlist_ref(playlist_id, dirid),
+            idempotency_key,
+            session=context[1],
         )
 
     @app.get("/api/catalog/qq/playlists/{playlist_id}/snapshots")
@@ -526,6 +536,7 @@ def create_app(
                 409,
             )
         await engines.check_target(owner)
+        store.check_session(context[1])
         task, created = store.submit(
             owner, body, manifest, idempotency_key, engines.runtime_key(owner)
         )
@@ -540,37 +551,13 @@ def create_app(
 
     @app.post("/api/tasks/{task_id}/control")
     async def control(task_id: str, body: ControlInput, context=Depends(authenticated)):
-        owner = context[0]
-        async with reconciler.lock:
-            task = store._owned("tasks", owner.key, task_id)
-            if task["runtime_key"] != engines.runtime_key(owner):
-                raise HubError("conflict", "原引擎绑定已变化", 409)
-            jobs = await engines.tasks(owner)
-            for entry in task["entries"]:
-                if entry["status"] == "completed":
-                    continue
-                job = next(
-                    (
-                        j
-                        for j in jobs
-                        if j["id"] == entry["engine_id"]
-                        and matches(j, entry, task["quality"])
-                    ),
-                    None,
-                )
-                if job is None:
-                    raise HubError(
-                        "outcome_unknown", "原任务不可确认，不能自动重建", 409
-                    )
-                await engines.call(
-                    owner, "POST", f"/api/tasks/{job['id']}/{body.action}", {}
-                )
-                entry["status"], entry["error"] = (
-                    ("paused" if body.action == "pause" else "running"),
-                    None,
-                )
-            task["status"] = "paused" if body.action == "pause" else "running"
-            store.save_task(task)
+        task = await reconciler.control(
+            context[0],
+            task_id,
+            body.action,
+            lambda: store.check_session(context[1]),
+        )
+        store.check_session(context[1])
         return public_task(task)
 
     @app.get("/api/assets")

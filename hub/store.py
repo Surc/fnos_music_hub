@@ -15,6 +15,8 @@ from cryptography.fernet import Fernet, InvalidToken
 from .domain import canonical, digest, now
 from .errors import HubError
 
+DATABASE_SCHEMA = 3
+
 
 class Store:
     def __init__(self, directory: Path):
@@ -33,7 +35,7 @@ class Store:
         self.path = directory / "hub.sqlite3"
         with self.db() as db:
             version = db.execute("PRAGMA user_version").fetchone()[0]
-            if version not in (0, 1, 2, 3):
+            if version not in (0, 1, 2, DATABASE_SCHEMA):
                 raise RuntimeError(
                     "unsupported database schema; restore a compatible backup"
                 )
@@ -68,8 +70,10 @@ class Store:
               CREATE INDEX IF NOT EXISTS captures_source ON playlist_captures(
                 owner, json_extract(payload, '$.source.id'),
                 json_extract(payload, '$.source.dirid'));
-              PRAGMA user_version=3;
+              CREATE INDEX IF NOT EXISTS tasks_active ON tasks(id)
+                WHERE json_extract(payload, '$.status') NOT IN ('completed','failed');
             """)
+            db.execute(f"PRAGMA user_version={DATABASE_SCHEMA}")
         os.chmod(self.path, 0o600)
 
     @contextmanager
@@ -93,7 +97,12 @@ class Store:
     def new_session(self, principal, token, lifetime):
         sid, csrf = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
         with self.db() as db:
-            db.execute("DELETE FROM sessions WHERE expires < ?", (time.time(),))
+            db.execute("BEGIN IMMEDIATE")
+            expired = db.execute(
+                "SELECT id FROM sessions WHERE expires <= ?", (time.time(),)
+            ).fetchall()
+            for row in expired:
+                self._revoke_session(db, row[0])
             db.execute(
                 "INSERT INTO sessions VALUES(?,?,?,?,?)",
                 (
@@ -123,13 +132,52 @@ class Store:
             raise HubError("auth_required", "会话无法解密，请重新登录", 401) from None
         return result
 
+    def check_session(self, session, db=None):
+        """Recheck the original local grant after awaited work, before publication."""
+        if db is None:
+            with self.db() as connection:
+                return self.check_session(session, connection)
+        valid = db.execute(
+            "SELECT 1 FROM sessions WHERE id=? AND owner=? AND csrf=? AND expires>?",
+            (session["id"], session["owner"], session["csrf"], time.time()),
+        ).fetchone()
+        if valid is None:
+            raise HubError("auth_required", "会话已失效，请重新登录", 401)
+
+    @staticmethod
+    def _revoke_session(db, session_id):
+        # Revoke only the still-current candidate owned by this session. An old
+        # session must not erase another session's new candidate or a bound account.
+        rows = db.execute(
+            "SELECT id,owner FROM account_attempts WHERE session=?", (session_id,)
+        ).fetchall()
+        for attempt in rows:
+            row = db.execute(
+                "SELECT payload FROM accounts WHERE owner=? AND provider='qq'",
+                (attempt["owner"],),
+            ).fetchone()
+            if row:
+                account = json.loads(row[0])
+                if (
+                    account.get("attempt_id") == attempt["id"]
+                    and account["state"] != "bound"
+                ):
+                    account.update(
+                        attempt_id=None,
+                        attempt_expires=0,
+                        binding_generation=account["binding_generation"] + 1,
+                    )
+                    db.execute(
+                        "UPDATE accounts SET payload=? WHERE owner=? AND provider='qq'",
+                        (canonical(account), attempt["owner"]),
+                    )
+        db.execute("DELETE FROM account_attempts WHERE session=?", (session_id,))
+        db.execute("DELETE FROM sessions WHERE id=?", (session_id,))
+
     def logout(self, sid):
         with self.db() as db:
-            db.execute("DELETE FROM sessions WHERE id=?", (self.session_hash(sid),))
-            db.execute(
-                "DELETE FROM account_attempts WHERE session=?",
-                (self.session_hash(sid),),
-            )
+            db.execute("BEGIN IMMEDIATE")
+            self._revoke_session(db, self.session_hash(sid))
 
     def cache_song(self, owner, song):
         from .domain import TrackRef
@@ -243,12 +291,11 @@ class Store:
 
     def pending(self):
         with self.db() as db:
-            rows = db.execute("SELECT payload FROM tasks ORDER BY rowid").fetchall()
-        return [
-            t
-            for row in rows
-            if (t := json.loads(row[0]))["status"] not in {"completed", "failed"}
-        ]
+            rows = db.execute(
+                "SELECT payload FROM tasks INDEXED BY tasks_active WHERE json_extract(payload, '$.status') "
+                "NOT IN ('completed','failed') ORDER BY rowid"
+            ).fetchall()
+        return [json.loads(row[0]) for row in rows]
 
     def save_task(self, task):
         with self.db() as db:

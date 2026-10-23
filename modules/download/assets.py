@@ -1,5 +1,6 @@
 """Validate actual audio and serve only the same immutable, owner-authorized file."""
 
+import errno
 import hashlib
 import json
 import os
@@ -15,23 +16,44 @@ def fingerprint(st):
 
 
 def open_private(root, filename):
-    path = Path(filename)
-    if not path.is_absolute() or not path.resolve().is_relative_to(root.resolve()):
+    root, path = Path(root), Path(filename)
+    if (
+        not root.is_absolute()
+        or not path.is_absolute()
+        or ".." in path.parts
+        or not path.is_relative_to(root)
+        or path == root
+    ):
         raise HubError("unsafe_file", "引擎文件不在用户授权目录内", 409)
-    current = path
-    while current != root and current != current.parent:
-        if current.is_symlink():
-            raise HubError("unsafe_file", "不允许通过符号链接访问下载文件", 409)
-        current = current.parent
+    directory = fd = None
     try:
-        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+        # Each lookup is relative to an already-open directory. Checking a path
+        # and then opening it by absolute name leaves its parents replaceable.
+        flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+        directory = os.open("/", flags)
+        for part in path.parts[1:-1]:
+            child = os.open(part, flags, dir_fd=directory)
+            os.close(directory)
+            directory = child
+        fd = os.open(
+            path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=directory
+        )
         st = os.fstat(fd)
         if not stat.S_ISREG(st.st_mode) or st.st_size <= 0 or st.st_size > 2 * 1024**3:
-            os.close(fd)
             raise HubError("invalid_audio", "文件为空、过大或不是普通文件", 409)
-        return fd, st
-    except OSError:
+        result, fd = fd, None
+        return result, st
+    except OSError as exc:
+        if exc.errno in {errno.ELOOP, errno.ENOTDIR}:
+            raise HubError(
+                "unsafe_file", "不允许通过符号链接访问下载文件", 409
+            ) from None
         raise HubError("file_unavailable", "下载文件不可用", 409) from None
+    finally:
+        if directory is not None:
+            os.close(directory)
+        if fd is not None:
+            os.close(fd)
 
 
 def validate_audio(root, filename, song, quality):

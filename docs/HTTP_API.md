@@ -10,6 +10,8 @@
 
 登录通过音桥验证用户 GUID。浏览器仅持有 HttpOnly / SameSite=Strict 会话 Cookie，CSRF token 留在页面内存。所有私人请求重新向音桥验证会话；无效身份、缺 GUID、账号归属变化或音桥不可用均拒绝，没有 shared 回退。
 
+注销会撤销本地会话。外部等待结束后、缓存/接单/任务控制等边界重新检查；会话已撤销则返回 401。已经接收并持久化的下载继续执行，注销不等于取消下载。未完成的 QQ 登录尝试随当前会话清理，已关联账号保持原 owner 归属。
+
 所有写入需要与配置一致的 Origin，登录之外还需要 `X-CSRF-Token`。未知字段返回 422；错误响应只有 `error.code`、`error.message`，不会回显密码或原始上游报文。
 
 | 方法 / 路径 | 实现行为 |
@@ -50,6 +52,8 @@ QQ 平台失效返回 `platform_auth_required`（409），不退出飞牛会话�
 TrackRef 三字段全部为字符串；酷我使用 provider=kuwo/id_type=rid，QQ 区分 songmid/songid，数值只在 Hot DTO 边界转换。QQ/网易的 id_type 不能互换。
 
 状态包括 queued/running/paused/completed/failed/attention，条目另外有 submitting/outcome_unknown。整个任务只有所有条目校验成功才完成，部分失败保留每项状态。unknown 只回读核对，不能作为普通失败自动重发。
+
+批量 control 不是远端原子事务：每个原生动作前先保存意图，逐项回读后保存实际状态。中途失败可能已有部分操作成功，应 GET 回读；后台也会在重启后继续核对，不自动重复未知操作。多个条目或 Hub 任务可引用同一原生任务；无需发送操作时仍同步已观察到的状态。Hot 已完成、本地音频校验失败的 retry 只重新验证文件，不创建新下载。
 
 文件校验包含真实容器/编码、完整解码、与元数据时长的误差阈值、最低目标码率或 Hi-Res 参数以及 SHA256。它不能证明来源文件从未被上游转码，也不据此宣称原版母带。下载失败原因按静态规则分类，地区限制显示 region_restricted，音质不匹配显示 quality_unavailable，其余不暴露未经清洗的原始报文。
 

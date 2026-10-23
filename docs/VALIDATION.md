@@ -1,5 +1,23 @@
 # 验证记录
 
+## 2026-10-23：Astra 整体审核修复
+
+基线 main `d6bef0aad6ae1c8774db9d0c023a3e17438a7359`（PR #2 已合并），其 [Actions 39955616620](https://github.com/Surc/fnos_music_hub/actions/runs/39955616620) 六项通过。本轮在 `fix/astra-review-hardening` 修复，逐项说明见 [Astra 记录](ASTRA_REVIEW_FIXES.md)。固定上游和真实平台证据未变。
+
+- 本地 Python 3.12、可选 QQ SDK 环境：完整 `pytest -q` **120 passed**，包含新增 **20 项**审核回归；仅保留既有 Starlette/httpx 弃用提示。覆盖部分控制超时/重启、共用 Hot job、原生完成后本地重验、并发控制、注销边界、扫码清理、目录 FD 竞态与活动索引。
+- `npm run check` 与 jsdom **31 passed**。新增失败的下一页/上一页/推荐游标重试、慢刷新单请求与切页隔离；文件详情核对实际 container/codec。新分页用例最初未等待按钮加载完成，补上可操作状态等待后定向和完整测试均通过。
+- Astra 二次审核发现共享原生任务状态未同步的 P2 回归，修复后独立跑相关 **6 项**定向测试通过，确认关闭；未发现这处修复新的阻断问题。
+- Ruff、`git diff --check`、14 个来源观察/研究原文/skill 摘要和本地链接检查通过。清单已统一 schema 3、完整快照能力、合并采用证据；维护 skill 1.4.2 按仓库及个人 Skills Git 同步。
+- 本地 `npm run test:browser` 在启动时因缺少 Chromium 可执行文件失败，**没有算作通过**。十视口脚本新增 QQ 第 2 页失败后仍重试第 2 页、文件容器字段断言；远端 CI 结果另行追加。
+
+所有平台响应与账号为合成边界，音频为生成测试音；真实 QQ/NAS、酷我本地复测、手机硬件与 FPK 仍按原验收清单。GitHub 连接器创建分支返回 403（集成无写权限），使用用户已授权的网页登录提交流程。
+
+远端已提交 [PR #3](https://github.com/Surc/fnos_music_hub/pull/3)。代码提交 `f2f7174aefc7a6ee8ff986e273f75d7fe64e0762` 的完整内容树 `3b4ea6497c4125f53639fdd3188cff1776834bce` 与本地已测 `8e392e2525e951ca461f8bdf39590643508a1b4e` 相同。维护 skill 已推送个人 Skills Git `1e33b59a21b2adc2c10dcca56336c2cb8c19e680`。来源校验另用独立临时副本确认错误 schema、快照能力和采用 SHA 均能被拒绝。
+
+同一代码 SHA 的 [push 39970198087](https://github.com/Surc/fnos_music_hub/actions/runs/39970198087) 已通过 core 3.12、QQ 3.11/3.12、web 和 browser；[PR 39970615832](https://github.com/Surc/fnos_music_hub/actions/runs/39970615832) 已通过 core 3.11/3.12、QQ 3.11/3.12 和 web。基础模式 **109 passed / 1 skipped**，QQ 模式 **120 passed**，jsdom **31 passed**，Chromium **10 种视口通过**；依赖检查、wheel、Ruff、来源检查包含在对应已成功作业内。归档时两次运行各有一项仍在安装环境依赖，未将其标成整组完成；逐项成功的 job/run ID 保存在来源清单，最终合并检查以 PR 为准。
+
+浏览器证据取自 push 的作业 `120470533606`，附件 `12509485229` 的 SHA256 为 `99721c3c0a7394a345976c0cf88c332a18782a351667d57257a23d8898e67d3f`。保存未改写的 [十视口原始报告](qq-ui-screenshots/astra-browser-report.json)，包含失败翻页同页重试与实际容器/编码显示，以及已有快照、旋转、1000 项、解绑后历史与删除流程。报告摘要纳入自动检查；真实设备与平台结论不变。
+
 ## 2026-10-23：合并后复查与恢复修复
 
 基于 main `535ed137c4bcc9827dc74106cdde7b434482a760`。该合并提交 [Actions 39948660461](https://github.com/Surc/fnos_music_hub/actions/runs/39948660461) 六项全部通过；替代此前仅记录提交前 CI 的交接状态。

@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "repository": "Surc/fnos_music_hub",
-  "stage": "qq-playlist-snapshot-development",
+  "stage": "astra-review-hardening-development",
   "recorded_on": "2026-10-23",
-  "observation_policy": "Inherited from the fixed-source v1.6 research of 2026-10-21. Not a claim of fresh upstream heads. No runtime source adopted in this bootstrap.",
+  "observation_policy": "Source observations remain those of the fixed-source v1.6 research on 2026-10-21, not fresh upstream heads. Adopted integration pins are backed by merged Hub code; runtime/NAS acceptance remains separate.",
   "design_archive": {
     "path": "docs/design-goals-v1.6-20261021.txt",
     "version": "1.6",
@@ -59,10 +59,25 @@
       "observed_branch": null,
       "observed_commit": "07e86c3d06243cf1350925c0dd3be704005abd29",
       "version_file_or_documented_version": null,
-      "status": "candidate",
+      "status": "adopted_integration_real_acceptance_partial_or_pending",
       "planned_role": "QQ/酷我下载引擎；QQ 登录/刷新单一所有者",
-      "adopted_commit": null,
-      "adoption_evidence": null,
+      "adopted_commit": "07e86c3d06243cf1350925c0dd3be704005abd29",
+      "adoption_evidence": {
+        "hub_merge_commit": "535ed137c4bcc9827dc74106cdde7b434482a760",
+        "pull_request": "https://github.com/Surc/fnos_music_hub/pull/1",
+        "verified_main_commit": "d6bef0aad6ae1c8774db9d0c023a3e17438a7359",
+        "verified_on": "2026-10-23",
+        "components": [
+          "Hot metadata/download HTTP facade",
+          "QQ account facade"
+        ],
+        "integration_modes": [
+          "original thin HTTP client; no copied runtime source",
+          "original HTTP QR client plus protected read-only native credential store; Hot alone owns login/refresh; explicit Hub consent"
+        ],
+        "upstream_patch_files": [],
+        "real_platform_acceptance": "See per-component acceptance; not implied by merge."
+      },
       "license_record": "Apache-2.0",
       "license_status": "LICENSE checked at fixed commit during implementation",
       "evidence_path": "docs/design-goals-v1.6-20261021.txt"
@@ -74,10 +89,23 @@
       "observed_branch": null,
       "observed_commit": "27861e51432ea6b6e88dc35c4e8c8e239c0339e8",
       "version_file_or_documented_version": "0.8.2",
-      "status": "candidate",
+      "status": "adopted_integration_real_acceptance_partial_or_pending",
       "planned_role": "QQ 账号推荐、私人列表和明确云端收藏；不竞争凭据刷新",
-      "adopted_commit": null,
-      "adoption_evidence": null,
+      "adopted_commit": "27861e51432ea6b6e88dc35c4e8c8e239c0339e8",
+      "adoption_evidence": {
+        "hub_merge_commit": "535ed137c4bcc9827dc74106cdde7b434482a760",
+        "pull_request": "https://github.com/Surc/fnos_music_hub/pull/1",
+        "verified_main_commit": "d6bef0aad6ae1c8774db9d0c023a3e17438a7359",
+        "verified_on": "2026-10-23",
+        "components": [
+          "QQ read-only catalog"
+        ],
+        "integration_modes": [
+          "optional unmodified Python SDK library; upstream request/sign/transport/errors; immutable per-call credentials; no refresh or credential pool"
+        ],
+        "upstream_patch_files": [],
+        "real_platform_acceptance": "See per-component acceptance; not implied by merge."
+      },
       "license_record": "GPL-3.0-or-later",
       "license_status": "LICENSE and package metadata checked at fixed commit on 2026-10-22; optional SDK integration, no upstream patch",
       "evidence_path": "docs/design-goals-v1.6-20261021.txt"
@@ -179,10 +207,23 @@
       "observed_branch": "main",
       "observed_commit": "ad9ce203cbb7fdb54f9404a7abb2df605893f388",
       "version_file_or_documented_version": null,
-      "status": "candidate",
+      "status": "adopted_integration_real_acceptance_partial_or_pending",
       "planned_role": "FnIdentity/FnLibrary 同一主上游；认证后事件出口",
-      "adopted_commit": null,
-      "adoption_evidence": null,
+      "adopted_commit": "ad9ce203cbb7fdb54f9404a7abb2df605893f388",
+      "adoption_evidence": {
+        "hub_merge_commit": "535ed137c4bcc9827dc74106cdde7b434482a760",
+        "pull_request": "https://github.com/Surc/fnos_music_hub/pull/1",
+        "verified_main_commit": "d6bef0aad6ae1c8774db9d0c023a3e17438a7359",
+        "verified_on": "2026-10-23",
+        "components": [
+          "FnIdentity"
+        ],
+        "integration_modes": [
+          "original HTTP client; no copied signer/auth implementation"
+        ],
+        "upstream_patch_files": [],
+        "real_platform_acceptance": "See per-component acceptance; not implied by merge."
+      },
       "license_record": "AGPL-3.0",
       "license_status": "recorded_in_research_recheck_before_adoption",
       "evidence_path": "docs/design-goals-v1.6-20261021.txt"
@@ -301,13 +342,13 @@
   ],
   "maintenance_skill": {
     "name": "maintain-fnos-music-hub",
-    "version": "1.4.1",
+    "version": "1.4.2",
     "files": {
-      "skills/maintain-fnos-music-hub/SKILL.md": "0e11440346566270ab7db00c58814db882491085ce177d5f1a58e6b3d6371e37",
+      "skills/maintain-fnos-music-hub/SKILL.md": "c84bd91371e1ada237dffe75ab0e81a57990f76964a8e3e34fd5c3302f5adb9a",
       "skills/maintain-fnos-music-hub/agents/openai.yaml": "43f885a269d77d2173f7480c43e58afcab96777c2546511cdaeb4636349ed40d",
       "skills/maintain-fnos-music-hub/assets/icon.svg": "9be88f8dd4c5e658961515c71389eafd45142ffa68bcae58e8dcff57d178ed91"
     },
-    "personal_skill_git_commit": "3f7fc35de7576d7c8fe778e92336574ed7e422e7"
+    "personal_skill_git_commit": "1e33b59a21b2adc2c10dcca56336c2cb8c19e680"
   },
   "project_release": {
     "tag": null,
@@ -373,17 +414,18 @@
         "account-scoped recommended playlists using continuation cursor",
         "guess songs (not daily recommendation)",
         "created playlist directory",
-        "100-item page-only details preserving duplicate/unknown entries"
+        "100-item page-only details preserving duplicate/unknown entries",
+        "two-pass immutable full playlist snapshot, <=1000 items/512 KiB, atomic=false"
       ],
       "personalization": "unverified",
-      "full_playlist_export": false,
+      "full_playlist_export": true,
       "live_account_validation": "not_run",
       "evidence": "docs/QQ_ACCOUNTS.md",
       "snapshot_integrity": "two_full_reads; no verified atomic upstream version"
     }
   ],
-  "implementation_branch": "feat/core-download-slice",
-  "adoption_policy": "Main-branch source adoption stays null until the implementation is merged. Interface pins on the development branch do not imply NAS/runtime acceptance.",
+  "implementation_branch": "fix/astra-review-hardening",
+  "adoption_policy": "Advance adopted_commit only for an adapter or dependency already merged on main, with its integration mode and merge evidence. HTTP integration does not vendor upstream code; adoption does not imply real platform or NAS acceptance.",
   "runtime_dependencies": {
     "lockfile": "requirements.lock",
     "python": "3.11+",
@@ -394,7 +436,7 @@
       "native Hot server",
       "Yinqiao API"
     ],
-    "database_schema": 2,
+    "database_schema": 3,
     "optional_qq": {
       "lockfile": "requirements-qq.lock",
       "lockfile_sha256": "9dfb18da730249e84edad336b306aba5e3ccd31db61b5b220acef004cc44a4f4",
@@ -585,6 +627,73 @@
       "browser_evidence_workflow_run": 39953939767,
       "core_python_tests": 89,
       "core_skipped": 1
+    },
+    "astra_review_hardening": {
+      "status": "controlled_tests_and_browser_passed_real_platform_pending",
+      "guide": "docs/ASTRA_REVIEW_FIXES.md",
+      "baseline_commit": "d6bef0aad6ae1c8774db9d0c023a3e17438a7359",
+      "baseline_main_workflow_run": 39955616620,
+      "review_model": "gpt-6-astra",
+      "new_python_regressions": 20,
+      "frontend_jsdom_tests": 31,
+      "astra_targeted_recheck_tests": 6,
+      "real_platform_acceptance": "unchanged; real QQ/NAS pending and Kuwo regional failures retained",
+      "upstream_patch_files": [],
+      "python_qq_tests": 120,
+      "local_browser_validation": "not_run_missing_chromium",
+      "validation_commit": "f2f7174aefc7a6ee8ff986e273f75d7fe64e0762",
+      "validation_tree": "3b4ea6497c4125f53639fdd3188cff1776834bce",
+      "local_implementation_commit": "8e392e2525e951ca461f8bdf39590643508a1b4e",
+      "pull_request": 3,
+      "python_base_tests": 109,
+      "python_base_skipped": 1,
+      "browser_viewports": 10,
+      "browser_evidence_workflow_run": 39970198087,
+      "browser_artifact_id": 12509485229,
+      "browser_artifact_sha256": "99721c3c0a7394a345976c0cf88c332a18782a351667d57257a23d8898e67d3f",
+      "browser_validation": "chromium_10_viewports_passed_synthetic_api",
+      "validation_jobs": [
+        {
+          "name": "core (3.11)",
+          "workflow_run": 39970615832,
+          "job_id": 120471988017,
+          "conclusion": "success"
+        },
+        {
+          "name": "core (3.12)",
+          "workflow_run": 39970198087,
+          "job_id": 120470533199,
+          "conclusion": "success"
+        },
+        {
+          "name": "qq (3.11)",
+          "workflow_run": 39970198087,
+          "job_id": 120470533348,
+          "conclusion": "success"
+        },
+        {
+          "name": "qq (3.12)",
+          "workflow_run": 39970198087,
+          "job_id": 120470533565,
+          "conclusion": "success"
+        },
+        {
+          "name": "web",
+          "workflow_run": 39970198087,
+          "job_id": 120470533217,
+          "conclusion": "success"
+        },
+        {
+          "name": "browser",
+          "workflow_run": 39970198087,
+          "job_id": 120470533606,
+          "conclusion": "success"
+        }
+      ],
+      "validation_note": "Successful jobs on the exact same code SHA across push and PR runs; not a claim that either entire workflow had finished at evidence-recording time.",
+      "evidence_files_sha256": {
+        "docs/qq-ui-screenshots/astra-browser-report.json": "66ee6eed06ad5ea9da69e849418820ee7430923b12bfee93997b31c29978a774"
+      }
     }
   }
 }

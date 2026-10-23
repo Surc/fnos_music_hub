@@ -129,6 +129,24 @@ class Upstream:
                     "simulated lost acknowledgement", request=request
                 )
             return httpx.Response(200, json={"outcome": "created", "task": job})
+        if path.startswith("/api/tasks/"):
+            job_id, action = path.rsplit("/", 2)[1:]
+            job = next((j for j in self.jobs[port] if j["id"] == job_id), None)
+            if job is None:
+                return httpx.Response(404, json={"error": "missing"})
+            if action == "retry":
+                retried = job["status"] == "error"
+                if retried:
+                    job["status"] = "waiting"
+                return httpx.Response(200, json={"retried": retried})
+            allowed = {
+                "pause": {"waiting", "downloading"},
+                "resume": {"paused", "interrupted"},
+            }
+            if action not in allowed or job["status"] not in allowed[action]:
+                return httpx.Response(400, json={"error": "invalid state"})
+            job["status"] = "paused" if action == "pause" else "downloading"
+            return httpx.Response(200, json={"ok": True})
         return httpx.Response(200, json={"ok": True})
 
 
