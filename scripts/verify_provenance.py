@@ -81,6 +81,7 @@ if optional:
 for evidence in (
     manifest.get("acceptance", {}).get("responsive_ui", {}),
     manifest.get("acceptance", {}).get("qq_accounts_and_catalog", {}),
+    manifest.get("acceptance", {}).get("qq_playlist_snapshots", {}),
 ):
     for path, digest in evidence.get("evidence_files_sha256", {}).items():
         check_file_digest(path, digest)
