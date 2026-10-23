@@ -6,7 +6,15 @@
 
 复查先复现 4 个失败场景：初始写入失败、取消清理写入失败各造成持续 409；空历史后生成成功缺少查看入口；QQ 翻页 503 清空本地快照入口。修复后定向测试通过。新增测试还覆盖完成发布/删除事务回滚、跨用户历史及游标拒绝、分页/重启、删除重放/CSRF/在途冲突、冷却保留和同键不重抓，QQ 关闭时的本地历史、1000 项原序/重复/未知、分页/确认删除、迟到历史不得覆盖完成状态或退出后页面。
 
-本地 Python **100 passed**，前台 jsdom **27 passed**；Ruff 与 Node 语法通过。已有 Starlette/httpx 弃用提示保留。本地 Chromium 未安装，`npm run test:browser` 在启动阶段失败；未将其计作通过。十视口新增 1000 项滚动、解绑后本地查看、确认删除，等待本分支 GitHub Actions 实跑后补记。全部平台响应为合成测试，未新增真实 QQ/NAS/FPK 结论。
+本地 Python **100 passed**，前台 jsdom **27 passed**；Ruff 与 Node 语法通过。已有 Starlette/httpx 弃用提示保留。本地 Chromium 未安装，`npm run test:browser` 在启动阶段失败；未将其计作通过。十视口新增 1000 项滚动、解绑后本地查看、确认删除；远端实际结果见下文。全部平台响应为合成测试，未新增真实 QQ/NAS/FPK 结论。
+
+远端交付：GitHub 连接器写入返回 403，继续使用用户此前授权的网页登录提交。`4151d38c096178025d09a00c37704aa06a317cc0` 的完整内容树 `2741590cd37ccaafccb5523df25768b26f065d97` 与本地已测版本一致，形成 PR #2。首次 [Actions 39952921386](https://github.com/Surc/fnos_music_hub/actions/runs/39952921386) 五项通过，browser 因新增脚本在扫码尚未关联时提前执行快照历史导航，被真实弹层拦截而失败。修正提交 `3d8cc1479be866fe88f57942e1100e5b52a8efab` 仅移除误插入的前置步骤，保留解绑后的本地快照检查；没有改变应用运行代码。
+
+第二次 [Actions 39953230850](https://github.com/Surc/fnos_music_hub/actions/runs/39953230850) 五项通过，browser 在 1440×900 的 1000 项明细中检出实际界面缺陷：弹层 y=141、高度=868，底部超出视口。桌面定位按 650 像素计算，但内容高度此前只受视口约束。修复为弹层/内部容器分别最多 650/648 像素，并保留小视口限制和内部列表滚动；曲目长文本允许任意位置换行。额外加入 504 字符无空格标题的横向溢出断言。提交 `33a326af18d107fd6713ec5270b6140067dc1e3f` 内容树 `24592f7f7024aa996d710869f7b9d8a19e18cc3c` 与本地修复完全一致。
+
+该提交的 push [Actions 39953935354](https://github.com/Surc/fnos_music_hub/actions/runs/39953935354) 六项全部通过：core 3.11/3.12、QQ 3.11/3.12、web、browser。基础模式 **89 passed / 1 skipped**，QQ 模式 **100 passed**、前台 **27 passed**、Chromium **10 种视口**；锁定依赖、Ruff、来源/文档与 wheel 构建通过。同 SHA 的 PR [Actions 39953939767](https://github.com/Surc/fnos_music_hub/actions/runs/39953939767) 浏览器作业也通过，下述证据取自该作业。完整流程覆盖原分页、选曲及酷我确认任务，新增 1000 项/长标题、旋转、解绑后本地读取与确认删除，没有额外创建下载任务。
+
+附件 `12500888740` 下载后 SHA256 为 `780a3658956a9a04146392453ce25abd64735b7ca3a5bdef3be6ee4876f5a88a`。已保存未改写的 [原始报告](qq-ui-screenshots/qq-recovery-browser-report.json)，并逐张检查 [PC 横屏](qq-ui-screenshots/qq-recovery-pc-landscape.png)、[PC 竖屏](qq-ui-screenshots/qq-recovery-pc-portrait.png)、[手机竖屏](qq-ui-screenshots/qq-recovery-mobile-portrait.png)、[手机横屏](qq-ui-screenshots/qq-recovery-mobile-landscape.png) 的列表尾部和可见关闭入口。源码清单记录每个文件的摘要，验证脚本一并检查；此前失败运行和旧截图保留。这些均为合成 API，不证明真实 QQ/NAS 可用。
 
 ## 2026-10-23：QQ 完整歌单快照
 
