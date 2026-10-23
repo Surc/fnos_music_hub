@@ -3,6 +3,7 @@
 
 This intentionally does not claim to verify live upstreams or runtime behavior.
 """
+import ast
 import hashlib
 import json
 import re
@@ -68,8 +69,28 @@ for adapter in manifest.get("implemented_adapters", []):
     source = next((s for s in manifest["sources"] if s["repository"] == adapter["source_repository"]), None)
     check(source is not None and source["observed_commit"] == adapter["interface_commit"],
           f"Adapter pin differs from fixed source: {adapter['component']}")
+    if source is not None and source["adopted_commit"] is not None:
+        check(source["adopted_commit"] == adapter["interface_commit"],
+              f"Adopted source differs from adapter pin: {adapter['component']}")
     for path in adapter["files"]:
         check((ROOT / path).is_file(), f"Missing adapter file: {path}")
+
+schema_constants = [
+    node.value.value
+    for node in ast.parse((ROOT / "hub/store.py").read_text()).body
+    if isinstance(node, ast.Assign)
+    and any(isinstance(target, ast.Name) and target.id == "DATABASE_SCHEMA" for target in node.targets)
+    and isinstance(node.value, ast.Constant)
+]
+check(len(schema_constants) == 1, "Missing unique runtime DATABASE_SCHEMA constant")
+if len(schema_constants) == 1:
+    check(manifest["runtime_dependencies"]["database_schema"] == schema_constants[0],
+          "Runtime database schema differs from source manifest")
+    check(manifest["acceptance"]["qq_playlist_snapshots"]["database_schema"] == schema_constants[0],
+          "Snapshot database schema differs from runtime")
+qq_catalog = next(a for a in manifest["implemented_adapters"] if a["component"] == "QQ read-only catalog")
+check(qq_catalog["full_playlist_export"] == manifest["acceptance"]["qq_accounts_and_catalog"]["full_playlist_export"],
+      "QQ full playlist export capability records disagree")
 
 optional = manifest.get("runtime_dependencies", {}).get("optional_qq")
 if optional:
