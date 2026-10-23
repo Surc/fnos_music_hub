@@ -39,7 +39,7 @@
 
 QQ 平台失效返回 `platform_auth_required`（409），不退出飞牛会话、不回退公共内容。私人响应带 AccountRef/绑定代次/修订；网络请求后重新核对原生凭据和绑定，旧响应返回 binding_changed 且不缓存。recommendations 的 personalization=unverified，不能据此声称私人算法已验证。详细存储/上游/竞态边界见 [QQ 模块](QQ_ACCOUNTS.md)。无音质或未知时长的条目仍能浏览和收藏，但不能通过本版严格下载准入。
 
-清单上限 1000 项 / 512 KiB，请求体上限 600 KiB；超限明确拒绝。此处的 complete 只适用于用户明确选择的完整输入，不能用于宣称远端分页歌单已完整抓取。任务保存独立清单副本及请求哈希。
+清单上限 1000 项 / 512 KiB，请求体上限 600 KiB；超限明确拒绝。显式选曲的 complete 只适用于用户选择的完整输入。新增远端 QQ 快照使用独立的两轮全量读取判定，complete=true 必须结合 integrity=double_read_verified、source.verification.atomic=false 解读；不提供平台原子快照保证。端点、冷却、失败与重启恢复见 [QQ 完整快照](QQ_SNAPSHOTS.md)。任务保存独立清单副本及请求哈希。
 
 TrackRef 三字段全部为字符串；酷我使用 provider=kuwo/id_type=rid，QQ 区分 songmid/songid，数值只在 Hot DTO 边界转换。QQ/网易的 id_type 不能互换。
 
