@@ -1,5 +1,17 @@
 # 验证记录
 
+## 2026-10-23：Astra 整体审核修复
+
+基线 main `d6bef0aad6ae1c8774db9d0c023a3e17438a7359`（PR #2 已合并），其 [Actions 39955616620](https://github.com/Surc/fnos_music_hub/actions/runs/39955616620) 六项通过。本轮在 `fix/astra-review-hardening` 修复，逐项说明见 [Astra 记录](ASTRA_REVIEW_FIXES.md)。固定上游和真实平台证据未变。
+
+- 本地 Python 3.12、可选 QQ SDK 环境：完整 `pytest -q` **120 passed**，包含新增 **20 项**审核回归；仅保留既有 Starlette/httpx 弃用提示。覆盖部分控制超时/重启、共用 Hot job、原生完成后本地重验、并发控制、注销边界、扫码清理、目录 FD 竞态与活动索引。
+- `npm run check` 与 jsdom **31 passed**。新增失败的下一页/上一页/推荐游标重试、慢刷新单请求与切页隔离；文件详情核对实际 container/codec。新分页用例最初未等待按钮加载完成，补上可操作状态等待后定向和完整测试均通过。
+- Astra 二次审核发现共享原生任务状态未同步的 P2 回归，修复后独立跑相关 **6 项**定向测试通过，确认关闭；未发现这处修复新的阻断问题。
+- Ruff、`git diff --check`、14 个来源观察/研究原文/skill 摘要和本地链接检查通过。清单已统一 schema 3、完整快照能力、合并采用证据；维护 skill 1.4.2 按仓库及个人 Skills Git 同步。
+- 本地 `npm run test:browser` 在启动时因缺少 Chromium 可执行文件失败，**没有算作通过**。十视口脚本新增 QQ 第 2 页失败后仍重试第 2 页、文件容器字段断言；远端 CI 结果另行追加。
+
+所有平台响应与账号为合成边界，音频为生成测试音；真实 QQ/NAS、酷我本地复测、手机硬件与 FPK 仍按原验收清单。GitHub 连接器创建分支返回 403（集成无写权限），使用用户已授权的网页登录提交流程。
+
 ## 2026-10-23：合并后复查与恢复修复
 
 基于 main `535ed137c4bcc9827dc74106cdde7b434482a760`。该合并提交 [Actions 39948660461](https://github.com/Surc/fnos_music_hub/actions/runs/39948660461) 六项全部通过；替代此前仅记录提交前 CI 的交接状态。
