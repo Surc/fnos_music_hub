@@ -629,7 +629,7 @@
       "core_skipped": 1
     },
     "astra_review_hardening": {
-      "status": "local_checks_passed_remote_ci_pending",
+      "status": "controlled_tests_and_browser_passed_real_platform_pending",
       "guide": "docs/ASTRA_REVIEW_FIXES.md",
       "baseline_commit": "d6bef0aad6ae1c8774db9d0c023a3e17438a7359",
       "baseline_main_workflow_run": 39955616620,
@@ -641,7 +641,59 @@
       "upstream_patch_files": [],
       "python_qq_tests": 120,
       "local_browser_validation": "not_run_missing_chromium",
-      "browser_viewports_planned": 10
+      "validation_commit": "f2f7174aefc7a6ee8ff986e273f75d7fe64e0762",
+      "validation_tree": "3b4ea6497c4125f53639fdd3188cff1776834bce",
+      "local_implementation_commit": "8e392e2525e951ca461f8bdf39590643508a1b4e",
+      "pull_request": 3,
+      "python_base_tests": 109,
+      "python_base_skipped": 1,
+      "browser_viewports": 10,
+      "browser_evidence_workflow_run": 39970198087,
+      "browser_artifact_id": 12509485229,
+      "browser_artifact_sha256": "99721c3c0a7394a345976c0cf88c332a18782a351667d57257a23d8898e67d3f",
+      "browser_validation": "chromium_10_viewports_passed_synthetic_api",
+      "validation_jobs": [
+        {
+          "name": "core (3.11)",
+          "workflow_run": 39970615832,
+          "job_id": 120471988017,
+          "conclusion": "success"
+        },
+        {
+          "name": "core (3.12)",
+          "workflow_run": 39970198087,
+          "job_id": 120470533199,
+          "conclusion": "success"
+        },
+        {
+          "name": "qq (3.11)",
+          "workflow_run": 39970198087,
+          "job_id": 120470533348,
+          "conclusion": "success"
+        },
+        {
+          "name": "qq (3.12)",
+          "workflow_run": 39970198087,
+          "job_id": 120470533565,
+          "conclusion": "success"
+        },
+        {
+          "name": "web",
+          "workflow_run": 39970198087,
+          "job_id": 120470533217,
+          "conclusion": "success"
+        },
+        {
+          "name": "browser",
+          "workflow_run": 39970198087,
+          "job_id": 120470533606,
+          "conclusion": "success"
+        }
+      ],
+      "validation_note": "Successful jobs on the exact same code SHA across push and PR runs; not a claim that either entire workflow had finished at evidence-recording time.",
+      "evidence_files_sha256": {
+        "docs/qq-ui-screenshots/astra-browser-report.json": "66ee6eed06ad5ea9da69e849418820ee7430923b12bfee93997b31c29978a774"
+      }
     }
   }
 }
