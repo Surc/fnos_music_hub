@@ -1,4 +1,13 @@
 interface:
-  display_name: "维护飞牛音乐 Hub"
-  short_description: "维护独立飞牛音乐中心的模块接口、上游版本、用户隔离与原生 FPK"
-  default_prompt: "使用 $maintain-fnos-music-hub 接续 Surc/fnos_music_hub，先核对来源和迭代记录，再完成本次模块开发与验证。"
+  display_name: 维护飞牛音乐 Hub
+  short_description: 维护独立飞牛音乐中心的模块接口、上游版本、用户隔离与原生 FPK
+  default_prompt: 使用 $maintain-fnos-music-hub 接续 Surc/fnos_music_hub，先核对来源和迭代记录，再完成本次模块开发与验证。
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true

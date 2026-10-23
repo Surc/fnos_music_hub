@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content"
+    />
+    <meta name="theme-color" content="#23644a" />
+    <title>飞牛音乐 Hub</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <script type="module" src="/static/app.js"></script>
+  </head>
+  <body>
+    <svg
+      class="icon-definitions"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <symbol id="icon-discover" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" />
+        <path d="m16 8-2 6-6 2 2-6Z" />
+      </symbol>
+      <symbol id="icon-collections" viewBox="0 0 24 24">
+        <path d="M4 4v16M8 4v16M13 4l6 16M2 20h20" />
+      </symbol>
+      <symbol id="icon-downloads" viewBox="0 0 24 24">
+        <path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5" />
+      </symbol>
+      <symbol id="icon-accounts" viewBox="0 0 24 24">
+        <circle cx="12" cy="8" r="4" />
+        <path d="M4 21v-2a8 8 0 0 1 16 0v2" />
+      </symbol>
+      <symbol id="icon-storage" viewBox="0 0 24 24">
+        <path d="M3 7V4h7l3 3h8v14H3ZM3 11h18" />
+      </symbol>
+      <symbol id="icon-injection" viewBox="0 0 24 24">
+        <path d="M8 2v5m8-5v5M6 7h12v5a6 6 0 0 1-12 0Zm6 11v4" />
+      </symbol>
+      <symbol id="icon-search" viewBox="0 0 24 24">
+        <circle cx="10" cy="10" r="7" />
+        <path d="m15 15 6 6" />
+      </symbol>
+      <symbol id="icon-close" viewBox="0 0 24 24">
+        <path d="m6 6 12 12M6 18 18 6" />
+      </symbol>
+    </svg>
+    <section id="login" class="login-shell" aria-label="登录飞牛音乐">
+      <div class="login-brand">
+        <span class="mark" aria-hidden="true">♪</span
+        ><span class="eyebrow">FNOS MUSIC HUB</span>
+        <h1>音乐，各归其位。</h1>
+        <p>你的歌单、收藏和下载，跟随你的飞牛音乐账号。</p>
+        <span class="version">开发版 · 0.1</span>
+      </div>
+      <form id="login-form" class="login-card">
+        <h2>登录飞牛音乐</h2>
+        <p class="muted">使用当前 NAS 的飞牛音乐账号</p>
+        <label
+          >用户名<input
+            name="username"
+            autocomplete="username"
+            required
+            maxlength="256" /></label
+        ><label
+          >密码<input
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            required
+            maxlength="1024"
+        /></label>
+        <p id="login-error" class="error" role="alert" hidden></p>
+        <button class="primary" type="submit">登录</button>
+        <p class="small muted">需要管理员先配置音桥与独立下载引擎。</p>
+      </form>
+    </section>
+    <div id="shell" hidden>
+      <a class="skip-link" href="#main">跳到页面内容</a>
+      <aside class="sidebar" aria-label="音乐中心导航">
+        <a class="brand" href="/" aria-label="音乐 Hub 首页"
+          ><span aria-hidden="true">♪</span
+          ><span class="brand-name">音乐 Hub</span></a
+        ><span class="version sidebar-version">开发版 · 0.1</span>
+        <nav class="primary-nav" aria-label="主要导航">
+          <button data-view="discover" aria-label="发现" aria-current="page">
+            <svg class="icon" aria-hidden="true">
+              <use href="#icon-discover" /></svg
+            ><span>发现</span>
+          </button>
+          <button data-view="collections" aria-label="我的歌单">
+            <svg class="icon" aria-hidden="true">
+              <use href="#icon-collections" /></svg
+            ><span class="desktop-label">我的歌单</span
+            ><span class="mobile-label">歌单</span>
+          </button>
+          <button data-view="downloads" aria-label="下载管理">
+            <svg class="icon" aria-hidden="true">
+              <use href="#icon-downloads" /></svg
+            ><span class="desktop-label">下载管理</span
+            ><span class="mobile-label">下载</span>
+          </button>
+          <button data-view="accounts" aria-label="我的与平台账号">
+            <svg class="icon" aria-hidden="true">
+              <use href="#icon-accounts" /></svg
+            ><span class="desktop-label">平台账号</span
+            ><span class="mobile-label">我的</span>
+          </button>
+        </nav>
+        <div id="admin-nav" hidden>
+          <p class="nav-label">管理员</p>
+          <nav class="admin-navigation" aria-label="管理员设置">
+            <button data-view="storage">
+              <svg class="icon" aria-hidden="true">
+                <use href="#icon-storage" /></svg
+              ><span>下载与曲库</span></button
+            ><button data-view="injection">
+              <svg class="icon" aria-hidden="true">
+                <use href="#icon-injection" /></svg
+              ><span>飞牛注入</span>
+            </button>
+          </nav>
+        </div>
+        <div class="sidebar-note">
+          <span class="status-dot"></span>独立音乐中心
+          <p>歌单 · 下载 · 飞牛音乐</p>
+        </div>
+      </aside>
+      <div class="workspace">
+        <header class="topbar">
+          <span class="mobile-brand" aria-hidden="true">♪ 音乐 Hub</span>
+          <form id="search-form" class="global-search" role="search">
+            <svg class="icon" aria-hidden="true">
+              <use href="#icon-search" /></svg
+            ><select id="provider" aria-label="搜索来源">
+              <option value="kuwo">酷我音乐</option>
+              <option value="qq">QQ 音乐</option>
+              <option value="netease" disabled>网易云 · 待接入</option></select
+            ><input
+              id="query"
+              type="search"
+              placeholder="搜索歌曲、歌手"
+              required
+              maxlength="200"
+              aria-label="搜索关键词"
+            /><button type="submit" id="search-submit">搜索</button>
+          </form>
+          <div class="user-area">
+            <span class="user-avatar" aria-hidden="true">♪</span
+            ><span id="user" class="user-name"></span
+            ><button id="logout" class="quiet" type="button">退出</button>
+          </div>
+        </header>
+        <main id="main">
+          <div class="page-heading">
+            <div>
+              <span class="eyebrow">YOUR MUSIC, YOUR SPACE</span>
+              <h1 id="page-title">发现</h1>
+              <p id="page-description" class="muted">从喜欢的音乐开始。</p>
+            </div>
+            <span class="chip">网易 · QQ · 酷我</span>
+          </div>
+          <section id="discover-controls" aria-label="音乐来源">
+            <div class="source-tabs">
+              <button type="button" data-provider="netease" disabled>
+                网易云 · 待接入</button
+              ><button type="button" data-provider="qq">QQ 音乐</button
+              ><button type="button" data-provider="kuwo" aria-pressed="true">
+                酷我音乐
+              </button>
+            </div>
+            <p id="source-notice" class="notice"></p>
+            <div
+              id="discovery-tabs"
+              class="page-tabs"
+              role="tablist"
+              aria-label="QQ 发现内容"
+              hidden
+            >
+              <button
+                type="button"
+                role="tab"
+                data-discovery="search"
+                aria-selected="true"
+              >
+                歌曲搜索
+              </button>
+              <button
+                type="button"
+                role="tab"
+                data-discovery="playlists"
+                aria-selected="false"
+              >
+                账号推荐歌单
+              </button>
+              <button
+                type="button"
+                role="tab"
+                data-discovery="songs"
+                aria-selected="false"
+              >
+                猜你喜欢歌曲
+              </button>
+            </div>
+          </section>
+          <div
+            id="collection-tabs"
+            class="page-tabs"
+            role="tablist"
+            aria-label="我的歌单"
+            hidden
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected="true"
+              aria-controls="view-content"
+              id="local-collection-tab"
+            >
+              本地收藏</button
+            ><button
+              type="button"
+              role="tab"
+              aria-selected="false"
+              id="qq-collection-tab"
+              aria-controls="view-content"
+              disabled
+            >
+              QQ 本人歌单
+            </button>
+          </div>
+          <div
+            id="download-tabs"
+            class="page-tabs"
+            role="tablist"
+            aria-label="下载管理"
+            hidden
+          >
+            <button
+              type="button"
+              role="tab"
+              data-download-tab="tasks"
+              aria-selected="true"
+              aria-controls="view-content"
+              id="tasks-tab"
+            >
+              下载任务</button
+            ><button
+              type="button"
+              role="tab"
+              data-download-tab="assets"
+              aria-selected="false"
+              aria-controls="view-content"
+              id="assets-tab"
+            >
+              已下载歌曲
+            </button>
+          </div>
+          <div id="download-filters" class="filter-bar" hidden>
+            <label id="task-filter-label"
+              >任务状态<select id="task-filter">
+                <option value="all">全部状态</option>
+                <option value="running">下载中</option>
+                <option value="queued">待提交</option>
+                <option value="paused">已暂停</option>
+                <option value="failed">失败</option>
+                <option value="attention">需要核对</option>
+                <option value="completed">校验完成</option>
+              </select></label
+            ><label id="asset-filter-label" hidden
+              >查找文件<input
+                id="asset-filter"
+                type="search"
+                maxlength="200"
+                placeholder="歌曲或歌手" /></label
+            ><button type="button" id="refresh-list" class="quiet">
+              刷新列表
+            </button>
+          </div>
+          <div id="page-status" class="notice" role="status" hidden></div>
+          <div id="page-error" class="page-error" role="alert" hidden>
+            <span></span><button type="button" id="retry-page">重试</button>
+          </div>
+          <div id="selection-bar" class="selection-bar" hidden>
+            <label
+              ><input
+                id="select-all"
+                type="checkbox"
+              />选择本页可下载歌曲</label
+            ><span id="selection-count" aria-live="polite">已选 0 首</span
+            ><button
+              type="button"
+              id="download-selected"
+              class="primary"
+              disabled
+            >
+              下载所选
+            </button>
+          </div>
+          <div id="view-content"></div>
+          <div id="pagination" hidden>
+            <button type="button" id="next-page" class="quiet">
+              加载下一页
+            </button>
+          </div>
+        </main>
+        <footer>
+          下载、音频校验与飞牛入库分别显示 · 开发版列表最多显示最近 500 条记录
+        </footer>
+      </div>
+    </div>
+    <dialog id="download-dialog" aria-labelledby="download-title">
+      <form id="download-form" class="dialog-shell">
+        <div class="dialog-header">
+          <div>
+            <h2 id="download-title">确认下载</h2>
+            <p id="download-summary" class="small muted"></p>
+          </div>
+          <button
+            type="button"
+            class="icon-button"
+            data-close="download-dialog"
+            aria-label="关闭下载确认"
+          >
+            <svg class="icon" aria-hidden="true">
+              <use href="#icon-close" />
+            </svg>
+          </button>
+        </div>
+        <div class="dialog-body">
+          <div id="download-tracks" class="confirm-tracks"></div>
+          <div class="download-fields">
+            <label
+              >下载音质<select id="download-quality" required></select></label
+            ><label
+              >保存位置<select id="download-target" required></select
+            ></label>
+          </div>
+          <p id="target-path" class="small muted break-text"></p>
+          <label class="checkbox-label"
+            ><input type="checkbox" disabled />添加到飞牛音乐库
+            <span class="muted">· 尚未支持</span></label
+          >
+          <p class="notice">
+            按所选音质下载，不自动替换录音或降低音质。来源限制会保留在任务中。
+          </p>
+          <p id="download-error" class="error" role="alert" hidden></p>
+        </div>
+        <div class="dialog-footer">
+          <button type="button" data-close="download-dialog">取消</button
+          ><button type="submit" id="confirm-download" class="primary">
+            创建下载任务
+          </button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="detail-dialog" aria-labelledby="detail-title">
+      <div class="dialog-shell">
+        <div class="dialog-header">
+          <h2 id="detail-title">详情</h2>
+          <button
+            type="button"
+            class="icon-button"
+            data-close="detail-dialog"
+            aria-label="关闭详情"
+          >
+            <svg class="icon" aria-hidden="true">
+              <use href="#icon-close" />
+            </svg>
+          </button>
+        </div>
+        <div id="detail-body" class="dialog-body"></div>
+        <div class="dialog-footer">
+          <button type="button" data-close="detail-dialog">关闭</button>
+        </div>
+      </div>
+    </dialog>
+    <div id="toast" role="status" hidden></div>
+  </body>
+</html>

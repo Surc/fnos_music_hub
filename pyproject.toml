@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fnos-music-hub"
+version = "0.1.0a1"
+description = "A modular, user-scoped gateway for fnOS music"
+license = "MIT"
+requires-python = ">=3.11"
+dynamic = ["dependencies"]
+
+[project.optional-dependencies]
+qq = ["qqmusic-api-python @ git+https://github.com/L-1124/QQMusicApi.git@27861e51432ea6b6e88dc35c4e8c8e239c0339e8"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[tool.setuptools.packages.find]
+include = ["hub*", "modules*", "apps*"]
+
+[tool.setuptools.package-data]
+"apps.web" = ["*.html", "*.js", "*.css"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "B"]
+ignore = ["B008"]
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/*.py" = ["E402"]

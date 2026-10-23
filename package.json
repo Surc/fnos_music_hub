@@ -1,0 +1,15 @@
+{
+  "name": "fnos-music-hub-ui-checks",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node --check apps/web/app.js && node --check tests/web-browser.mjs",
+    "test": "node --test tests/web.test.mjs",
+    "test:browser": "node tests/web-browser.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "30.1.3",
+    "playwright": "1.62.1",
+    "prettier": "3.6.2"
+  }
+}

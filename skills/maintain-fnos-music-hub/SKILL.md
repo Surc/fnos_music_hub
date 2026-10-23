@@ -8,8 +8,8 @@ description: 维护 Surc/fnos_music_hub 独立飞牛音乐中心。用于接续�
 ## 先核对当前工程
 
 1. 定位或按任务授权克隆 `https://github.com/Surc/fnos_music_hub.git`。检查 remote、分支、未提交修改；不要把旧 `fnos_music_ext` 当作本仓库。
-2. 读取仓库 `AGENTS.md`、`README.md`、`SOURCE_VERSIONS.json`、`docs/ITERATION.md` 和 `docs/VALIDATION.md`；按任务读取 `docs/DESIGN.md`、`docs/CONTRACTS.md`、`docs/ACCOUNTS_AND_FEEDBACK.md`、`docs/UPSTREAM.md`、`docs/MIGRATION.md`。
-3. 以当前代码和验证记录判断完成度。初始工程是设计与目录骨架，没有可运行服务或可安装 FPK。`docs/design-goals-v1.6-20261021.txt` 是完整历史研究，含被后续审核修订的提议；当前规范文档优先，不能只截取早期选型表。
+2. 读取仓库 `AGENTS.md`、`README.md`、`SOURCE_VERSIONS.json`、`docs/ITERATION.md` 和 `docs/VALIDATION.md`；先读 `docs/RUNNING.md`、`docs/HTTP_API.md` 与功能/平台两份 `docs/ACCEPTANCE_*.md`。前台任务再读 `docs/UI_REVIEW.md`，QQ 模块先读 `docs/QQ_ACCOUNTS.md`；其余按模块读取设计、契约、账号反馈、更新和迁移文档。
+3. 以当前代码和验证记录判断完成度。初始化是设计骨架；0.1.0a1 已有可运行开发服务与前台，尚无 FPK。按当前迭代区分模拟验证与真实平台/NAS验收。`docs/design-goals-v1.6-20261021.txt` 是完整历史研究，含被后续审核修订的提议；当前规范文档优先，不能只截取早期选型表。
 4. 核对来源的完整 SHA、实际分支、版本文件、Git tag、观察时间、采用状态和许可证。`observed_commit` 不等于 `adopted_commit`，原工程双来源的采用基线不等于新 Hub 已采用。
 
 ## 保持模块可替换
@@ -34,9 +34,38 @@ description: 维护 Surc/fnos_music_hub 独立飞牛音乐中心。用于接续�
 ## 验证、记录与交付
 
 1. 从 `docs/ITERATION.md` 取最小下一步，先完成严格身份和一首歌的端到端链路，再冻结 OpenAPI。保留内联清单容量上限，超限明确拒绝；暂不引入通用事件总线或复杂分块协议。
-2. 运行与本次改动相符的检查。资料变更运行 `python3 scripts/verify_provenance.py`；适配器需覆盖失败语义和两个用户并发隔离。账号真测、客户端真测、fnOS 安装测试分别记录，不能以模拟测试替代。
-3. 下载回归包含酷我 `rid=142276943` 的 DAYBREAK'S BELL 和其他样本，检查完整可解码音频、实际来源和格式。单首成功不代表全平台、会员资格或所有音质可用。
-4. 原生 FPK 面向 J4125/x86_64；NAS 不安装编译器、不依赖 Docker。实现后核对运行依赖、独立应用 ID、数据目录、升级备份、停用恢复、唯一 Socket 所有者以及密钥排除。
-5. 同步 `SOURCE_VERSIONS.json`、迭代/验证/变更记录和用户说明；实际合入后才能推进采用 SHA。发行请求另核对 VERSION/tag/构建提交/正式附件 SHA256 和实机证据，不把设计提交发布为可用 FPK。
-6. 更新本 skill 时提升清单中的 skill 版本，重新计算本文件与 `agents/openai.yaml` 的 SHA256，同步仓库副本与个人 Skills Git。旧 `maintain-fnos-music` 保持专用于旧工程。
-7. 按会话已有授权完成提交/PR/发布，不因例行维护重复索要许可；权限和凭证不写入项目。交接给出实际提交、检查结果、候选/采用差异和下一项阻断条件。
+2. 运行与本次改动相符的检查。运行相关 pytest、ruff、`npm run check` / jsdom，以及 `python3 scripts/verify_provenance.py`；适配器需覆盖失败语义和两个用户并发隔离。账号真测、客户端真测、fnOS 安装测试分别记录，不能以模拟测试替代。
+3. 现有运行时使用逐用户独立 Hot 进程、端口、凭据与非重叠下载目录；禁止把它改成共享 Cookie 切换。内联选曲清单上限 1000 项/512 KiB，任务投递结果不明时先回读，不盲目重试。
+4. 下载回归包含酷我 `rid=142276943` 的 DAYBREAK'S BELL 和其他样本，检查完整可解码音频、实际来源和格式。单首成功不代表全平台、会员资格或所有音质可用。
+5. 原生 FPK 面向 J4125/x86_64；NAS 不安装编译器、不依赖 Docker。实现后核对运行依赖、独立应用 ID、数据目录、升级备份、停用恢复、唯一 Socket 所有者以及密钥排除。
+6. 同步 `SOURCE_VERSIONS.json`、迭代/验证/变更记录和用户说明；实际合入后才能推进采用 SHA。发行请求另核对 VERSION/tag/构建提交/正式附件 SHA256 和实机证据，不把设计提交发布为可用 FPK。
+7. 更新本 skill 时提升清单中的 skill 版本，重新计算本文件与 `agents/openai.yaml` 的 SHA256，同步仓库副本与个人 Skills Git。旧 `maintain-fnos-music` 保持专用于旧工程。
+8. 按会话已有授权完成提交/PR/发布，不因例行维护重复索要许可；权限和凭证不写入项目。交接给出实际提交、检查结果、候选/采用差异和下一项阻断条件。
+
+## 当前开发版的验证边界
+
+- PC/移动端均需横/竖屏；手机横屏使用紧凑侧栏、低高度确认页，竖屏使用底部四入口。管理员设置从“我的”可达。当前前台已接搜索、收藏、任务/文件、批量选曲和下载确认；推荐/私人绑定/入库/注入仍按实际后端能力标为未开放，禁止放入原型示例数据。
+- 保持旋转仅调整布局与可见视口，不重建表单、不重新认证或提交。下载结果不明时冻结原音质/目标，以原清单、请求体和幂等键核对；退出清除路径、弹层与私人筛选。旧用户的迟到响应不能写入新会话或将其登出。
+- 前台改动运行 jsdom 与 `npm run test:browser`。后者用真实 Chromium、合成同源 API 做尺寸/旋转/溢出及页面流程检查，属于开发机/CI 依赖，不进入 NAS。真实手机键盘/安全区、NAS 身份和真实平台仍按验收清单单独记录。
+
+- 2026-10-21 的真实 Hot HTTP 搜索能找到 DAYBREAK'S BELL（RID 142276943）和晴天（RID 228908）；本环境两次下载都被酷我地区限制 407 拒绝。不能沿用“Hot 在其他环境成功”来认定本次下载通过。
+- 保留这两项历史结果，业务码不当作 HTTP 状态。R-KW-001/002 由用户稍后本地复测，不改变网络环境代测，不冻结其他模块开发。
+- 当前下载仅开放酷我，QQ/酷我公共搜索仍独立；可选 QQMusicApi 库已接扫码后显式关联、账号推荐/猜你喜欢和本人创建歌单分页，真实账号/NAS 尚未验收。猜你喜欢不是每日推荐，personalization=unverified；分页预览 complete=false，不当作完整歌单。网易、云端写入、入库、注入与真实播放反馈仍有独立准入。
+- `scripts/run_hot_user.py` 初始化 Hub 专属原生引擎；`scripts/live_hot_smoke.py` 是显式真测工具，音频和原始日志放在仓库外，不用作生产认证入口。
+- 自有代码 MIT；Hot/音桥通过 HTTP 对接，可选 QQMusicApi 固定库为 GPL-3.0-or-later，组合发行保留其许可证/固定源码。没有复制或修改其运行源码。真实构建 Hot 时要获取固定子模块并保留其 LICENSE/NOTICE。
+
+## QQ 账号与只读目录接续
+
+- 保持 `qq_accounts_enabled=false` 的基础模式与独立 Hot 数据目录；QQ 可选依赖见 requirements-qq.lock，不增加常驻 SDK 服务。缺依赖时明确拒绝启用。schema 1/2→3 升级前备份数据库与密钥，不能让旧程序直接降级读取。
+- QQ 扫码通过本人 Hot；confirmed 只是候选，核对账号后显式 bind 才授予读取。尝试 180 秒且属于当前 Hub 会话，退出清除；二维码 ID/图片加密，秘密不进业务响应。
+- 固定 Hot 无原生二维码取消，后台仍可能回写。取消/解绑撤销 Hub 代次，不依赖删文件或原生 logout 防迟到写入；换 UIN 立即使关联失效，不能自动绑定迟到账号。Hot 内部刷新条件写入仍待验证，QQ 下载保持关闭。
+- 只读打开本用户 0700/0600 原生凭据，逐级 FD/NOFOLLOW/大小和所有者校验；每次 SDK Client 使用冻结账号值，不提供 refresh/access token，不使用共享凭据池。平台读取后重验 AccountRef/代次/修订/摘要，再缓存或返回，正常同号刷新不推进绑定代次。
+- 用 QQMusicApi 上游请求描述符/sign/错误处理，response_model=None 保留未知项；推荐沿来源 next_cursor，不能按固定步长猜下一页。平台 auth_required 用 409 区分飞牛 401，禁止匿名回退。SDK 合成 Transport 测试不证明真实签名/设备/推荐效果；浏览器合成 QR 也不证明真实扫码。
+
+## QQ 完整快照接续（2026-10-23）
+
+- 先读 `docs/QQ_SNAPSHOTS.md`。保留实时分页 `complete=false/page_only`；完整快照单独走按用户持久化的 capture 句柄与原 manifests 表，不新增下载调度器。
+- `complete=true/integrity=double_read_verified` 必须两轮全部分页的总数、页长、结束标记、目录信息与原始有序条目哈希一致，账号/代次/修订不变且会话仍有效。无已验证上游版本，`source.version=null/atomic=false`；不宣称可检测 ABA/稳定旧缓存或具有单时刻原子性。
+- 最多 1000 项/512 KiB；保序、重复和未知位置，未知只保存白名单原始标量与原条目哈希，不存任意上游报文。中断/超时/漂移不发布部分清单；恢复句柄后显式从第一页重新两轮验证，不能拼接旧页。限流冷却按用户持久化，不能新建请求绕过。
+- 同号刷新在途失败、下次重试用新 revision 从头；解绑/重绑不能继续旧 capture。已导入不可变快照属于飞牛 owner，解绑不隐式删除。每次快照/明细/恢复检查 owner；SDK 与 Hot 上游均零补丁。
+- 验证包含大歌单、等数换曲/重排、unknown 变化、真实异步超时/取消、双用户/会话撤销、schema 2→3 与重启恢复、真实固定 SDK 的两轮 offset 请求，以及前台分页/确认/旋转/丢响应回读。真实 QQ/NAS 另走 R-QQ-005/006；快照成功不解禁 QQ 下载。

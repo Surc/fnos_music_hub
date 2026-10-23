@@ -1,8 +1,12 @@
 # fnos_music_hub 开发约定
 
-先读 README、SOURCE_VERSIONS.json、docs/ITERATION.md、docs/VALIDATION.md；模块修改再读 docs/DESIGN.md、docs/CONTRACTS.md 与 docs/ACCOUNTS_AND_FEEDBACK.md。
+先读 README、SOURCE_VERSIONS.json、docs/ITERATION.md、docs/VALIDATION.md；模块修改再读 docs/DESIGN.md、docs/CONTRACTS.md 与 docs/ACCOUNTS_AND_FEEDBACK.md；QQ 业务先读 docs/QQ_ACCOUNTS.md，保留扫码确认与显式关联的边界。
 
-当前是设计骨架。不要声称已有可运行应用、真实账号验证、Docker/FPK 构建或 Release。接口仍是草案，最小链路验证后才冻结。
+当前已有 0.1.0a1 开发实现。先读 docs/RUNNING.md、docs/HTTP_API.md；不要把 mock/生成音频测试当成真实 NAS、账号、完整音乐下载或 FPK 验收。接口尚未冻结。
+
+按 docs/ACCEPTANCE_FUNCTIONS.md、docs/ACCEPTANCE_PLATFORMS.md 逐项记录。地区限制由用户稍后本地复测，保留两首平台业务码 407 的历史结果，不改成通过，不冻结独立开发。界面方案见 docs/UI_REVIEW.md，用户已授权实施；后续按真实后端能力继续接入，不重复要求确认。
+
+界面必须覆盖 PC/移动端各自横/竖屏，并检查窄窗、低高度、软键盘、安全区与旋转状态保留；不以缩放桌面稿代替手机适配，不因重排重新认证或重复提交任务。
 
 - 保持歌单推荐、歌曲下载、飞牛注入三个模块独立；内部组件按包拆分，进程数量按需要决定。
 - 每个协议组件标记一个主上游，锁定完整 SHA；外围适配优先，必要补丁记录文件、原因、验证与回退。观察版本不推进采用基线。
@@ -13,4 +17,4 @@
 - Git 不包含 Cookie、token、账号数据库、用户历史收藏、音频、缓存或临时签名 URL。
 - 本仓库维护 skill 为 `maintain-fnos-music-hub`；旧 `maintain-fnos-music` 的共享账号、只读发现、主音源三选一约束属于旧工程。
 
-纯资料变更运行 `python3 scripts/verify_provenance.py`。实现代码后按改动新增有意义的验证，记录模拟/真实账号/设备/FPK 各层结论；历史测试数字不能作为新代码证据。提交时同步迭代、验证、来源与 skill 摘要；日常工作按会话已有授权推进。
+运行与改动有关的 pytest、ruff、前台 Node/jsdom 检查和 `python3 scripts/verify_provenance.py`；记录模拟/真实账号/设备/FPK 各层结论，历史测试数字不能作为新代码证据。提交时同步迭代、验证、来源与 skill 摘要；日常工作按会话已有授权推进。
