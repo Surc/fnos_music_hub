@@ -232,7 +232,7 @@ try {
         ...song,
         id: "synthetic-asset",
         codec: "mp3",
-        format: "mp3",
+        container: "mp3",
         bytes: 12000000,
         bitrate: 320000,
         duration_seconds: 252,
@@ -246,6 +246,7 @@ try {
     await layout(page);
     await page.getByRole("button", { name: "文件详情", exact: true }).click();
     await page.getByText("完整解码通过", { exact: true }).waitFor();
+    await page.getByText("mp3 / mp3", { exact: true }).waitFor();
     await page.locator("#detail-dialog [data-close]").first().click();
     await page
       .getByRole("button", { name: "我的与平台账号", exact: true })
@@ -312,8 +313,35 @@ try {
     await page.getByText(/当前为分页预览，未验证整单完整性/).waitFor();
     await page.locator(".song-card h3").waitFor();
     await layout(page);
+    let failedPage = false;
+    current.hook = (path) => {
+      if (
+        !failedPage &&
+        path.includes("/api/catalog/qq/playlists/77?") &&
+        path.endsWith("page=2")
+      ) {
+        failedPage = true;
+        return {
+          status: 503,
+          body: {
+            error: {
+              code: "platform_unavailable",
+              message: "合成分页临时错误",
+            },
+          },
+        };
+      }
+    };
+    await page.getByRole("button", { name: "下一页歌曲", exact: true }).click();
+    await page.getByText("合成分页临时错误", { exact: true }).waitFor();
+    await page.getByText(/第 1 页 · 来源总数 205/).waitFor();
     await page.getByRole("button", { name: "下一页歌曲", exact: true }).click();
     await page.getByText(/第 2 页 · 来源总数 205/).waitFor();
+    current.hook = null;
+    assert.equal(
+      current.calls.filter((c) => c.path.includes("dirid=9&page=2")).length,
+      2,
+    );
     assert.ok(current.calls.some((c) => c.path.includes("dirid=9&page=2")));
     current.snapshotSongs = Array.from({ length: 1000 }, (_, i) => ({
       ...current.qqSongs[0],
@@ -460,7 +488,7 @@ try {
       touch: mobile,
       status: "passed",
       coverage:
-        "login/search/unknown metadata/bulk/confirmation/tasks/region details/files/QQ QR confirmation and explicit binding/QQ recommendations and guess songs/QQ playlist page-only details/two-pass snapshot UI/1000 ordered snapshot entries/local snapshot history after unlink/confirmed local deletion/storage/injection/collections/logout/overflow",
+        "login/search/unknown metadata/bulk/confirmation/tasks/region details/files with actual container and codec/QQ QR confirmation and explicit binding/QQ recommendations and guess songs/QQ playlist page-only details/failed next page retries the same page/two-pass snapshot UI/1000 ordered snapshot entries/local snapshot history after unlink/confirmed local deletion/storage/injection/collections/logout/overflow",
     });
     console.log("PASS", name, `${width}x${height}`);
     await context.close();

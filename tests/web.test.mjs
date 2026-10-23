@@ -36,8 +36,10 @@ async function boot(options = {}) {
   const dom = new JSDOM(html, {
     url: "http://localhost/",
     runScripts: "outside-only",
+    pretendToBeVisual: true,
   });
-  dom.window.setInterval = () => 0;
+  const intervals = [];
+  dom.window.setInterval = (callback) => intervals.push(callback);
   dom.window.structuredClone = structuredClone;
   dom.window.fetch = async (path, opts) =>
     response(await apiFixture(rig, path, opts));
@@ -68,6 +70,7 @@ async function boot(options = {}) {
     click,
     search,
     calls: rig.calls,
+    poll: () => intervals.forEach((callback) => callback()),
     close: () => dom.window.close(),
   };
 }
@@ -374,6 +377,7 @@ test("verified files distinguish stored audio from unsupported fnOS indexing", a
         id: "asset-1",
         ...song,
         codec: "mp3",
+        container: "mp3",
         duration_seconds: 252,
         bytes: 12000000,
         bitrate: 320000,
@@ -398,6 +402,10 @@ test("verified files distinguish stored audio from unsupported fnOS indexing", a
     assert.equal(
       r.d.querySelector(".asset-file-link").getAttribute("href"),
       "/api/assets/asset-1/file",
+    );
+    action(r, "文件详情");
+    assert.ok(
+      r.d.querySelector("#detail-body").textContent.includes("mp3 / mp3"),
     );
   } finally {
     r.close();
@@ -862,6 +870,11 @@ test("saved local snapshot remains accessible when live QQ preview fails", async
     );
     action(r, "下一页歌曲");
     await waitFor(() => !r.d.querySelector("#page-error").hidden);
+    await waitFor(() =>
+      [...r.d.querySelectorAll("button")].some(
+        (b) => b.textContent === "下一页歌曲" && !b.disabled,
+      ),
+    );
     assert.equal(r.rig.captures[0].complete, true);
     assert.ok(
       [...r.d.querySelectorAll("button")].some(
@@ -1019,6 +1032,185 @@ test("late local history after logout cannot reveal saved snapshots", async () =
     release();
     await new Promise((resolve) => setTimeout(resolve, 20));
     assert.equal(r.d.querySelector("#view-content").textContent, "");
+  } finally {
+    release();
+    r.close();
+  }
+});
+
+test("QQ failed next and previous pages preserve the displayed page and retry target", async () => {
+  let failPage = 2;
+  const r = await boot({
+    qqEnabled: true,
+    qqAccount: boundQq,
+    hook: (path) => {
+      if (
+        path.includes("/api/catalog/qq/playlists/77?") &&
+        path.endsWith(`page=${failPage}`)
+      ) {
+        failPage = -1;
+        return {
+          status: 503,
+          body: {
+            error: {
+              code: "platform_unavailable",
+              message: "synthetic page failure",
+            },
+          },
+        };
+      }
+    },
+  });
+  try {
+    await openQqPlaylist(r);
+    await waitFor(() =>
+      [...r.d.querySelectorAll("button")].some(
+        (b) => b.textContent === "下一页歌曲" && !b.disabled,
+      ),
+    );
+    action(r, "下一页歌曲");
+    await waitFor(() => !r.d.querySelector("#page-error").hidden);
+    await waitFor(() =>
+      [...r.d.querySelectorAll("button")].some(
+        (b) => b.textContent === "下一页歌曲" && !b.disabled,
+      ),
+    );
+    assert.ok(
+      r.d.querySelector("#view-content").textContent.includes("第 1 页"),
+    );
+    action(r, "下一页歌曲");
+    await waitFor(() =>
+      r.d.querySelector("#view-content").textContent.includes("第 2 页"),
+    );
+    failPage = 1;
+    action(r, "上一页歌曲");
+    await waitFor(() => !r.d.querySelector("#page-error").hidden);
+    await waitFor(() =>
+      [...r.d.querySelectorAll("button")].some(
+        (b) => b.textContent === "上一页歌曲" && !b.disabled,
+      ),
+    );
+    assert.ok(
+      r.d.querySelector("#view-content").textContent.includes("第 2 页"),
+    );
+    action(r, "上一页歌曲");
+    await waitFor(() =>
+      r.d.querySelector("#view-content").textContent.includes("第 1 页"),
+    );
+    const pages = r.calls
+      .filter((c) => c.path.includes("/api/catalog/qq/playlists/77?"))
+      .map((c) => new URL(c.path, "http://localhost").searchParams.get("page"));
+    assert.deepEqual(pages, ["1", "2", "2", "1", "1"]);
+  } finally {
+    r.close();
+  }
+});
+
+test("QQ recommendation failure retries the same server continuation cursor", async () => {
+  let failed = false;
+  const r = await boot({
+    qqEnabled: true,
+    qqAccount: boundQq,
+    qqNextCursor: 35,
+    hook: (path) => {
+      if (!failed && path.includes("recommendations?kind=playlists&page=2")) {
+        failed = true;
+        return {
+          status: 503,
+          body: {
+            error: {
+              code: "platform_unavailable",
+              message: "synthetic recommendation failure",
+            },
+          },
+        };
+      }
+    },
+  });
+  try {
+    r.click('[data-provider="qq"]');
+    r.click('[data-discovery="playlists"]');
+    await waitFor(() => r.d.querySelector(".song-card"));
+    r.click("#next-page");
+    await waitFor(() => !r.d.querySelector("#page-error").hidden);
+    r.click("#next-page");
+    await waitFor(
+      () =>
+        r.calls.filter((c) =>
+          c.path.includes("recommendations?kind=playlists&page=2&cursor=35"),
+        ).length === 2,
+    );
+    assert.ok(
+      !r.calls.some((c) =>
+        c.path.includes("recommendations?kind=playlists&page=3"),
+      ),
+    );
+  } finally {
+    r.close();
+  }
+});
+
+test("slow download refresh stays single-flight and publishes every completed poll", async () => {
+  const pending = [];
+  const r = await boot({
+    tasks: [
+      {
+        id: "slow-task",
+        status: "running",
+        quality: "320kmp3",
+        entries: [{ ...song, status: "running" }],
+      },
+    ],
+    hook: (path) =>
+      path === "/api/tasks"
+        ? new Promise((resolve) => pending.push(resolve))
+        : undefined,
+  });
+  try {
+    r.click('[data-view="downloads"]');
+    await waitFor(() => pending.length === 1);
+    for (let n = 0; n < 5; n++) r.poll();
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    assert.equal(pending.length, 1);
+    pending[0]();
+    await waitFor(() => r.d.querySelectorAll(".task-card").length === 1);
+    r.poll();
+    await waitFor(() => pending.length === 2);
+    r.poll();
+    r.poll();
+    assert.equal(pending.length, 2);
+    pending[1]();
+    await waitFor(
+      () => r.calls.filter((c) => c.path === "/api/tasks").length === 2,
+    );
+  } finally {
+    pending.forEach((resolve) => resolve());
+    r.close();
+  }
+});
+
+test("a slow task poll cannot replace a newly selected assets view", async () => {
+  let release;
+  const gate = new Promise((resolve) => {
+    release = resolve;
+  });
+  const r = await boot({
+    hook: async (path) => {
+      if (path === "/api/tasks") await gate;
+    },
+  });
+  try {
+    r.click('[data-view="downloads"]');
+    await waitFor(() => r.calls.some((c) => c.path === "/api/tasks"));
+    r.click("#assets-tab");
+    await waitFor(() => r.calls.some((c) => c.path === "/api/assets"));
+    release();
+    await new Promise((resolve) => setTimeout(resolve, 15));
+    assert.equal(
+      r.d.querySelector("#assets-tab").getAttribute("aria-selected"),
+      "true",
+    );
+    assert.equal(r.d.querySelectorAll(".task-card").length, 0);
   } finally {
     release();
     r.close();
