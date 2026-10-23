@@ -325,6 +325,7 @@ try {
       title: "来源中的未知条目",
       artist: "",
     };
+    current.snapshotSongs[3].title = "LongTitle".repeat(56);
     await page
       .getByRole("button", { name: "回读已保存快照", exact: true })
       .click();
@@ -357,6 +358,11 @@ try {
       .getByRole("heading", { name: "已保存的完整歌单快照", exact: true })
       .waitFor();
     assert.equal(await page.locator("#detail-body li").count(), 1000);
+    assert.ok(
+      await page
+        .locator("#detail-body")
+        .evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
+    );
     await page.locator("#detail-body li").last().scrollIntoViewIfNeeded();
     assert.match(
       await page.locator("#detail-body li").last().textContent(),
