@@ -99,14 +99,17 @@ const layout = async (page) => {
     `control clipped ${JSON.stringify(result)}`,
   );
 };
-const dialogFits = async (page) => {
-  const bounds = await page.locator("#download-dialog").boundingBox();
-  const button = await page.locator("#confirm-download").boundingBox();
-  const close = await page
-    .getByRole("button", { name: "关闭下载确认", exact: true })
-    .boundingBox();
+const dialogFits = async (
+  page,
+  selectors = [
+    "#download-dialog",
+    "#confirm-download",
+    "#download-dialog .dialog-header [data-close]",
+  ],
+) => {
   const viewport = page.viewportSize();
-  for (const box of [bounds, button, close]) {
+  for (const selector of selectors) {
+    const box = await page.locator(selector).boundingBox();
     assert.ok(box, "dialog element visible");
     assert.ok(
       box.x >= -1 && box.x + box.width <= viewport.width + 1,
@@ -340,7 +343,11 @@ try {
     await page
       .getByRole("heading", { name: "已保存的完整歌单快照", exact: true })
       .waitFor();
-    await dialogFits(page);
+    await dialogFits(page, [
+      "#detail-dialog",
+      "#detail-dialog .dialog-header [data-close]",
+      "#detail-dialog .dialog-footer [data-close]",
+    ]);
     await layout(page);
     if (
       [
@@ -354,7 +361,7 @@ try {
         path: `test-results/qq-snapshot-${name}.png`,
         fullPage: true,
       });
-    await page.locator("#detail-dialog [data-close]").click();
+    await page.getByRole("button", { name: "关闭详情", exact: true }).click();
     assert.equal(
       current.calls.filter((c) => c.path.endsWith("/run")).length,
       1,
