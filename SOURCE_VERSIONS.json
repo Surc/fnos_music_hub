@@ -406,7 +406,7 @@
     }
   },
   "acceptance": {
-    "recorded_on": "2026-10-22",
+    "recorded_on": "2026-10-23",
     "functional_checklist": "docs/ACCEPTANCE_FUNCTIONS.md",
     "platform_checklist": "docs/ACCEPTANCE_PLATFORMS.md",
     "ui_proposal": "docs/UI_REVIEW.md",
@@ -512,7 +512,7 @@
       "frontend_test_count": 18
     },
     "qq_playlist_snapshots": {
-      "status": "implemented_local_tests_passed_remote_write_403_ci_blocked_real_qq_nas_pending",
+      "status": "implemented_six_ci_jobs_passed_real_qq_nas_pending",
       "guide": "docs/QQ_SNAPSHOTS.md",
       "database_schema": 3,
       "integrity": "double_read_verified",
@@ -536,7 +536,25 @@
       "python_qq_test_count": 93,
       "frontend_test_count": 22,
       "remote_head_at_attempt": "383bdee0b0ffce0391615c128a5e2ef9918623bc",
-      "workflow_run": null
+      "workflow_run": 39945305983,
+      "validation_commit": "c65242e390ea5603c9f283590fb6b6eddf17994c",
+      "full_validation_jobs": 6,
+      "python_base_test_count": 82,
+      "browser_validation": "chromium_10_viewports_and_snapshot_workflows_passed_synthetic_api",
+      "artifact_id": 12498305742,
+      "artifact_sha256": "aa3ed4f9fc5fcdc329974eaf49a90e2cede8dde5281c99d3b42f22a860b326bf",
+      "evidence": "docs/qq-ui-screenshots/qq-snapshot-browser-report.json",
+      "first_failed_workflow_run": 39944943303,
+      "browser_fix": "Distinct download and snapshot detail dialog selectors; runtime code unchanged.",
+      "delivery": "User-authorized GitHub web upload after connector write returned 403; remote tree verified against local tested files.",
+      "merge_authorization": "User explicitly requested PR #1 merge after successful checks; no FPK or Release authorized.",
+      "evidence_files_sha256": {
+        "docs/qq-ui-screenshots/qq-snapshot-browser-report.json": "f34ac788fc1cbaeb1061c26b2352744c30a28cce38e0bceb20530ef605eca65f",
+        "docs/qq-ui-screenshots/qq-snapshot-mobile-landscape.png": "fe9d98fb72b7522c53d47b90a4efa911b5cb5bf95ddbe935f3b9f65b6785d311",
+        "docs/qq-ui-screenshots/qq-snapshot-mobile-portrait.png": "e0e1e62c65a718891e6eb4939b4843d15b7177297dce35176f2ae1ac159a144a",
+        "docs/qq-ui-screenshots/qq-snapshot-pc-landscape.png": "6b318ef34608fc7a9eed970f27cd9c978eca281f1fcd8ed0545aa34a95454426",
+        "docs/qq-ui-screenshots/qq-snapshot-pc-portrait.png": "fa3c063dbcd15809a740a4a678f26e8dfd27f0988baae4577bb959ab612fd7c2"
+      }
     }
   }
 }
