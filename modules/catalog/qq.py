@@ -43,7 +43,7 @@ def song_metadata(raw, position):
             "availability": "unverified",
             "source_position": position,
         }
-    except (ValueError, TypeError, KeyError, AttributeError):
+    except (ValueError, TypeError, KeyError, AttributeError, OverflowError):
         return unknown(position)
 
 
@@ -175,6 +175,11 @@ class QqCatalog:
 
     async def read(self, owner, operation, **kwargs):
         grant, snapshot = await self.accounts.snapshot(owner)
+        return await self.read_bound(owner, grant, snapshot, operation, **kwargs), grant
+
+    async def read_bound(self, owner, grant, snapshot, operation, **kwargs):
+        # Full captures reuse one frozen grant across every page and both passes.
+        await self.accounts.validate(owner, grant, snapshot)
         try:
             result = await self.protocol.read(snapshot, operation, **kwargs)
         except HubError as exc:
@@ -183,7 +188,7 @@ class QqCatalog:
             raise
         # Recheck binding, runtime and credential revision after every awaited platform request.
         await self.accounts.validate(owner, grant, snapshot)
-        return result, grant
+        return result
 
     def songs(self, owner, rows, start=0):
         if not isinstance(rows, list) or len(rows) > 1000:
