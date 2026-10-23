@@ -1,5 +1,17 @@
 # QQ 完整歌单快照
 
+## 本地历史、故障恢复与清理（补齐）
+
+“我的歌单 → 已保存快照”独立于 QQ 实时目录；QQ 关闭、解绑、网络失败或源歌单消失时，已保存内容仍按当前飞牛 owner 读取。飞牛认证本身仍须有效。临时 QQ 错误保留当前预览和快照入口；平台授权撤销仍清理实时 QQ 内容。历史与运行结果按请求/尝试合并，旧 reading 响应不能覆盖完成状态。
+
+`GET /api/playlist-captures` 返回本人所有来源的读取历史；原来源历史端点也支持 `before=<capture_id>&limit=20`。limit 为 1–50，响应为 `{items,next_cursor}`，按创建顺序倒序；游标必须属于当前用户及指定来源。`next_cursor=null` 表示结束。新记录插入不会使后续页重复；已删除游标仍可定位。schema 3 增加 owner/来源索引，不修改清单格式。
+
+`DELETE /api/playlist-captures/{id}` 需要 CSRF/Origin，前台二次确认；运行中返回 409。完成清单内容与读取状态在同一 SQLite 事务中删除/标记 deleted；中断、待处理及完成记录均可移除。GET 状态仍返回 deleted，重复 DELETE 安全，同一创建键仍返回原 deleted 记录，run 返回 410，必须新建请求。保留小型请求记录和 retry_at，删除不会绕过限流；列表不显示 deleted。已有下载清单、任务、歌曲缓存、QQ 云端歌单均不在清理范围内。
+
+不自动按时间清理用户完整快照。显式删除释放的 SQLite 页由后续写入复用，数据库文件不保证立即缩小；需要压缩时先停服务并备份数据库及 vault.key，再按 SQLite 运维流程维护，不能直接删库。小型请求记录暂不清除，以保留幂等性。
+
+SQLite 初始写入、取消后的恢复写入即使失败，内存运行占用也必须释放；存储恢复后可显式重试，无需为残留 409 重启。发布事务失败不留下半份清单。
+
 更新：2026-10-23（Asia/Makassar / UTC+8）。开发实现；真实 QQ 平台、音桥/NAS 验收仍待执行。QQ 下载保持关闭。接口仍是 v0.1 草案。
 
 ## 完整性的含义
@@ -36,10 +48,10 @@
 | `POST /api/catalog/qq/playlists/{id}/snapshots?dirid=...` | 需要 CSRF / Origin 和 `Idempotency-Key`；持久化 pending 句柄并返回 201，不开始平台读取；同 owner/键/歌单/账号关联重放返回原记录，异内容 409 |
 | `POST /api/playlist-captures/{id}/run` | 显式开始/从头重试；已完成直接返回原结果，同用户已有读取则 409，不排第二个后台任务 |
 | `GET /api/playlist-captures/{id}` | 本用户状态、轮次、已读取数量、错误、retry_at 与成功后的 manifest_id；不返回任何半成品曲目 |
-| `GET /api/catalog/qq/playlists/{id}/snapshots?dirid=...` | 本用户该来源最近 20 条请求，用于丢响应、页面刷新或重启后找回句柄；不是完整历史导出 |
+| `GET /api/catalog/qq/playlists/{id}/snapshots?dirid=...` | 本用户该来源历史，默认 20 条并返回 next_cursor；可用 before/limit 继续回读 |
 | `GET /api/manifests/{id}` | 按 owner 读取完整远端歌单清单；显式选曲下载清单不由此接口暴露内部 engine_song |
 
-未完成的读取记录与不可变清单分别存储。状态为 `pending → reading → complete/incomplete`，成功才有 manifest_id；失败不缓存任何部分曲目，不会影响原分页浏览/收藏缓存。网络/契约/漂移/容量错误返回 HTTP 200 的 incomplete 记录及 `error.code/message`；平台账号失效、绑定变化、会话撤销仍返回原 409/401 并保存未完成状态。运行冲突和限流等待尚未结束为 409/429。非 2xx 不回传凭据或原始上游错误。
+未完成的读取记录与不可变清单分别存储。状态为 `pending → reading → complete/incomplete`，显式删除后为 `deleted`，成功才有 manifest_id；失败不缓存任何部分曲目，不会影响原分页浏览/收藏缓存。网络/契约/漂移/容量错误返回 HTTP 200 的 incomplete 记录及 `error.code/message`；平台账号失效、绑定变化、会话撤销仍返回原 409/401 并保存未完成状态。运行冲突和限流等待尚未结束为 409/429。非 2xx 不回传凭据或原始上游错误。
 
 - 单页最多 30 秒，一个完整尝试最多 120 秒、最多 20 次详情读取（1000 项、两轮）；SDK 每次内部登录检查另计。超过 1000 项、512 KiB 或来源单页 512 KiB 明确失败，不截断当作成功。
 - 不自动重试平台请求。超时/断网/取消/漂移后由用户显式重试，两轮都从第一页开始，旧页不参与新清单。它是安全恢复句柄，不是断点拼接旧远端数据。

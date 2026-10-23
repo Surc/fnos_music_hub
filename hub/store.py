@@ -64,6 +64,10 @@ class Store:
               CREATE TABLE IF NOT EXISTS playlist_captures (
                 id TEXT PRIMARY KEY, owner TEXT NOT NULL, idem TEXT NOT NULL,
                 payload TEXT NOT NULL, UNIQUE(owner, idem));
+              CREATE INDEX IF NOT EXISTS captures_owner ON playlist_captures(owner);
+              CREATE INDEX IF NOT EXISTS captures_source ON playlist_captures(
+                owner, json_extract(payload, '$.source.id'),
+                json_extract(payload, '$.source.dirid'));
               PRAGMA user_version=3;
             """)
         os.chmod(self.path, 0o600)
@@ -313,20 +317,68 @@ class Store:
     def capture(self, owner, capture_id):
         return self._owned("playlist_captures", owner.key, capture_id)
 
-    def captures(self, owner, source):
-        with self.db() as db:
-            rows = db.execute(
-                "SELECT payload FROM playlist_captures WHERE owner=? ORDER BY rowid DESC",
-                (owner.key,),
+    def captures(self, owner, source=None, before=None, limit=20):
+        if not 1 <= limit <= 50:
+            raise HubError("invalid_request", "历史每页需要 1 至 50 条")
+        where, args = ["owner=?"], [owner.key]
+        if source is not None:
+            where.extend(
+                [
+                    "json_extract(payload, '$.source.id')=?",
+                    "json_extract(payload, '$.source.dirid')=?",
+                ]
             )
-            result = []
-            for row in rows:
-                capture = json.loads(row[0])
-                if capture["source"] == source:
-                    result.append(capture)
-                    if len(result) == 20:
-                        break
-            return result
+            args.extend([source["id"], source["dirid"]])
+        with self.db() as db:
+            if before:
+                cursor = db.execute(
+                    "SELECT rowid, payload FROM playlist_captures WHERE id=? AND owner=?",
+                    (before, owner.key),
+                ).fetchone()
+                if cursor is None or (
+                    source is not None and json.loads(cursor[1])["source"] != source
+                ):
+                    raise HubError("not_found", "历史游标不存在或不属于此列表", 404)
+                where.append("rowid<?")
+                args.append(cursor[0])
+            where.append("json_extract(payload, '$.status')!='deleted'")
+            rows = db.execute(
+                "SELECT payload FROM playlist_captures WHERE "
+                + " AND ".join(where)
+                + " ORDER BY rowid DESC LIMIT ?",
+                (*args, limit + 1),
+            ).fetchall()
+        result = [json.loads(row[0]) for row in rows[:limit]]
+        return {
+            "items": result,
+            "next_cursor": result[-1]["id"] if len(rows) > limit else None,
+        }
+
+    def remove_capture(self, owner, capture_id):
+        # Keep a small tombstone: a lost DELETE reply/reused creation key cannot
+        # repeat platform reads, and deleting a limited attempt cannot erase cooldown.
+        with self.db() as db:
+            db.execute("BEGIN IMMEDIATE")
+            row = db.execute(
+                "SELECT payload FROM playlist_captures WHERE id=? AND owner=?",
+                (capture_id, owner.key),
+            ).fetchone()
+            if row is None:
+                raise HubError("not_found", "记录不存在或不属于当前用户", 404)
+            capture = json.loads(row[0])
+            if capture["manifest_id"]:
+                db.execute(
+                    "DELETE FROM manifests WHERE id=? AND owner=?",
+                    (capture["manifest_id"], owner.key),
+                )
+            capture.update(
+                status="deleted", complete=False, manifest_id=None, error=None
+            )
+            db.execute(
+                "UPDATE playlist_captures SET payload=? WHERE id=? AND owner=?",
+                (canonical(capture), capture_id, owner.key),
+            )
+            return capture
 
     def capture_retry_at(self, owner):
         with self.db() as db:

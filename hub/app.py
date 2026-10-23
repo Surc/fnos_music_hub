@@ -411,11 +411,35 @@ def create_app(
 
     @app.get("/api/catalog/qq/playlists/{playlist_id}/snapshots")
     async def playlist_snapshots(
-        playlist_id: str, dirid: str = "0", context=Depends(authenticated)
+        playlist_id: str,
+        dirid: str = "0",
+        before: str | None = None,
+        limit: int = 20,
+        context=Depends(authenticated),
     ):
         owner = context[0]
-        captures = store.captures(owner, playlist_ref(playlist_id, dirid))
-        return {"items": [qq_snapshots.status(owner, c["id"]) for c in captures]}
+        captures = store.captures(
+            owner, playlist_ref(playlist_id, dirid), before, limit
+        )
+        captures["items"] = [
+            qq_snapshots.status(owner, c["id"]) for c in captures["items"]
+        ]
+        return captures
+
+    @app.get("/api/playlist-captures")
+    async def snapshot_history(
+        before: str | None = None, limit: int = 20, context=Depends(authenticated)
+    ):
+        owner = context[0]
+        captures = store.captures(owner, before=before, limit=limit)
+        captures["items"] = [
+            qq_snapshots.status(owner, c["id"]) for c in captures["items"]
+        ]
+        return captures
+
+    @app.delete("/api/playlist-captures/{capture_id}")
+    async def remove_snapshot(capture_id: str, context=Depends(authenticated)):
+        return qq_snapshots.remove(context[0], capture_id)
 
     @app.get("/api/playlist-captures/{capture_id}")
     async def snapshot_status(capture_id: str, context=Depends(authenticated)):

@@ -315,11 +315,25 @@ try {
     await page.getByRole("button", { name: "下一页歌曲", exact: true }).click();
     await page.getByText(/第 2 页 · 来源总数 205/).waitFor();
     assert.ok(current.calls.some((c) => c.path.includes("dirid=9&page=2")));
+    current.snapshotSongs = Array.from({ length: 1000 }, (_, i) => ({
+      ...current.qqSongs[0],
+      title: `合成快照条目-${i}`,
+    }));
+    current.snapshotSongs[1] = { ...current.snapshotSongs[0] };
+    current.snapshotSongs[2] = {
+      track: null,
+      title: "来源中的未知条目",
+      artist: "",
+    };
+    current.snapshotSongs[3].title = "LongTitle".repeat(56);
+    await page
+      .getByRole("button", { name: "回读已保存快照", exact: true })
+      .click();
     await page
       .getByRole("button", { name: "生成完整快照", exact: true })
       .click();
     await page
-      .getByText("已保存 1 项，两轮读取一致。", { exact: true })
+      .getByText("已保存 1000 项，两轮读取一致。", { exact: true })
       .waitFor();
     await layout(page);
     const captureRequests = current.calls.filter((c) =>
@@ -343,6 +357,17 @@ try {
     await page
       .getByRole("heading", { name: "已保存的完整歌单快照", exact: true })
       .waitFor();
+    assert.equal(await page.locator("#detail-body li").count(), 1000);
+    assert.ok(
+      await page
+        .locator("#detail-body")
+        .evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
+    );
+    await page.locator("#detail-body li").last().scrollIntoViewIfNeeded();
+    assert.match(
+      await page.locator("#detail-body li").last().textContent(),
+      /合成快照条目-999/,
+    );
     await dialogFits(page, [
       "#detail-dialog",
       "#detail-dialog .dialog-header [data-close]",
@@ -385,6 +410,21 @@ try {
       .click();
     await page.getByText("尚未关联", { exact: true }).waitFor();
     assert.equal(current.qqAccount.state, "unbound");
+    await page.getByRole("button", { name: "我的歌单", exact: true }).click();
+    await page.getByRole("tab", { name: "已保存快照", exact: true }).click();
+    await page
+      .getByRole("button", { name: "查看快照曲目", exact: true })
+      .click();
+    await page.locator("#detail-body li").last().waitFor();
+    assert.equal(await page.locator("#detail-body li").count(), 1000);
+    await layout(page);
+    await page.getByRole("button", { name: "关闭详情", exact: true }).click();
+    await page.getByRole("button", { name: "删除记录", exact: true }).click();
+    await page.getByRole("button", { name: "确认删除", exact: true }).click();
+    await page.getByText("暂无读取记录", { exact: true }).waitFor();
+    await page
+      .getByRole("button", { name: "我的与平台账号", exact: true })
+      .click();
     await page
       .locator("#view-content")
       .getByRole("button", { name: "下载与曲库", exact: true })
@@ -420,7 +460,7 @@ try {
       touch: mobile,
       status: "passed",
       coverage:
-        "login/search/unknown metadata/bulk/confirmation/tasks/region details/files/QQ QR confirmation and explicit binding/QQ recommendations and guess songs/QQ playlist page-only details/unlink/storage/injection/collections/logout/overflow",
+        "login/search/unknown metadata/bulk/confirmation/tasks/region details/files/QQ QR confirmation and explicit binding/QQ recommendations and guess songs/QQ playlist page-only details/two-pass snapshot UI/1000 ordered snapshot entries/local snapshot history after unlink/confirmed local deletion/storage/injection/collections/logout/overflow",
     });
     console.log("PASS", name, `${width}x${height}`);
     await context.close();

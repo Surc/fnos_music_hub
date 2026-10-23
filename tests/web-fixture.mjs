@@ -159,23 +159,46 @@ export async function apiFixture(rig, path, options = {}) {
     const capture = rig.captures.find(
       (c) => url.pathname.split("/")[3] === c.id,
     );
+    if (method === "DELETE") {
+      Object.assign(capture, {
+        status: "deleted",
+        complete: false,
+        manifest_id: null,
+      });
+      return ok(capture);
+    }
     if (url.pathname.endsWith("/run"))
       Object.assign(capture, {
         status: "complete",
         complete: true,
-        fetched_count: rig.qqSongs.length,
+        fetched_count: (rig.snapshotSongs || rig.qqSongs).length,
         manifest_id: "qq-snapshot",
       });
     return ok(capture);
   }
+  const historyPage = (rows) => {
+    rows = [...rows].reverse();
+    const before = url.searchParams.get("before");
+    const offset = before ? rows.findIndex((c) => c.id === before) + 1 : 0;
+    const visible = rows.slice(offset).filter((c) => c.status !== "deleted");
+    const items = visible.slice(0, 20);
+    return ok({
+      items,
+      next_cursor: visible.length > 20 ? items.at(-1).id : null,
+    });
+  };
+  if (url.pathname === "/api/playlist-captures")
+    return historyPage(rig.captures);
   if (url.pathname === "/api/manifests/qq-snapshot")
     return ok({
-      fetched_count: rig.qqSongs.length,
+      fetched_count: (rig.snapshotSongs || rig.qqSongs).length,
       captured_at: "2026-10-23T12:00:00Z",
-      ordered_entries: rig.qqSongs.map((song, position) => ({
-        song,
-        position,
-      })),
+      ordered_entries: (rig.snapshotSongs || rig.qqSongs).map(
+        (song, position) => ({
+          song,
+          position,
+        }),
+      ),
     });
   if (url.pathname.startsWith("/api/catalog/qq/")) {
     if (rig.qqAccount.state !== "bound")
@@ -201,11 +224,12 @@ export async function apiFixture(rig, path, options = {}) {
           complete: false,
           created_at: "2026-10-23T12:00:00Z",
           fetched_count: 0,
+          source: { provider: "qq", id: "77", dirid: "9" },
         };
         rig.captures.push(capture);
         return { status: 201, body: capture };
       }
-      return ok({ items: rig.captures });
+      return historyPage(rig.captures);
     }
     const base = {
       provider: "qq",

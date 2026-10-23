@@ -754,7 +754,7 @@ dialog {
   border-radius: 16px;
   width: min(510px, calc(100% - 36px));
   max-width: 100%;
-  max-height: calc(var(--available-height) - 32px);
+  max-height: min(650px, calc(var(--available-height) - 32px));
   color: inherit;
   background: var(--paper);
   box-shadow: 0 20px 80px #223c2c35;
@@ -773,7 +773,7 @@ dialog::backdrop {
 .dialog-shell {
   display: flex;
   flex-direction: column;
-  max-height: calc(var(--available-height) - 34px);
+  max-height: min(648px, calc(var(--available-height) - 34px));
   min-height: 0;
   margin: 0;
 }
@@ -798,6 +798,9 @@ dialog::backdrop {
   overflow-y: auto;
   min-height: 0;
   overscroll-behavior: contain;
+}
+#detail-body li {
+  overflow-wrap: anywhere;
 }
 .dialog-footer {
   display: flex;
