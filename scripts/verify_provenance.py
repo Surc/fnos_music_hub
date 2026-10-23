@@ -104,6 +104,7 @@ for evidence in (
     manifest.get("acceptance", {}).get("qq_accounts_and_catalog", {}),
     manifest.get("acceptance", {}).get("qq_playlist_snapshots", {}),
     manifest.get("acceptance", {}).get("qq_snapshot_recovery", {}),
+    manifest.get("acceptance", {}).get("astra_review_hardening", {}),
 ):
     for path, digest in evidence.get("evidence_files_sha256", {}).items():
         check_file_digest(path, digest)
