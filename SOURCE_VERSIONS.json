@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "repository": "Surc/fnos_music_hub",
-  "stage": "qq-account-catalog-development",
-  "recorded_on": "2026-10-22",
+  "stage": "qq-playlist-snapshot-development",
+  "recorded_on": "2026-10-23",
   "observation_policy": "Inherited from the fixed-source v1.6 research of 2026-10-21. Not a claim of fresh upstream heads. No runtime source adopted in this bootstrap.",
   "design_archive": {
     "path": "docs/design-goals-v1.6-20261021.txt",
@@ -301,13 +301,13 @@
   ],
   "maintenance_skill": {
     "name": "maintain-fnos-music-hub",
-    "version": "1.3.0",
+    "version": "1.4.0",
     "files": {
-      "skills/maintain-fnos-music-hub/SKILL.md": "1d3166c8f39ccedf2b3edddddc62cd217db06f6d27e063ab63072f6405a422e8",
+      "skills/maintain-fnos-music-hub/SKILL.md": "26f0ea88cca6ea01f83bc9fb802bfcba3d68fa73ec716dace8b069e290dca3bd",
       "skills/maintain-fnos-music-hub/agents/openai.yaml": "43f885a269d77d2173f7480c43e58afcab96777c2546511cdaeb4636349ed40d",
       "skills/maintain-fnos-music-hub/assets/icon.svg": "9be88f8dd4c5e658961515c71389eafd45142ffa68bcae58e8dcff57d178ed91"
     },
-    "personal_skill_git_commit": "517692b4d71d771c0864419932ad7ccb9a45d6d4"
+    "personal_skill_git_commit": "be914de5323a31df196d7f35ad754fa83c9495b6"
   },
   "project_release": {
     "tag": null,
@@ -365,7 +365,8 @@
       "interface_commit": "27861e51432ea6b6e88dc35c4e8c8e239c0339e8",
       "integration_mode": "optional unmodified Python SDK library; upstream request/sign/transport/errors; immutable per-call credentials; no refresh or credential pool",
       "files": [
-        "modules/catalog/qq.py"
+        "modules/catalog/qq.py",
+        "modules/catalog/qq_snapshot.py"
       ],
       "upstream_patch_files": [],
       "implemented": [
@@ -377,7 +378,8 @@
       "personalization": "unverified",
       "full_playlist_export": false,
       "live_account_validation": "not_run",
-      "evidence": "docs/QQ_ACCOUNTS.md"
+      "evidence": "docs/QQ_ACCOUNTS.md",
+      "snapshot_integrity": "two_full_reads; no verified atomic upstream version"
     }
   ],
   "implementation_branch": "feat/core-download-slice",
@@ -486,7 +488,7 @@
         "R-QQ-004"
       ],
       "personalization": "unverified",
-      "full_playlist_export": false,
+      "full_playlist_export": true,
       "qq_download_enabled": false,
       "native_hot_refresh_cas": "pending_upstream_extension",
       "browser_validation": "chromium_10_viewports_and_qq_workflows_passed_synthetic_api",
@@ -508,6 +510,33 @@
       "python_qq_test_count": 54,
       "python_base_test_count": 44,
       "frontend_test_count": 18
+    },
+    "qq_playlist_snapshots": {
+      "status": "implemented_local_tests_passed_remote_write_403_ci_blocked_real_qq_nas_pending",
+      "guide": "docs/QQ_SNAPSHOTS.md",
+      "database_schema": 3,
+      "integrity": "double_read_verified",
+      "atomic_upstream_snapshot": false,
+      "max_items": 1000,
+      "max_bytes": 524288,
+      "qq_download_enabled": false,
+      "upstream_patch_files": [],
+      "real_account_evidence": null,
+      "local_retest_cases": [
+        "R-QQ-005",
+        "R-QQ-006"
+      ],
+      "test_files": [
+        "tests/test_qq_snapshots.py",
+        "tests/test_qq_sdk.py",
+        "tests/web.test.mjs",
+        "tests/web-browser.mjs"
+      ],
+      "local_implementation_commit": "cbbf784a1a8ff48dbfdbd6b5fe5cbbb06091019d",
+      "python_qq_test_count": 93,
+      "frontend_test_count": 22,
+      "remote_head_at_attempt": "383bdee0b0ffce0391615c128a5e2ef9918623bc",
+      "workflow_run": null
     }
   }
 }
