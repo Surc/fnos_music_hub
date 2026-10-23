@@ -113,8 +113,16 @@ class QqSnapshots:
         capture = self.store.begin_capture(owner, source, grant, idem)
         return self.status(owner, capture["id"])
 
+    def remove(self, owner, capture_id):
+        self.store.capture(owner, capture_id)  # ownership before conflict details
+        if self.active.get(owner.key) == capture_id:
+            raise HubError("conflict", "读取进行中，请结束后再删除", 409)
+        return self.store.remove_capture(owner, capture_id)
+
     async def run(self, owner, capture_id, check_session, reauthenticate):
         capture = self.status(owner, capture_id)
+        if capture["status"] == "deleted":
+            raise HubError("gone", "此快照已删除，请创建新的读取请求", 410)
         if capture["complete"]:
             return capture
         if owner.key in self.active:
@@ -132,8 +140,8 @@ class QqSnapshots:
             **{"pass": 0},
             started_at=now(),
         )
-        self.store.save_capture(owner, capture)
         try:
+            self.store.save_capture(owner, capture)
             grant, credentials = await self.catalog.accounts.snapshot(owner)
             # A token refresh permits a fresh two-pass attempt, never continuation
             # of old pages. Unlink/rebind or account switch requires a new request.
@@ -256,14 +264,17 @@ class QqSnapshots:
             return capture
         finally:
             # Cancellation/crash cannot promote partial data; restart runs both scans anew.
-            if capture["status"] == "reading":
-                capture.update(
-                    status="incomplete",
-                    complete=False,
-                    error={
-                        "code": "interrupted",
-                        "message": "读取中断，请从第一页重新验证",
-                    },
-                )
-                self.store.save_capture(owner, capture)
-            self.active.pop(owner.key, None)
+            try:
+                if capture["status"] == "reading":
+                    capture.update(
+                        status="incomplete",
+                        complete=False,
+                        error={
+                            "code": "interrupted",
+                            "message": "读取中断，请从第一页重新验证",
+                        },
+                    )
+                    self.store.save_capture(owner, capture)
+            finally:
+                # A failed recovery write must never leak the in-memory owner slot.
+                self.active.pop(owner.key, None)
