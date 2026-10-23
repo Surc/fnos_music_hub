@@ -2,6 +2,7 @@
 
 import asyncio
 import copy
+import sqlite3
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
@@ -519,3 +520,170 @@ def test_completed_manifest_and_existing_task_survive_schema_two_upgrade(qq):
     assert (
         qq.a.get(f"/api/manifests/{m['id']}").status_code == 409
     )  # no new engine DTO disclosure
+
+
+@pytest.mark.parametrize("stage", ["initial", "cleanup"])
+def test_write_failure_releases_active_capture(qq, monkeypatch, stage):
+    _, pages = setup(qq, 1)
+    capture = begin(qq.a)
+    store = qq.app.state.store
+    original = store.save_capture
+
+    def fail(owner, value, manifest=None):
+        if (stage == "initial" and value["status"] == "reading") or (
+            stage == "cleanup" and value["status"] == "incomplete"
+        ):
+            raise sqlite3.OperationalError("synthetic transient write failure")
+        return original(owner, value, manifest)
+
+    monkeypatch.setattr(store, "save_capture", fail)
+    if stage == "cleanup":
+
+        def cancel(*args):
+            raise asyncio.CancelledError()
+
+        pages.hook = cancel
+
+    async def reauthenticate():
+        pass
+
+    with pytest.raises(sqlite3.OperationalError):
+        asyncio.run(
+            qq.app.state.qq_snapshots.run(
+                OWNER, capture["id"], lambda: None, reauthenticate
+            )
+        )
+    monkeypatch.setattr(store, "save_capture", original)
+    pages.hook = None
+    response = run(qq.a, capture)
+    assert response.status_code == 200, response.text
+    assert response.json()["complete"]
+
+
+def test_owner_history_keyset_pagination_is_local_and_stable(qq):
+    bound, _ = setup(qq, 1)
+    records = [begin(qq.a, f"history-{i}") for i in range(25)]
+    other_source = begin(qq.a, "other-source", SOURCE.replace("77", "78"))
+    assert (
+        qq.a.post(
+            "/api/accounts/qq/unlink",
+            json={"binding_generation": bound["binding_generation"]},
+        ).status_code
+        == 200
+    )
+    first = qq.a.get("/api/playlist-captures?limit=20").json()
+    assert [c["id"] for c in first["items"]] == [other_source["id"]] + [
+        c["id"] for c in reversed(records[6:])
+    ]
+    restarted = Store(qq.settings.data_dir)
+    second = restarted.captures(OWNER, before=first["next_cursor"])
+    assert [c["id"] for c in second["items"]] == [
+        c["id"] for c in reversed(records[:6])
+    ]
+    assert second["next_cursor"] is None
+    assert qq.b.get("/api/playlist-captures").json()["items"] == []
+    assert (
+        qq.b.get("/api/playlist-captures?before=" + first["next_cursor"]).status_code
+        == 404
+    )
+    assert qq.a.get("/api/playlist-captures?limit=0").status_code == 400
+    assert qq.a.get("/api/playlist-captures?limit=51").status_code == 400
+    scoped = qq.a.get(SOURCE).json()
+    assert len(scoped["items"]) == 20
+    assert other_source["id"] not in [c["id"] for c in scoped["items"]]
+    assert qq.a.get(SOURCE + "&before=" + other_source["id"]).status_code == 404
+    assert (
+        len(qq.a.get(SOURCE + "&before=" + scoped["next_cursor"]).json()["items"]) == 5
+    )
+
+
+def test_deleting_snapshot_is_owned_atomic_and_does_not_repeat_reads(qq):
+    _, pages = setup(qq, 1)
+    done = run(qq.a, begin(qq.a)).json()
+    path = f"/api/playlist-captures/{done['id']}"
+    assert qq.b.delete(path).status_code == 404
+    assert qq.a.delete(path, headers={"X-CSRF-Token": "wrong"}).status_code == 403
+    assert qq.a.get(f"/api/manifests/{done['manifest_id']}").status_code == 200
+    deleted = qq.a.delete(path).json()
+    assert deleted["status"] == "deleted" and not deleted["complete"]
+    assert qq.a.delete(path).json() == deleted  # lost acknowledgement is safe
+    assert qq.a.get(f"/api/manifests/{done['manifest_id']}").status_code == 404
+    assert qq.a.get("/api/playlist-captures").json()["items"] == []
+    assert begin(qq.a) == deleted  # original creation key stays consumed
+    assert run(qq.a, deleted).status_code == 410
+    assert len(pages.calls) == 2
+    assert Store(qq.settings.data_dir).capture(OWNER, done["id"]) == deleted
+
+
+def test_delete_cannot_erase_cooldown_or_remove_an_active_capture(qq):
+    _, pages = setup(qq, 1)
+    capture = begin(qq.a)
+    pages.gate = 1
+    with ThreadPoolExecutor() as pool:
+        pending = pool.submit(run, qq.a, capture)
+        assert pages.entered.wait(3)
+        try:
+            assert (
+                qq.a.delete(f"/api/playlist-captures/{capture['id']}").status_code
+                == 409
+            )
+        finally:
+            pages.release.set()
+        assert pending.result(5).json()["complete"]
+
+    def limited(*args):
+        raise HubError("rate_limited", "synthetic limit", 429)
+
+    pages.hook = limited
+    limited_capture = run(qq.a, begin(qq.a, "limited")).json()
+    deleted = qq.a.delete(f"/api/playlist-captures/{limited_capture['id']}").json()
+    assert deleted["retry_at"] == limited_capture["retry_at"]
+    assert run(qq.a, begin(qq.a, "after-delete")).status_code == 429
+    assert (
+        Store(qq.settings.data_dir).capture_retry_at(OWNER)
+        == limited_capture["retry_at"]
+    )
+
+
+def test_publication_write_failure_rolls_back_manifest_and_remains_retryable(qq):
+    _, pages = setup(qq, 1)
+    capture = begin(qq.a)
+    store = qq.app.state.store
+    with store.db() as db:
+        db.execute("""CREATE TRIGGER fail_publish BEFORE UPDATE ON playlist_captures
+          WHEN json_extract(NEW.payload, '$.status')='complete'
+          BEGIN SELECT RAISE(ABORT, 'synthetic write failure'); END""")
+
+    async def reauthenticate():
+        pass
+
+    with pytest.raises(sqlite3.IntegrityError):
+        asyncio.run(
+            qq.app.state.qq_snapshots.run(
+                OWNER, capture["id"], lambda: None, reauthenticate
+            )
+        )
+    assert not qq.app.state.qq_snapshots.active
+    no_manifest(qq)
+    assert (
+        qq.a.get(f"/api/playlist-captures/{capture['id']}").json()["status"]
+        == "incomplete"
+    )
+    with store.db() as db:
+        db.execute("DROP TRIGGER fail_publish")
+    assert run(qq.a, capture).json()["complete"]
+
+
+def test_delete_write_failure_keeps_manifest_and_capture_together(qq):
+    setup(qq, 1)
+    done = run(qq.a, begin(qq.a)).json()
+    store = qq.app.state.store
+    original = store.manifest(OWNER, done["manifest_id"])
+    with store.db() as db:
+        db.execute("""CREATE TRIGGER fail_delete BEFORE UPDATE ON playlist_captures
+          WHEN json_extract(NEW.payload, '$.status')='deleted'
+          BEGIN SELECT RAISE(ABORT, 'synthetic write failure'); END""")
+    with pytest.raises(sqlite3.IntegrityError):
+        store.remove_capture(OWNER, done["id"])
+    assert store.manifest(OWNER, done["manifest_id"]) == original
+    assert store.capture(OWNER, done["id"]) == done

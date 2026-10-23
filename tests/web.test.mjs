@@ -811,3 +811,216 @@ test("late capture response after logout cannot write private state into a new s
     r.close();
   }
 });
+
+test("newly completed snapshot remains visible after empty history read", async () => {
+  const r = await boot({ qqEnabled: true, qqAccount: boundQq });
+  try {
+    await openQqPlaylist(r);
+    action(r, "回读已保存快照");
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    action(r, "生成完整快照");
+    await waitFor(() =>
+      r.d.querySelector("#view-content").textContent.includes("已保存 1 项"),
+    );
+    assert.ok(
+      [...r.d.querySelectorAll("button")].some(
+        (b) => b.textContent === "查看快照曲目",
+      ),
+      "completed snapshot must have a view action",
+    );
+  } finally {
+    r.close();
+  }
+});
+test("saved local snapshot remains accessible when live QQ preview fails", async () => {
+  const r = await boot({
+    qqEnabled: true,
+    qqAccount: boundQq,
+    hook: (path) => {
+      if (
+        path.startsWith("/api/catalog/qq/playlists/77?") &&
+        path.includes("page=2")
+      )
+        return {
+          status: 503,
+          body: {
+            error: {
+              code: "platform_unavailable",
+              message: "synthetic QQ outage",
+            },
+          },
+        };
+    },
+  });
+  try {
+    await openQqPlaylist(r);
+    action(r, "生成完整快照");
+    await waitFor(() =>
+      [...r.d.querySelectorAll("button")].some(
+        (b) => b.textContent === "查看快照曲目",
+      ),
+    );
+    action(r, "下一页歌曲");
+    await waitFor(() => !r.d.querySelector("#page-error").hidden);
+    assert.equal(r.rig.captures[0].complete, true);
+    assert.ok(
+      [...r.d.querySelectorAll("button")].some(
+        (b) => b.textContent === "查看快照曲目",
+      ),
+      "local snapshot must remain available during QQ outage",
+    );
+  } finally {
+    r.close();
+  }
+});
+
+test("local history pages and deletes snapshots while QQ is disabled", async () => {
+  const captures = Array.from({ length: 26 }, (_, i) => ({
+    id: `saved-${i}`,
+    source: { provider: "qq", id: "77", dirid: "9" },
+    status: "complete",
+    complete: true,
+    fetched_count: 1000,
+    created_at: "2026-10-23T12:00:00Z",
+    manifest_id: "qq-snapshot",
+  }));
+  const snapshotSongs = Array.from({ length: 1000 }, (_, i) => ({
+    ...song,
+    title: `原序-${i}`,
+  }));
+  snapshotSongs[1] = { ...snapshotSongs[0] };
+  snapshotSongs[2] = { track: null, title: "来源中的未知条目", artist: "" };
+  const r = await boot({ captures, snapshotSongs });
+  try {
+    r.click('[data-view="collections"]');
+    r.click("#snapshot-collection-tab");
+    await waitFor(
+      () => r.d.querySelectorAll("#view-content .panel").length === 20,
+    );
+    action(r, "更早的快照");
+    await waitFor(
+      () => r.d.querySelectorAll("#view-content .panel").length === 26,
+    );
+    action(r, "查看快照曲目");
+    await waitFor(
+      () => r.d.querySelectorAll("#detail-body li").length === 1000,
+    );
+    const rows = [...r.d.querySelectorAll("#detail-body li")];
+    assert.equal(rows[0].textContent, rows[1].textContent);
+    assert.match(rows[2].textContent, /未知条目/);
+    assert.match(rows.at(-1).textContent, /原序-999/);
+    r.click("#detail-dialog [data-close]");
+    action(r, "删除记录");
+    assert.equal(r.calls.filter((c) => c.method === "DELETE").length, 0);
+    action(r, "确认删除");
+    await waitFor(
+      () => r.d.querySelectorAll("#view-content .panel").length === 25,
+    );
+    assert.equal(r.calls.filter((c) => c.method === "DELETE").length, 1);
+    assert.ok(
+      !r.calls.some(
+        (c) =>
+          c.path.startsWith("/api/catalog/qq/") ||
+          c.path.endsWith("/run") ||
+          c.path === "/api/tasks",
+      ),
+    );
+  } finally {
+    r.close();
+  }
+});
+
+test("late reading history cannot overwrite a completed capture", async () => {
+  let finishRun, finishHistory;
+  const runGate = new Promise((resolve) => {
+    finishRun = resolve;
+  });
+  const historyGate = new Promise((resolve) => {
+    finishHistory = resolve;
+  });
+  const r = await boot({
+    qqEnabled: true,
+    qqAccount: boundQq,
+    hook: async (path, options, rig) => {
+      if (path.endsWith("/run")) {
+        rig.captures[0].status = "reading";
+        await runGate;
+      }
+      if (path.includes("/snapshots?") && options.method !== "POST") {
+        const items = structuredClone(rig.captures);
+        await historyGate;
+        return { status: 200, body: { items, next_cursor: null } };
+      }
+    },
+  });
+  try {
+    await openQqPlaylist(r);
+    action(r, "生成完整快照");
+    await waitFor(() => r.rig.captures[0]?.status === "reading");
+    action(r, "回读已保存快照");
+    await waitFor(() =>
+      r.calls.some(
+        (c) => c.path.includes("/snapshots?") && c.method !== "POST",
+      ),
+    );
+    finishRun();
+    await waitFor(() =>
+      r.d.querySelector("#view-content").textContent.includes("已保存 1 项"),
+    );
+    finishHistory();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    assert.match(r.d.querySelector("#view-content").textContent, /已保存 1 项/);
+    assert.ok(
+      [...r.d.querySelectorAll("button")].some(
+        (b) => b.textContent === "重新生成快照" && !b.disabled,
+      ),
+    );
+    assert.equal(r.calls.filter((c) => c.path.endsWith("/run")).length, 1);
+  } finally {
+    finishRun();
+    finishHistory();
+    r.close();
+  }
+});
+
+test("late local history after logout cannot reveal saved snapshots", async () => {
+  let release;
+  const gate = new Promise((resolve) => {
+    release = resolve;
+  });
+  const r = await boot({
+    hook: async (path) => {
+      if (path === "/api/playlist-captures") {
+        await gate;
+        return {
+          status: 200,
+          body: {
+            items: [
+              {
+                id: "private-history",
+                source: { id: "secret" },
+                complete: true,
+              },
+            ],
+            next_cursor: null,
+          },
+        };
+      }
+    },
+  });
+  try {
+    r.click('[data-view="collections"]');
+    r.click("#snapshot-collection-tab");
+    await waitFor(() =>
+      r.calls.some((c) => c.path === "/api/playlist-captures"),
+    );
+    r.click("#logout");
+    await waitFor(() => r.d.querySelector("#shell").hidden);
+    release();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    assert.equal(r.d.querySelector("#view-content").textContent, "");
+  } finally {
+    release();
+    r.close();
+  }
+});
