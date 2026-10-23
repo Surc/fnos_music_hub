@@ -56,8 +56,16 @@ description: 维护 Surc/fnos_music_hub 独立飞牛音乐中心。用于接续�
 
 ## QQ 账号与只读目录接续
 
-- 保持 `qq_accounts_enabled=false` 的基础模式与独立 Hot 数据目录；QQ 可选依赖见 requirements-qq.lock，不增加常驻 SDK 服务。缺依赖时明确拒绝启用。schema 1→2 升级前备份数据库与密钥，不能让旧程序直接降级读取。
+- 保持 `qq_accounts_enabled=false` 的基础模式与独立 Hot 数据目录；QQ 可选依赖见 requirements-qq.lock，不增加常驻 SDK 服务。缺依赖时明确拒绝启用。schema 1/2→3 升级前备份数据库与密钥，不能让旧程序直接降级读取。
 - QQ 扫码通过本人 Hot；confirmed 只是候选，核对账号后显式 bind 才授予读取。尝试 180 秒且属于当前 Hub 会话，退出清除；二维码 ID/图片加密，秘密不进业务响应。
 - 固定 Hot 无原生二维码取消，后台仍可能回写。取消/解绑撤销 Hub 代次，不依赖删文件或原生 logout 防迟到写入；换 UIN 立即使关联失效，不能自动绑定迟到账号。Hot 内部刷新条件写入仍待验证，QQ 下载保持关闭。
 - 只读打开本用户 0700/0600 原生凭据，逐级 FD/NOFOLLOW/大小和所有者校验；每次 SDK Client 使用冻结账号值，不提供 refresh/access token，不使用共享凭据池。平台读取后重验 AccountRef/代次/修订/摘要，再缓存或返回，正常同号刷新不推进绑定代次。
 - 用 QQMusicApi 上游请求描述符/sign/错误处理，response_model=None 保留未知项；推荐沿来源 next_cursor，不能按固定步长猜下一页。平台 auth_required 用 409 区分飞牛 401，禁止匿名回退。SDK 合成 Transport 测试不证明真实签名/设备/推荐效果；浏览器合成 QR 也不证明真实扫码。
+
+## QQ 完整快照接续（2026-10-23）
+
+- 先读 `docs/QQ_SNAPSHOTS.md`。保留实时分页 `complete=false/page_only`；完整快照单独走按用户持久化的 capture 句柄与原 manifests 表，不新增下载调度器。
+- `complete=true/integrity=double_read_verified` 必须两轮全部分页的总数、页长、结束标记、目录信息与原始有序条目哈希一致，账号/代次/修订不变且会话仍有效。无已验证上游版本，`source.version=null/atomic=false`；不宣称可检测 ABA/稳定旧缓存或具有单时刻原子性。
+- 最多 1000 项/512 KiB；保序、重复和未知位置，未知只保存白名单原始标量与原条目哈希，不存任意上游报文。中断/超时/漂移不发布部分清单；恢复句柄后显式从第一页重新两轮验证，不能拼接旧页。限流冷却按用户持久化，不能新建请求绕过。
+- 同号刷新在途失败、下次重试用新 revision 从头；解绑/重绑不能继续旧 capture。已导入不可变快照属于飞牛 owner，解绑不隐式删除。每次快照/明细/恢复检查 owner；SDK 与 Hot 上游均零补丁。
+- 验证包含大歌单、等数换曲/重排、unknown 变化、真实异步超时/取消、双用户/会话撤销、schema 2→3 与重启恢复、真实固定 SDK 的两轮 offset 请求，以及前台分页/确认/旋转/丢响应回读。真实 QQ/NAS 另走 R-QQ-005/006；快照成功不解禁 QQ 下载。
