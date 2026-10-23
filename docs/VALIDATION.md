@@ -12,6 +12,12 @@
 
 所有平台响应与账号为合成边界，音频为生成测试音；真实 QQ/NAS、酷我本地复测、手机硬件与 FPK 仍按原验收清单。GitHub 连接器创建分支返回 403（集成无写权限），使用用户已授权的网页登录提交流程。
 
+远端已提交 [PR #3](https://github.com/Surc/fnos_music_hub/pull/3)。代码提交 `f2f7174aefc7a6ee8ff986e273f75d7fe64e0762` 的完整内容树 `3b4ea6497c4125f53639fdd3188cff1776834bce` 与本地已测 `8e392e2525e951ca461f8bdf39590643508a1b4e` 相同。维护 skill 已推送个人 Skills Git `1e33b59a21b2adc2c10dcca56336c2cb8c19e680`。来源校验另用独立临时副本确认错误 schema、快照能力和采用 SHA 均能被拒绝。
+
+同一代码 SHA 的 [push 39970198087](https://github.com/Surc/fnos_music_hub/actions/runs/39970198087) 已通过 core 3.12、QQ 3.11/3.12、web 和 browser；[PR 39970615832](https://github.com/Surc/fnos_music_hub/actions/runs/39970615832) 已通过 core 3.11/3.12、QQ 3.11/3.12 和 web。基础模式 **109 passed / 1 skipped**，QQ 模式 **120 passed**，jsdom **31 passed**，Chromium **10 种视口通过**；依赖检查、wheel、Ruff、来源检查包含在对应已成功作业内。归档时两次运行各有一项仍在安装环境依赖，未将其标成整组完成；逐项成功的 job/run ID 保存在来源清单，最终合并检查以 PR 为准。
+
+浏览器证据取自 push 的作业 `120470533606`，附件 `12509485229` 的 SHA256 为 `99721c3c0a7394a345976c0cf88c332a18782a351667d57257a23d8898e67d3f`。保存未改写的 [十视口原始报告](qq-ui-screenshots/astra-browser-report.json)，包含失败翻页同页重试与实际容器/编码显示，以及已有快照、旋转、1000 项、解绑后历史与删除流程。报告摘要纳入自动检查；真实设备与平台结论不变。
+
 ## 2026-10-23：合并后复查与恢复修复
 
 基于 main `535ed137c4bcc9827dc74106cdde7b434482a760`。该合并提交 [Actions 39948660461](https://github.com/Surc/fnos_music_hub/actions/runs/39948660461) 六项全部通过；替代此前仅记录提交前 CI 的交接状态。
