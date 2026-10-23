@@ -82,16 +82,19 @@ class Accounts:
             )
         return account, snapshot
 
-    async def status(self, owner):
+    async def status(self, owner, session=None):
         if not self.enabled(owner):
             return {"items": [], "enabled": False}
         async with self.locks[owner.key]:
+            if session is not None:
+                self.store.store.check_session(session)
             account, _ = self.observe(owner)
             return {"items": [self.public(account)], "enabled": True}
 
     async def start(self, owner, session, kind):
         self.require(owner)
         async with self.locks[owner.key]:
+            self.store.store.check_session(session)
             self.observe(owner)
             attempt = self.store.begin(
                 owner, session, self.native.engines.runtime_key(owner), kind
@@ -250,9 +253,11 @@ class Accounts:
             self.store.save_attempt(owner, session, attempt)
             return self.public(bound)
 
-    async def unlink(self, owner, generation):
+    async def unlink(self, owner, generation, session=None):
         self.require(owner)
         async with self.locks[owner.key]:
+            if session is not None:
+                self.store.store.check_session(session)
             old = self.store.get(owner)
             if old["binding_generation"] != generation:
                 raise HubError("conflict", "账号代次已变化，请刷新后操作", 409)

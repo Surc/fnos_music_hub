@@ -66,6 +66,8 @@ class AccountStore:
 
     def save_attempt(self, owner, session, attempt):
         with self.store.db() as db:
+            db.execute("BEGIN IMMEDIATE")
+            self.store.check_session(session, db)
             db.execute(
                 "INSERT OR REPLACE INTO account_attempts VALUES(?,?,?,?)",
                 (
@@ -77,6 +79,7 @@ class AccountStore:
             )
 
     def begin(self, owner, session, runtime_key, kind):
+        self.store.check_session(session)
         old = self.get(owner)
         if old["state"] == "bound":
             raise HubError("conflict", "请先解除当前 QQ 关联，再登录或换号", 409)
@@ -108,6 +111,7 @@ class AccountStore:
         return attempt
 
     def current_attempt(self, owner, session, attempt_id):
+        self.store.check_session(session)
         attempt, account = self.attempt(owner, session, attempt_id), self.get(owner)
         if (
             account["binding_generation"] != attempt["generation"]
