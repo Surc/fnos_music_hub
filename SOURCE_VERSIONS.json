@@ -557,13 +557,34 @@
       }
     },
     "qq_snapshot_recovery": {
-      "status": "local_tests_passed_remote_ci_pending",
+      "status": "controlled_tests_and_ci_passed_real_platform_pending",
       "baseline_commit": "535ed137c4bcc9827dc74106cdde7b434482a760",
       "baseline_main_workflow_run": 39948660461,
       "python_tests": 100,
       "frontend_jsdom_tests": 27,
       "real_qq_nas": "pending",
-      "qq_download_enabled": false
+      "qq_download_enabled": false,
+      "validation_commit": "33a326af18d107fd6713ec5270b6140067dc1e3f",
+      "validation_tree": "24592f7f7024aa996d710869f7b9d8a19e18cc3c",
+      "workflow_run": 39953935354,
+      "browser_viewports": 10,
+      "browser_artifact_id": 12500888740,
+      "browser_artifact_sha256": "780a3658956a9a04146392453ce25abd64735b7ca3a5bdef3be6ee4876f5a88a",
+      "failed_workflow_runs": [
+        39952921386,
+        39953230850
+      ],
+      "evidence_files_sha256": {
+        "docs/qq-ui-screenshots/qq-recovery-browser-report.json": "b552573fb0b479e9837a9c8b3f24cae6c08ae8a0eecae6985738a4fd03cda0f7",
+        "docs/qq-ui-screenshots/qq-recovery-mobile-landscape.png": "10d280e8e59cd88de8ccde714d2d8938841b4940edaf4a8d3e77de5661a1edc7",
+        "docs/qq-ui-screenshots/qq-recovery-mobile-portrait.png": "e9094ed2b36491458c35f37a310d8c0d32b3c5b428dbfd25823a85b2960d2ed5",
+        "docs/qq-ui-screenshots/qq-recovery-pc-landscape.png": "01ab9cefec181a4f231b2e8b7f1c3809f515af7694beb49607179d92f4a00e4c",
+        "docs/qq-ui-screenshots/qq-recovery-pc-portrait.png": "8f918aa527010091e8aef4cfcaa11581d9dd22f5fb353878cf73229e3746c9ae"
+      },
+      "workflow_jobs_passed": 6,
+      "browser_evidence_workflow_run": 39953939767,
+      "core_python_tests": 89,
+      "core_skipped": 1
     }
   }
 }
