@@ -4,6 +4,15 @@
 
 歌单详情增加生成、从头重试、回读已保存快照与只读曲目明细。状态明确显示两轮观测一致/未完成；不把分页页码改成快照页码，不更改选曲和下载确认，不启动 QQ 下载。旋转不重复请求，退出丢弃迟到结果。新增 jsdom 与十视口 Chromium 用例；实际运行结果见 [验证记录](VALIDATION.md)。
 
+快照新增流程已通过提交 `c65242e` 的 [Actions 39945305983](https://github.com/Surc/fnos_music_hub/actions/runs/39945305983)，原下载确认与快照详情各自检查边界/关闭按钮。四种实际应用布局截图（合成 API）如下：
+
+| 场景 | 完整快照明细 |
+| --- | --- |
+| PC 横屏 | [1440×900](qq-ui-screenshots/qq-snapshot-pc-landscape.png) |
+| PC 竖屏 | [900×1440](qq-ui-screenshots/qq-snapshot-pc-portrait.png) |
+| 手机竖屏 | [390×844，全页](qq-ui-screenshots/qq-snapshot-mobile-portrait.png) |
+| 手机横屏 | [844×390，全页](qq-ui-screenshots/qq-snapshot-mobile-landscape.png) |
+
 ## 2026-10-22：QQ 业务页接入
 
 Chromium 合成 API 下的实际页面截图与 [十视口报告](qq-ui-screenshots/browser-report.json) 已保存。截图不是来源平台私人歌单或真实扫码验收。

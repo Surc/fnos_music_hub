@@ -4,7 +4,7 @@
 
 新增有界两轮完整读取，复用冻结账号授权、TrackRef、DownloadManifest 和 SQLite；总数/页长/终止、来源信息及原序原始条目哈希全部一致才保存 complete=true / double_read_verified。无上游原子版本，明确 atomic=false。重复/未知不丢，中断不存部分清单；重启与刷新只恢复句柄，重试从头开始。前台保留分页并增加只读快照与回读入口；酷我幂等下载未改，QQ 下载继续关闭。
 
-数据库 schema 2→3 只加读取状态表，需备份后升级；维护 skill 1.4.0。验证、CI 与真实平台边界见 [验证记录](VALIDATION.md) 和 [快照说明](QQ_SNAPSHOTS.md)。本轮不合并 Draft PR，不改 Hot 上游、不发行 FPK/Release；下一步为真实 QQ/NAS 大歌单验收及独立网易/云端业务。
+数据库 schema 2→3 只加读取状态表，需备份后升级；维护 skill 1.4.0。验证、CI 与真实平台边界见 [验证记录](VALIDATION.md) 和 [快照说明](QQ_SNAPSHOTS.md)。用户追加授权在 CI 通过后合并 PR #1；不改 Hot 上游、不发行 FPK/Release；下一步为真实 QQ/NAS 大歌单验收及独立网易/云端业务。
 
 ## 2026-10-22：QQ 关联与只读账号目录
 

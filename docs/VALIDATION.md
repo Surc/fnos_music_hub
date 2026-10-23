@@ -8,12 +8,18 @@
 - 快照覆盖 0/1/100/101/205/1000 项、跨页重复/未知/原序、1001 项与字节超限、等数替换/重排/未知变化、目录漂移、总数/页长/终止不一致、请求超时及真实 asyncio 超时/取消、限流持久冷却、同用户并发拒绝、跨用户并发/越权、会话撤销/身份变更、解绑/换号/同号修订、schema 1/2→3 与进程中断后从头恢复。失败没有部分 manifests/songs/tasks；原酷我任务重放保持原 ID。
 - 固定 SDK 新增两轮 205 项测试：实际构建/签名 CgiGetDiss，song_begin 顺序为 0/100/200/0/100/200，重复与未知条目穿过 SDK 后保留；每轮凭据只读且每次 Client 关闭。合成 Transport 不证明真实平台接受设备/签名或歌单稳定性。
 - Node 语法检查与 **22 项 jsdom 通过**：原分页/选曲/确认、快照与预览并存、旋转、快照请求丢响应回读、漂移重试复用句柄、退出后迟到响应隔离。QQ 下载依旧禁用；快照动作不投递任务。
-- Ruff、`git diff --check`、来源/技能摘要与 94 个本地文档链接检查通过。维护 skill 1.4.0 已校验并推送个人 Skills Git `be914de`；来源采用 SHA 保持不变。
-- 本地 `npm run test:browser` 因缺 Chromium 未运行；尝试 Playwright 下载后得到损坏/空 ZIP，安装失败。新增 Chromium 十视口快照/明细/旋转/回读用例，实际 CI 结果将在本节补记；此处不把浏览器检查写成已通过。
+- Ruff、`git diff --check`、来源/技能摘要与本地文档链接检查通过。维护 skill 1.4.0 已校验并推送个人 Skills Git `be914de`；来源采用 SHA 保持不变。
+- 本地 `npm run test:browser` 因缺 Chromium 未运行；尝试 Playwright 下载后得到损坏/空 ZIP，安装失败。实际 Chromium 验证改由 GitHub Actions 执行，见下述独立记录。
 
-提交/远端交付状态：本地实现提交 `cbbf784a1a8ff48dbfdbd6b5fe5cbbb06091019d`，内容树 `2338c237e885393c23564414879541f6ffbbf1f4`，27 个文件。命令行 push 因没有 GitHub 写入凭据失败；GitHub 连接器 create_tree 和 create_file 都返回 HTTP 403 / Resource not accessible by integration，未写入远端。PR #1 远端仍为基线 `383bdee0b0ffce0391615c128a5e2ef9918623bc`，本轮 Actions 未触发，不能沿用旧六项通过结果。后续获准使用已登录 GitHub 网页或恢复连接器写权限后，提交同一内容、核对远端 tree 并执行六项 CI，再补充真实结果。PR 仍保持 Draft，不合并、不发布。
+远端交付：命令行无写入凭据、GitHub 连接器返回 HTTP 403 后，用户明确授权网页提交；27 个文件已通过 GitHub 上传到原开发分支。远端 `5a4d4bd3768cdfb39036e07890053daf28b1537f` 内容树 `5260f8dcae8b9d8b2f5a841feb5c9dfcc8b1da23` 与本地已测文件完全一致。首次 [Actions 39944943303](https://github.com/Surc/fnos_music_hub/actions/runs/39944943303) 的其余五项通过，browser 因新增快照用例误用下载确认弹层选择器而失败；修正为分别检查下载/详情弹层及唯一关闭按钮，未修改应用运行代码。
 
-完整性为 **double_read_verified / atomic=false**，并非平台原子快照；ABA/稳定旧缓存等检测边界见 [完整规则](QQ_SNAPSHOTS.md)。真实 QQ R-QQ-005/006、NAS/J4125、Hot 内部刷新条件写入、手机实际键盘/安全区仍待执行。历史酷我 407 与 R-KW-001/002 不改写。未合并 PR，未开放 QQ 下载、未改 Hot 源码、未构建/发布 FPK 或 Release。
+修正提交 `c65242e390ea5603c9f283590fb6b6eddf17994c` 的 [Actions 39945305983](https://github.com/Surc/fnos_music_hub/actions/runs/39945305983) 六项全部通过：core 3.11/3.12、qq 3.11/3.12、web、browser。基础模式 **82 passed / 1 skipped**；QQ 模式 **93 passed**；**22 项 jsdom** 与 **10 种视口 Chromium** 通过，包含原分页/选曲/任务确认及新增快照生成/回读/明细/旋转、不额外创建任务。锁定依赖、pip check、Ruff、来源/文档与 wheel 构建通过。
+
+浏览器附件 `12498305742` 下载后 SHA256 核对为 `aa3ed4f9fc5fcdc329974eaf49a90e2cede8dde5281c99d3b42f22a860b326bf`；保留未改写的 [原报告](qq-ui-screenshots/qq-snapshot-browser-report.json) 和四张快照明细截图，逐张检查 PC/手机横竖布局、文字及关闭入口。原报告 coverage 文案沿用旧清单，新增快照断言以该提交的 `tests/web-browser.mjs` 和新截图为据。这是实际 Chromium + 合成 API，不是实际 QQ/NAS 歌单验收。
+
+用户随后明确要求合并 PR #1；完成本轮资料提交并核对最终 CI 后执行合并。没有发布请求，QQ 下载准入与真实平台验收不随合并改变。
+
+完整性为 **double_read_verified / atomic=false**，并非平台原子快照；ABA/稳定旧缓存等检测边界见 [完整规则](QQ_SNAPSHOTS.md)。真实 QQ R-QQ-005/006、NAS/J4125、Hot 内部刷新条件写入、手机实际键盘/安全区仍待执行。历史酷我 407 与 R-KW-001/002 不改写。未开放 QQ 下载、未改 Hot 源码、未构建/发布 FPK 或 Release。
 
 ## 2026-10-22：QQ 账号门面与只读目录
 
