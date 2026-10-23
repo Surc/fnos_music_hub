@@ -173,13 +173,19 @@ class QqCatalog:
     def __init__(self, accounts, protocol, store):
         self.accounts, self.protocol, self.store = accounts, protocol, store
 
-    async def read(self, owner, operation, **kwargs):
+    async def read(self, owner, operation, *, session=None, **kwargs):
         grant, snapshot = await self.accounts.snapshot(owner)
-        return await self.read_bound(owner, grant, snapshot, operation, **kwargs), grant
+        return await self.read_bound(
+            owner, grant, snapshot, operation, session=session, **kwargs
+        ), grant
 
-    async def read_bound(self, owner, grant, snapshot, operation, **kwargs):
+    async def read_bound(
+        self, owner, grant, snapshot, operation, *, session=None, **kwargs
+    ):
         # Full captures reuse one frozen grant across every page and both passes.
         await self.accounts.validate(owner, grant, snapshot)
+        if session is not None:
+            self.store.check_session(session)
         try:
             result = await self.protocol.read(snapshot, operation, **kwargs)
         except HubError as exc:
@@ -188,6 +194,8 @@ class QqCatalog:
             raise
         # Recheck binding, runtime and credential revision after every awaited platform request.
         await self.accounts.validate(owner, grant, snapshot)
+        if session is not None:
+            self.store.check_session(session)
         return result
 
     def songs(self, owner, rows, start=0):
@@ -199,9 +207,11 @@ class QqCatalog:
                 self.store.cache_song(owner, song)
         return songs
 
-    async def recommendations(self, owner, kind, page, cursor=0):
+    async def recommendations(self, owner, kind, page, cursor=0, *, session=None):
         operation = "recommend_playlists" if kind == "playlists" else "recommend_songs"
-        result, grant = await self.read(owner, operation, page=page, cursor=cursor)
+        result, grant = await self.read(
+            owner, operation, page=page, cursor=cursor, session=session
+        )
         if kind == "playlists":
             rows = result.get("List")
             if not isinstance(rows, list) or len(rows) > 100:
@@ -241,8 +251,8 @@ class QqCatalog:
             "account": grant,
         }
 
-    async def playlists(self, owner):
-        result, grant = await self.read(owner, "created_playlists")
+    async def playlists(self, owner, *, session=None):
+        result, grant = await self.read(owner, "created_playlists", session=session)
         rows = result.get("v_playlist")
         if not isinstance(rows, list) or len(rows) > 1000:
             raise HubError("upstream_contract", "QQ 本人歌单结构不匹配", 502)
@@ -256,9 +266,14 @@ class QqCatalog:
             and result.get("total") == len(rows),
         }
 
-    async def playlist_page(self, owner, playlist_id, dirid, page):
+    async def playlist_page(self, owner, playlist_id, dirid, page, *, session=None):
         result, grant = await self.read(
-            owner, "playlist_page", playlist_id=playlist_id, dirid=dirid, page=page
+            owner,
+            "playlist_page",
+            playlist_id=playlist_id,
+            dirid=dirid,
+            page=page,
+            session=session,
         )
         items = self.songs(owner, result.get("songlist"), (page - 1) * 100)
         total = result.get("total_song_num")

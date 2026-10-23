@@ -62,7 +62,9 @@ class HotCatalog:
     def __init__(self, engines, store):
         self.engines, self.store = engines, store
 
-    async def search(self, owner, provider, keyword, page=1):
+    async def search(self, owner, provider, keyword, page=1, *, session=None):
+        if session is not None:
+            self.store.check_session(session)
         if provider not in {"kuwo", "qq"}:
             raise HubError("unsupported", "网易目录适配尚未接入", 409)
         result = await self.engines.call(
@@ -76,6 +78,8 @@ class HotCatalog:
                 "limit": 30,
             },
         )
+        if session is not None:
+            self.store.check_session(session)
         if not isinstance(result, dict) or not isinstance(result.get("songs"), list):
             raise HubError("upstream_contract", "下载引擎返回了未知搜索结构", 502)
         items = []

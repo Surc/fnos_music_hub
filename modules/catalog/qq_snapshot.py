@@ -108,8 +108,10 @@ class QqSnapshots:
             )
         return capture
 
-    async def begin(self, owner, source, idem):
+    async def begin(self, owner, source, idem, *, session=None):
         grant, _ = await self.catalog.accounts.snapshot(owner)
+        if session is not None:
+            self.store.check_session(session)
         capture = self.store.begin_capture(owner, source, grant, idem)
         return self.status(owner, capture["id"])
 
