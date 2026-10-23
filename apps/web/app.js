@@ -52,6 +52,8 @@ const state = {
   personal: null,
   cloudPlaylists: null,
   playlist: null,
+  snapshotHistory: null,
+  removedCaptures: new Set(),
   selected: { discover: new Set(), collections: new Set() },
   drafts: new Map(),
   download: null,
@@ -166,6 +168,8 @@ function signedOut() {
   state.personal = null;
   state.cloudPlaylists = null;
   state.playlist = null;
+  state.snapshotHistory = null;
+  state.removedCaptures.clear();
   state.discovery = "search";
   state.collectionTab = "local";
   state.selected.discover.clear();
@@ -254,6 +258,7 @@ function downloadable(song) {
 }
 function visibleRows() {
   if (state.view === "collections") {
+    if (state.collectionTab === "snapshots") return [];
     const songs =
       state.collectionTab === "qq"
         ? state.playlist?.data?.items || []
@@ -851,11 +856,38 @@ function playlistCards(data) {
 function capturePath(current) {
   return `/api/catalog/qq/playlists/${encodeURIComponent(current.ref.id)}/snapshots?dirid=${encodeURIComponent(current.ref.dirid)}`;
 }
+function newerCapture(previous, next) {
+  if (next.status === "deleted") return next;
+  if (!previous || previous.id !== next.id) return next;
+  if (previous.status === "deleted" || previous.complete) return previous;
+  if ((previous.attempt || 0) > (next.attempt || 0)) return previous;
+  if (
+    previous.attempt === next.attempt &&
+    previous.status === "incomplete" &&
+    next.status === "reading"
+  )
+    return previous;
+  return next;
+}
+function captureRows(history = [], current = null) {
+  const rows = new Map(history.map((c) => [c.id, c]));
+  if (current)
+    rows.set(current.id, newerCapture(rows.get(current.id), current));
+  return [...rows.values()].filter(
+    (c) => c.status !== "deleted" && !state.removedCaptures.has(c.id),
+  );
+}
+function updateCapture(current, capture) {
+  if (state.removedCaptures.has(capture.id)) return;
+  current.capture = newerCapture(current.capture, capture);
+  // Merge the current result even when an earlier history request returned [].
+  current.captures = captureRows(current.captures, current.capture);
+}
 async function capturePlaylist(current) {
   if (current.captureBusy) return;
   const epoch = state.epoch;
   current.captureBusy = true;
-  if (current.capture?.complete) {
+  if (current.capture?.complete || current.capture?.status === "deleted") {
     current.capture = null;
     current.captureKey = null;
   }
@@ -869,22 +901,24 @@ async function capturePlaylist(current) {
       });
       guard(epoch);
       if (state.playlist !== current) return;
-      current.capture = capture;
+      updateCapture(current, capture);
     }
     const capture = await api(
       `/api/playlist-captures/${current.capture.id}/run`,
       { method: "POST" },
     );
     guard(epoch);
-    if (state.playlist === current) current.capture = capture;
+    if (state.playlist === current) updateCapture(current, capture);
   } catch (e) {
     if (
       !(e instanceof StaleRequest) &&
       state.playlist === current &&
       epoch === state.epoch
     ) {
-      if (["binding_changed", "platform_auth_required"].includes(e.code))
+      if (["binding_changed", "platform_auth_required"].includes(e.code)) {
         clearQqContent();
+        render();
+      }
       pageError(e.message + "；可回读已保存快照状态，不会触发下载。");
     }
   } finally {
@@ -894,20 +928,36 @@ async function capturePlaylist(current) {
     }
   }
 }
-async function captureHistory(current) {
-  const data = await api(capturePath(current));
+async function captureHistory(current, more = false) {
+  const seq = (current.historyRequest = (current.historyRequest || 0) + 1);
+  const data = await api(
+    capturePath(current) +
+      (more ? `&before=${encodeURIComponent(current.nextCursor)}` : ""),
+  );
   if (state.playlist !== current) return;
-  current.captures = data.items;
+  if (seq !== current.historyRequest) return;
+  current.captures = captureRows(
+    more ? [...(current.captures || []), ...data.items] : data.items,
+    current.capture,
+  );
+  current.nextCursor = data.next_cursor;
   if (current.capture)
-    current.capture =
-      data.items.find((c) => c.id === current.capture.id) || current.capture;
+    updateCapture(
+      current,
+      data.items.find((c) => c.id === current.capture.id) || current.capture,
+    );
   render();
 }
 async function showSnapshot(current, capture) {
   const manifest = await api(
     `/api/manifests/${encodeURIComponent(capture.manifest_id)}`,
   );
-  if (state.playlist !== current || state.view !== "collections") return;
+  if (state.removedCaptures.has(capture.id)) return;
+  if (
+    state.view !== "collections" ||
+    (current ? state.playlist !== current : state.collectionTab !== "snapshots")
+  )
+    return;
   const box = node("div");
   box.append(
     node(
@@ -926,6 +976,107 @@ async function showSnapshot(current, capture) {
     );
   box.append(rows);
   showDetails("已保存的完整歌单快照", box);
+}
+function removeSnapshot(capture) {
+  const box = node("div");
+  box.append(
+    node(
+      "p",
+      "删除此本地快照及读取记录？删除后无法恢复，QQ 云端歌单不会改变。",
+    ),
+  );
+  box.append(
+    button(
+      "确认删除",
+      async () => {
+        await api(`/api/playlist-captures/${encodeURIComponent(capture.id)}`, {
+          method: "DELETE",
+        });
+        state.removedCaptures.add(capture.id);
+        state.load++;
+        if (state.snapshotHistory)
+          state.snapshotHistory = {
+            ...state.snapshotHistory,
+            items: state.snapshotHistory.items.filter(
+              (c) => c.id !== capture.id,
+            ),
+          };
+        const current = state.playlist;
+        if (current) {
+          current.historyRequest = (current.historyRequest || 0) + 1;
+          current.captures = (current.captures || []).filter(
+            (c) => c.id !== capture.id,
+          );
+          if (current.capture?.id === capture.id) {
+            current.capture = null;
+            current.captureKey = null;
+          }
+        }
+        closeDialog("detail-dialog");
+        render();
+      },
+      "danger",
+    ),
+  );
+  showDetails("删除本地快照", box);
+}
+function snapshotHistoryPage() {
+  const box = node("section");
+  box.append(
+    node(
+      "p",
+      "属于当前飞牛用户的本地快照；QQ 解绑或暂时无法访问时仍可查看。",
+      "notice",
+    ),
+  );
+  const history = state.snapshotHistory;
+  if (!history?.items.length)
+    box.append(
+      empty("暂无读取记录", "生成完整快照后，可在这里独立查看和管理。"),
+    );
+  for (const capture of captureRows(history?.items)) {
+    const row = panel(
+      `QQ 歌单 ${capture.source.id} · 目录 ${capture.source.dirid}`,
+    );
+    row.append(
+      node(
+        "p",
+        `${capture.created_at} · ${capture.complete ? "完整快照" : "未完成"} · ${capture.fetched_count} 项`,
+      ),
+    );
+    if (capture.complete)
+      row.append(button("查看快照曲目", () => showSnapshot(null, capture)));
+    else if (capability("account_playlists", "qq"))
+      row.append(
+        button("打开来源歌单", async () => {
+          state.playlist = {
+            ref: capture.source,
+            title: `QQ 歌单 ${capture.source.id}`,
+            page: 1,
+            data: null,
+            capture,
+          };
+          state.collectionTab = "qq";
+          await navigate("collections");
+        }),
+      );
+    if (capture.status !== "reading")
+      row.append(button("删除记录", () => removeSnapshot(capture)));
+    box.append(row);
+  }
+  if (history?.next_cursor)
+    box.append(
+      button("更早的快照", async () => {
+        const data = await api(
+          `/api/playlist-captures?before=${encodeURIComponent(history.next_cursor)}`,
+        );
+        if (state.snapshotHistory !== history) return;
+        history.items = captureRows([...history.items, ...data.items]);
+        history.next_cursor = data.next_cursor;
+        render();
+      }),
+    );
+  return box;
 }
 function capturePanel(current) {
   const box = node("section", undefined, "notice");
@@ -967,8 +1118,7 @@ function capturePanel(current) {
           : `尚未完成：${current.capture.error?.message || current.capture.status}。${current.capture.retry_at > Date.now() / 1000 ? "限流等待中，稍后回读状态再重试。" : ""}`,
       ),
     );
-  for (const capture of current.captures ||
-    (current.capture?.complete ? [current.capture] : [])) {
+  for (const capture of captureRows(current.captures, current.capture)) {
     const row = node("div", undefined, "song-actions");
     row.append(
       node(
@@ -985,6 +1135,8 @@ function capturePanel(current) {
     );
     box.append(row);
   }
+  if (current.nextCursor)
+    box.append(button("更早的读取记录", () => captureHistory(current, true)));
   return box;
 }
 function qqCollectionPage() {
@@ -1101,6 +1253,10 @@ function render() {
     "aria-selected",
     String(state.collectionTab === "local"),
   );
+  $("#snapshot-collection-tab").setAttribute(
+    "aria-selected",
+    String(state.collectionTab === "snapshots"),
+  );
   $("#discovery-tabs").hidden =
     state.provider !== "qq" || !capability("recommendations", "qq");
   for (const b of document.querySelectorAll("[data-discovery]"))
@@ -1148,20 +1304,24 @@ function render() {
         );
   if (view === "collections") {
     result =
-      state.collectionTab === "qq"
-        ? qqCollectionPage()
-        : state.favorites.length
-          ? songCards(visibleRows())
-          : empty(
-              "还没有本地收藏",
-              "在搜索结果中收藏歌曲，这里仅保存当前用户的记录。",
-            );
+      state.collectionTab === "snapshots"
+        ? snapshotHistoryPage()
+        : state.collectionTab === "qq"
+          ? qqCollectionPage()
+          : state.favorites.length
+            ? songCards(visibleRows())
+            : empty(
+                "还没有本地收藏",
+                "在搜索结果中收藏歌曲，这里仅保存当前用户的记录。",
+              );
     content.setAttribute("role", "tabpanel");
     content.setAttribute(
       "aria-labelledby",
-      state.collectionTab === "qq"
-        ? "qq-collection-tab"
-        : "local-collection-tab",
+      state.collectionTab === "snapshots"
+        ? "snapshot-collection-tab"
+        : state.collectionTab === "qq"
+          ? "qq-collection-tab"
+          : "local-collection-tab",
     );
   }
   if (view === "discover" && state.discovery !== "search")
@@ -1215,11 +1375,13 @@ async function loadView(quiet = false) {
       : view === "accounts" && capability("cloud_accounts", "qq")
         ? "/api/accounts"
         : view === "collections"
-          ? state.collectionTab === "local"
-            ? "/api/favorites"
-            : currentPlaylist
-              ? `/api/catalog/qq/playlists/${encodeURIComponent(currentPlaylist.ref.id)}?dirid=${encodeURIComponent(currentPlaylist.ref.dirid)}&page=${currentPlaylist.page}`
-              : "/api/catalog/qq/playlists"
+          ? state.collectionTab === "snapshots"
+            ? "/api/playlist-captures"
+            : state.collectionTab === "local"
+              ? "/api/favorites"
+              : currentPlaylist
+                ? `/api/catalog/qq/playlists/${encodeURIComponent(currentPlaylist.ref.id)}?dirid=${encodeURIComponent(currentPlaylist.ref.dirid)}&page=${currentPlaylist.page}`
+                : "/api/catalog/qq/playlists"
           : view === "downloads"
             ? "/api/" + tab
             : view === "injection"
@@ -1248,6 +1410,8 @@ async function loadView(quiet = false) {
     else if (view === "collections" && state.collectionTab === "qq") {
       if (currentPlaylist) currentPlaylist.data = data;
       else state.cloudPlaylists = data;
+    } else if (view === "collections" && state.collectionTab === "snapshots") {
+      state.snapshotHistory = data;
     } else if (view === "collections") {
       state.favorites = data.items;
       state.selected.collections.clear();
@@ -1261,7 +1425,10 @@ async function loadView(quiet = false) {
       epoch === state.epoch &&
       seq === state.load
     ) {
-      if (path.startsWith("/api/catalog/qq/")) {
+      if (
+        path.startsWith("/api/catalog/qq/") &&
+        ["binding_changed", "platform_auth_required"].includes(e.code)
+      ) {
         clearQqContent();
         render();
       }
@@ -1574,6 +1741,7 @@ for (const b of document.querySelectorAll("[data-discovery]"))
 for (const [id, collectionTab] of [
   ["local-collection-tab", "local"],
   ["qq-collection-tab", "qq"],
+  ["snapshot-collection-tab", "snapshots"],
 ])
   $("#" + id).addEventListener("click", async () => {
     state.collectionTab = collectionTab;
