@@ -848,6 +848,145 @@ function playlistCards(data) {
   }
   return grid;
 }
+function capturePath(current) {
+  return `/api/catalog/qq/playlists/${encodeURIComponent(current.ref.id)}/snapshots?dirid=${encodeURIComponent(current.ref.dirid)}`;
+}
+async function capturePlaylist(current) {
+  if (current.captureBusy) return;
+  const epoch = state.epoch;
+  current.captureBusy = true;
+  if (current.capture?.complete) {
+    current.capture = null;
+    current.captureKey = null;
+  }
+  current.captureKey ||= crypto.randomUUID();
+  render();
+  try {
+    if (!current.capture) {
+      const capture = await api(capturePath(current), {
+        method: "POST",
+        headers: { "Idempotency-Key": current.captureKey },
+      });
+      guard(epoch);
+      if (state.playlist !== current) return;
+      current.capture = capture;
+    }
+    const capture = await api(
+      `/api/playlist-captures/${current.capture.id}/run`,
+      { method: "POST" },
+    );
+    guard(epoch);
+    if (state.playlist === current) current.capture = capture;
+  } catch (e) {
+    if (
+      !(e instanceof StaleRequest) &&
+      state.playlist === current &&
+      epoch === state.epoch
+    ) {
+      if (["binding_changed", "platform_auth_required"].includes(e.code))
+        clearQqContent();
+      pageError(e.message + "；可回读已保存快照状态，不会触发下载。");
+    }
+  } finally {
+    if (epoch === state.epoch && state.playlist === current) {
+      current.captureBusy = false;
+      render();
+    }
+  }
+}
+async function captureHistory(current) {
+  const data = await api(capturePath(current));
+  if (state.playlist !== current) return;
+  current.captures = data.items;
+  if (current.capture)
+    current.capture =
+      data.items.find((c) => c.id === current.capture.id) || current.capture;
+  render();
+}
+async function showSnapshot(current, capture) {
+  const manifest = await api(
+    `/api/manifests/${encodeURIComponent(capture.manifest_id)}`,
+  );
+  if (state.playlist !== current || state.view !== "collections") return;
+  const box = node("div");
+  box.append(
+    node(
+      "p",
+      `${manifest.fetched_count} 项 · ${manifest.captured_at}。两轮读取一致；平台未提供原子快照保证。QQ 下载尚未开放。`,
+      "notice",
+    ),
+  );
+  const rows = node("ol");
+  for (const entry of manifest.ordered_entries)
+    rows.append(
+      node(
+        "li",
+        `${entry.song.title || "未知条目"} · ${entry.song.artist || "歌手未知"}`,
+      ),
+    );
+  box.append(rows);
+  showDetails("已保存的完整歌单快照", box);
+}
+function capturePanel(current) {
+  const box = node("section", undefined, "notice");
+  box.append(
+    node(
+      "p",
+      "完整快照最多 1000 项；顺序、重复和未知条目均保留。读取两轮核对后保存，不会开始下载。",
+    ),
+  );
+  const actions = node("div", undefined, "song-actions");
+  const create = button(
+    current.capture?.complete
+      ? "重新生成快照"
+      : current.capture
+        ? "从头重试快照"
+        : "生成完整快照",
+    () => capturePlaylist(current),
+  );
+  create.disabled = Boolean(
+    current.captureBusy ||
+      current.capture?.status === "reading" ||
+      (current.capture?.retry_at || 0) * 1000 > Date.now(),
+  );
+  actions.append(
+    create,
+    button("回读已保存快照", () => captureHistory(current)),
+  );
+  box.append(actions);
+  if (current.captureBusy)
+    box.append(
+      node("p", "正在核对两轮完整歌单… 可继续翻页，刷新后可回读状态。"),
+    );
+  else if (current.capture)
+    box.append(
+      node(
+        "p",
+        current.capture.complete
+          ? `已保存 ${current.capture.fetched_count} 项，两轮读取一致。`
+          : `尚未完成：${current.capture.error?.message || current.capture.status}。${current.capture.retry_at > Date.now() / 1000 ? "限流等待中，稍后回读状态再重试。" : ""}`,
+      ),
+    );
+  for (const capture of current.captures ||
+    (current.capture?.complete ? [current.capture] : [])) {
+    const row = node("div", undefined, "song-actions");
+    row.append(
+      node(
+        "span",
+        `${capture.created_at} · ${capture.complete ? "完整快照" : "未完成"} · ${capture.fetched_count} 项`,
+      ),
+    );
+    row.append(
+      button(capture.complete ? "查看快照曲目" : "选择此记录", () => {
+        if (capture.complete) return showSnapshot(current, capture);
+        current.capture = capture;
+        render();
+      }),
+    );
+    box.append(row);
+  }
+  return box;
+}
 function qqCollectionPage() {
   if (!state.playlist) {
     const box = node("div");
@@ -874,6 +1013,7 @@ function qqCollectionPage() {
       "notice",
     ),
   );
+  box.append(capturePanel(current));
   box.append(
     current.data?.items?.length
       ? songCards(visibleRows())
