@@ -21,6 +21,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from modules.accounts.hot_qq import HotQqCredentials
 from modules.catalog.hot import HotCatalog, public_song
 from modules.catalog.qq import QqCatalog, QqProtocol
+from modules.catalog.qq_snapshot import QqSnapshots, playlist_ref
 from modules.download.assets import open_asset
 from modules.download.hot import HotEngines
 from modules.fnos.identity import BridgeIdentity
@@ -156,6 +157,7 @@ def create_app(
         )
     accounts = Accounts(settings, store, HotQqCredentials(settings, engines), protocol)
     qq_catalog = QqCatalog(accounts, protocol, store)
+    qq_snapshots = QqSnapshots(qq_catalog)
     reconciler = Reconciler(store, engines)
     attempts = defaultdict(deque)
 
@@ -203,6 +205,7 @@ def create_app(
     )
     app.state.store, app.state.reconciler = store, reconciler
     app.state.accounts, app.state.qq_catalog = accounts, qq_catalog
+    app.state.qq_snapshots = qq_snapshots
     app.add_middleware(BodyLimit)
     app.add_middleware(
         TrustedHostMiddleware, allowed_hosts=[urlsplit(settings.public_origin).hostname]
@@ -390,21 +393,54 @@ def create_app(
         page: int = 1,
         context=Depends(authenticated),
     ):
-        if (
-            not playlist_id.isascii()
-            or not playlist_id.isdecimal()
-            or len(playlist_id) > 20
-            or not dirid.isascii()
-            or not dirid.isdecimal()
-            or len(dirid) > 20
-            or not 0 <= int(playlist_id) < 2**64
-            or not 0 <= int(dirid) < 2**64
-            or int(playlist_id) == 0
-            and int(dirid) == 0
-            or not 1 <= page <= 100
-        ):
-            raise HubError("invalid_request", "歌单引用或页码不合法")
+        playlist_ref(playlist_id, dirid)
+        if not 1 <= page <= 100:
+            raise HubError("invalid_request", "歌单页码不合法")
         return await qq_catalog.playlist_page(context[0], playlist_id, dirid, page)
+
+    @app.post("/api/catalog/qq/playlists/{playlist_id}/snapshots", status_code=201)
+    async def create_snapshot(
+        playlist_id: str,
+        dirid: str = "0",
+        idempotency_key: str = Header(default=""),
+        context=Depends(authenticated),
+    ):
+        return await qq_snapshots.begin(
+            context[0], playlist_ref(playlist_id, dirid), idempotency_key
+        )
+
+    @app.get("/api/catalog/qq/playlists/{playlist_id}/snapshots")
+    async def playlist_snapshots(
+        playlist_id: str, dirid: str = "0", context=Depends(authenticated)
+    ):
+        owner = context[0]
+        captures = store.captures(owner, playlist_ref(playlist_id, dirid))
+        return {"items": [qq_snapshots.status(owner, c["id"]) for c in captures]}
+
+    @app.get("/api/playlist-captures/{capture_id}")
+    async def snapshot_status(capture_id: str, context=Depends(authenticated)):
+        return qq_snapshots.status(context[0], capture_id)
+
+    @app.post("/api/playlist-captures/{capture_id}/run")
+    async def capture_playlist(
+        capture_id: str, request: Request, context=Depends(authenticated)
+    ):
+        def check_session():
+            store.session(request.cookies.get(COOKIE))
+
+        async def reauthenticate():
+            await authenticated(request)
+
+        return await qq_snapshots.run(
+            context[0], capture_id, check_session, reauthenticate
+        )
+
+    @app.get("/api/manifests/{manifest_id}")
+    async def read_manifest(manifest_id: str, context=Depends(authenticated)):
+        manifest = store.manifest(context[0], manifest_id)
+        if manifest["source"]["kind"] != "remote_playlist":
+            raise HubError("unsupported", "此只读端点仅提供已保存的远端歌单快照", 409)
+        return manifest
 
     @app.get("/api/favorites")
     async def favorites(context=Depends(authenticated)):
@@ -446,8 +482,12 @@ def create_app(
         previous = store.replay(owner, body, manifest, idempotency_key)
         if previous is not None:
             return public_task(previous)
+        if not manifest["complete"]:
+            raise HubError("incomplete", "未完成的清单不能提交下载", 409)
         songs = [e["song"] for e in manifest["ordered_entries"]]
-        if any(s["track"]["provider"] != "kuwo" for s in songs):
+        if manifest["source"]["kind"] == "remote_playlist" or any(
+            not s["track"] or s["track"]["provider"] != "kuwo" for s in songs
+        ):
             raise HubError(
                 "unsupported", "此开发版先验证酷我链路，QQ/网易账号下载尚未开放", 409
             )

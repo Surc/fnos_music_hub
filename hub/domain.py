@@ -68,14 +68,16 @@ class SubmitInput(BaseModel):
     target_ref: Literal["private"] = "private"
 
 
-def make_manifest(owner: Principal, songs: list[dict]):
+def make_manifest(owner: Principal, songs: list[dict], *, source=None, integrity=None):
     # Each occurrence is independent: identical songs are not deduplicated.
     manifest = {
         "schema_version": 1,
         "snapshot_id": uuid4().hex,
         "owner": owner.model_dump(),
         "captured_at": now(),
-        "source": {"kind": "explicit_selection", "adapter": "explicit-selection-v1"},
+        "source": source
+        if source is not None
+        else {"kind": "explicit_selection", "adapter": "explicit-selection-v1"},
         "complete": True,
         "source_total": len(songs),
         "fetched_count": len(songs),
@@ -84,9 +86,15 @@ def make_manifest(owner: Principal, songs: list[dict]):
             for i, song in enumerate(songs)
         ],
     }
+    if len(songs) > MAX_MANIFEST_ITEMS:
+        from .errors import HubError
+
+        raise HubError("capacity_exceeded", "清单超过 1000 项", 413)
+    if integrity is not None:
+        manifest["integrity"] = integrity
+    manifest["content_hash"] = digest(manifest)
     if len(canonical(manifest).encode()) > MAX_MANIFEST_BYTES:
         from .errors import HubError
 
         raise HubError("capacity_exceeded", "清单超过 512 KiB，请减少条目", 413)
-    manifest["content_hash"] = digest(manifest)
     return manifest

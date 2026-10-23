@@ -33,7 +33,7 @@ class Store:
         self.path = directory / "hub.sqlite3"
         with self.db() as db:
             version = db.execute("PRAGMA user_version").fetchone()[0]
-            if version not in (0, 1, 2):
+            if version not in (0, 1, 2, 3):
                 raise RuntimeError(
                     "unsupported database schema; restore a compatible backup"
                 )
@@ -61,7 +61,10 @@ class Store:
               CREATE TABLE IF NOT EXISTS account_attempts (
                 id TEXT PRIMARY KEY, owner TEXT NOT NULL, session TEXT NOT NULL,
                 payload BLOB NOT NULL);
-              PRAGMA user_version=2;
+              CREATE TABLE IF NOT EXISTS playlist_captures (
+                id TEXT PRIMARY KEY, owner TEXT NOT NULL, idem TEXT NOT NULL,
+                payload TEXT NOT NULL, UNIQUE(owner, idem));
+              PRAGMA user_version=3;
             """)
         os.chmod(self.path, 0o600)
 
@@ -119,7 +122,10 @@ class Store:
     def logout(self, sid):
         with self.db() as db:
             db.execute("DELETE FROM sessions WHERE id=?", (self.session_hash(sid),))
-            db.execute("DELETE FROM account_attempts WHERE session=?", (self.session_hash(sid),))
+            db.execute(
+                "DELETE FROM account_attempts WHERE session=?",
+                (self.session_hash(sid),),
+            )
 
     def cache_song(self, owner, song):
         from .domain import TrackRef
@@ -152,7 +158,7 @@ class Store:
         return self._owned("manifests", owner.key, id)
 
     def _owned(self, table, owner_key, id):
-        assert table in {"manifests", "tasks", "assets"}
+        assert table in {"manifests", "tasks", "assets", "playlist_captures"}
         with self.db() as db:
             row = db.execute(
                 f"SELECT payload FROM {table} WHERE id=? AND owner=?", (id, owner_key)
@@ -266,3 +272,81 @@ class Store:
                     "DELETE FROM favorites WHERE owner=? AND track_key=?",
                     (owner.key, track.key),
                 )
+
+    def begin_capture(self, owner, source, grant, idem):
+        if not idem or len(idem) > 128:
+            raise HubError("invalid_request", "需要长度不超过 128 的 Idempotency-Key")
+        with self.db() as db:
+            db.execute("BEGIN IMMEDIATE")
+            row = db.execute(
+                "SELECT payload FROM playlist_captures WHERE owner=? AND idem=?",
+                (owner.key, idem),
+            ).fetchone()
+            if row:
+                capture = json.loads(row[0])
+                if capture["source"] != source or any(
+                    capture["account"][key] != grant[key]
+                    for key in ("account_ref", "binding_generation", "uin")
+                ):
+                    raise HubError("conflict", "此快照请求对应不同歌单或账号关联", 409)
+                return capture
+            capture = {
+                "id": uuid4().hex,
+                "source": source,
+                "account": grant,
+                "created_at": now(),
+                "status": "pending",
+                "complete": False,
+                "attempt": 0,
+                "pass": 0,
+                "fetched_count": 0,
+                "manifest_id": None,
+                "error": None,
+                "retry_at": 0,
+            }
+            db.execute(
+                "INSERT INTO playlist_captures VALUES(?,?,?,?)",
+                (capture["id"], owner.key, idem, canonical(capture)),
+            )
+            return capture
+
+    def capture(self, owner, capture_id):
+        return self._owned("playlist_captures", owner.key, capture_id)
+
+    def captures(self, owner, source):
+        with self.db() as db:
+            rows = db.execute(
+                "SELECT payload FROM playlist_captures WHERE owner=? ORDER BY rowid DESC",
+                (owner.key,),
+            )
+            result = []
+            for row in rows:
+                capture = json.loads(row[0])
+                if capture["source"] == source:
+                    result.append(capture)
+                    if len(result) == 20:
+                        break
+            return result
+
+    def capture_retry_at(self, owner):
+        with self.db() as db:
+            row = db.execute(
+                "SELECT MAX(json_extract(payload, '$.retry_at')) FROM playlist_captures WHERE owner=?",
+                (owner.key,),
+            ).fetchone()
+        return row[0] or 0
+
+    def save_capture(self, owner, capture, manifest=None):
+        # Publish the final immutable manifest and its handle in one transaction.
+        # A crash can leave a reading record, never a complete record without its manifest.
+        with self.db() as db:
+            db.execute("BEGIN IMMEDIATE")
+            if manifest is not None:
+                db.execute(
+                    "INSERT INTO manifests VALUES(?,?,?)",
+                    (manifest["snapshot_id"], owner.key, canonical(manifest)),
+                )
+            db.execute(
+                "UPDATE playlist_captures SET payload=? WHERE id=? AND owner=?",
+                (canonical(capture), capture["id"], owner.key),
+            )
