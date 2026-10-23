@@ -29,6 +29,7 @@ const state = {
   csrf: "",
   epoch: 0,
   load: 0,
+  viewRequest: null,
   searchRequest: 0,
   view: "discover",
   downloadTab: "tasks",
@@ -151,6 +152,7 @@ function showDetails(title, body) {
   showDialog("detail-dialog");
 }
 function signedOut() {
+  state.viewRequest = null;
   state.epoch++;
   state.load++;
   state.searchRequest++;
@@ -549,7 +551,7 @@ function assetCards() {
             ["实际来源", providers[asset.track?.provider] || "未知"],
             [
               "格式 / 编码",
-              `${asset.format || "未知"} / ${asset.codec || "未知"}`,
+              `${asset.container || "未知"} / ${asset.codec || "未知"}`,
             ],
             ["时长", `${asset.duration_seconds} 秒`],
             [
@@ -1175,15 +1177,13 @@ function qqCollectionPage() {
   if (current.page > 1)
     actions.append(
       button("上一页歌曲", async () => {
-        current.page--;
-        await loadView();
+        await loadView(false, { page: current.page - 1 });
       }),
     );
   if (current.data?.has_more)
     actions.append(
       button("下一页歌曲", async () => {
-        current.page++;
-        await loadView();
+        await loadView(false, { page: current.page + 1 });
       }),
     );
   box.append(actions);
@@ -1362,16 +1362,15 @@ async function navigate(view) {
   render();
   await loadView();
 }
-async function loadView(quiet = false) {
+async function loadView(quiet = false, target = {}) {
   if (!state.me) return;
   const view = state.view,
     tab = state.downloadTab,
-    seq = ++state.load,
     epoch = state.epoch;
   const currentPlaylist = state.playlist;
   const path =
     view === "discover" && state.discovery !== "search"
-      ? `/api/catalog/qq/recommendations?kind=${state.discovery}&page=${state.personal?.page || 1}&cursor=${state.personal?.cursor || 0}`
+      ? `/api/catalog/qq/recommendations?kind=${state.discovery}&page=${target.page ?? state.personal?.page ?? 1}&cursor=${target.cursor ?? state.personal?.cursor ?? 0}`
       : view === "accounts" && capability("cloud_accounts", "qq")
         ? "/api/accounts"
         : view === "collections"
@@ -1380,7 +1379,7 @@ async function loadView(quiet = false) {
             : state.collectionTab === "local"
               ? "/api/favorites"
               : currentPlaylist
-                ? `/api/catalog/qq/playlists/${encodeURIComponent(currentPlaylist.ref.id)}?dirid=${encodeURIComponent(currentPlaylist.ref.dirid)}&page=${currentPlaylist.page}`
+                ? `/api/catalog/qq/playlists/${encodeURIComponent(currentPlaylist.ref.id)}?dirid=${encodeURIComponent(currentPlaylist.ref.dirid)}&page=${target.page ?? currentPlaylist.page}`
                 : "/api/catalog/qq/playlists"
           : view === "downloads"
             ? "/api/" + tab
@@ -1388,6 +1387,16 @@ async function loadView(quiet = false) {
               ? "/api/admin/injection"
               : null;
   if (!path) return;
+  // A timer must not invalidate an identical request that is still in flight.
+  if (
+    state.viewRequest?.path === path &&
+    state.viewRequest.epoch === epoch &&
+    state.viewRequest.seq === state.load
+  )
+    return;
+  const seq = ++state.load;
+  const request = { path, epoch, seq };
+  state.viewRequest = request;
   if (!quiet) {
     $("#page-status").textContent = "正在刷新…";
     $("#page-status").hidden = false;
@@ -1408,8 +1417,10 @@ async function loadView(quiet = false) {
       state.qqAccount = next;
     } else if (view === "discover") state.personal = data;
     else if (view === "collections" && state.collectionTab === "qq") {
-      if (currentPlaylist) currentPlaylist.data = data;
-      else state.cloudPlaylists = data;
+      if (currentPlaylist && currentPlaylist === state.playlist) {
+        currentPlaylist.page = data.page;
+        currentPlaylist.data = data;
+      } else state.cloudPlaylists = data;
     } else if (view === "collections" && state.collectionTab === "snapshots") {
       state.snapshotHistory = data;
     } else if (view === "collections") {
@@ -1435,6 +1446,7 @@ async function loadView(quiet = false) {
       pageError(e.message);
     }
   } finally {
+    if (state.viewRequest === request) state.viewRequest = null;
     if (epoch === state.epoch && seq === state.load)
       $("#page-status").hidden = true;
   }
@@ -1721,12 +1733,10 @@ $("#search-form").addEventListener("submit", async (event) => {
 $("#next-page").addEventListener("click", () => {
   if (state.discovery === "search") search(true);
   else {
-    state.personal = {
-      ...state.personal,
+    loadView(false, {
       page: (state.personal?.page || 1) + 1,
       cursor: state.personal.next_cursor,
-    };
-    loadView();
+    });
   }
 });
 for (const b of document.querySelectorAll("[data-discovery]"))
