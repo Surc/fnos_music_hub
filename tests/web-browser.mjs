@@ -312,6 +312,54 @@ try {
     await page.getByRole("button", { name: "下一页歌曲", exact: true }).click();
     await page.getByText(/第 2 页 · 来源总数 205/).waitFor();
     assert.ok(current.calls.some((c) => c.path.includes("dirid=9&page=2")));
+    await page
+      .getByRole("button", { name: "生成完整快照", exact: true })
+      .click();
+    await page
+      .getByText("已保存 1 项，两轮读取一致。", { exact: true })
+      .waitFor();
+    await layout(page);
+    const captureRequests = current.calls.filter((c) =>
+      c.path.endsWith("/run"),
+    ).length;
+    if (mobile && name === "mobile-portrait") {
+      await page.setViewportSize({ width: 844, height: 390 });
+      await layout(page);
+      await page.setViewportSize({ width, height });
+      assert.equal(
+        current.calls.filter((c) => c.path.endsWith("/run")).length,
+        captureRequests,
+      );
+    }
+    await page
+      .getByRole("button", { name: "回读已保存快照", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "查看快照曲目", exact: true })
+      .click();
+    await page
+      .getByRole("heading", { name: "已保存的完整歌单快照", exact: true })
+      .waitFor();
+    await dialogFits(page);
+    await layout(page);
+    if (
+      [
+        "pc-landscape",
+        "pc-portrait",
+        "mobile-portrait",
+        "mobile-landscape",
+      ].includes(name)
+    )
+      await page.screenshot({
+        path: `test-results/qq-snapshot-${name}.png`,
+        fullPage: true,
+      });
+    await page.locator("#detail-dialog [data-close]").click();
+    assert.equal(
+      current.calls.filter((c) => c.path.endsWith("/run")).length,
+      1,
+    );
+    assert.equal(current.tasks.length, 1); // Only the prior Kuwo confirmation created a task.
     await page.getByRole("button", { name: "发现", exact: true }).click();
     await page.getByRole("tab", { name: "猜你喜欢歌曲", exact: true }).click();
     await page.locator(".song-card h3").waitFor();

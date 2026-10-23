@@ -18,6 +18,7 @@ export function fixture(options = {}) {
     tasks: [],
     assets: [],
     manifests: [],
+    captures: [],
     calls: [],
     searchMore: false,
     qqAccount: {
@@ -154,6 +155,28 @@ export async function apiFixture(rig, path, options = {}) {
     rig.qqAttempt = null;
     return ok(rig.qqAccount);
   }
+  if (url.pathname.startsWith("/api/playlist-captures/")) {
+    const capture = rig.captures.find(
+      (c) => url.pathname.split("/")[3] === c.id,
+    );
+    if (url.pathname.endsWith("/run"))
+      Object.assign(capture, {
+        status: "complete",
+        complete: true,
+        fetched_count: rig.qqSongs.length,
+        manifest_id: "qq-snapshot",
+      });
+    return ok(capture);
+  }
+  if (url.pathname === "/api/manifests/qq-snapshot")
+    return ok({
+      fetched_count: rig.qqSongs.length,
+      captured_at: "2026-10-23T12:00:00Z",
+      ordered_entries: rig.qqSongs.map((song, position) => ({
+        song,
+        position,
+      })),
+    });
   if (url.pathname.startsWith("/api/catalog/qq/")) {
     if (rig.qqAccount.state !== "bound")
       return {
@@ -165,6 +188,25 @@ export async function apiFixture(rig, path, options = {}) {
           },
         },
       };
+    if (url.pathname.endsWith("/snapshots")) {
+      if (method === "POST") {
+        const previous = rig.captures.find(
+          (c) => c.idem === options.headers["Idempotency-Key"],
+        );
+        if (previous) return { status: 201, body: previous };
+        const capture = {
+          id: "capture-" + (rig.captures.length + 1),
+          idem: options.headers["Idempotency-Key"],
+          status: "pending",
+          complete: false,
+          created_at: "2026-10-23T12:00:00Z",
+          fetched_count: 0,
+        };
+        rig.captures.push(capture);
+        return { status: 201, body: capture };
+      }
+      return ok({ items: rig.captures });
+    }
     const base = {
       provider: "qq",
       scope: "account",

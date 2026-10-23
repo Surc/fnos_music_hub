@@ -58,6 +58,8 @@ def wire(monkeypatch):
                         "code": self.code,
                         "data": {}
                         if method == "GetLoginUserInfo"
+                        else self.data(payload["req_0"]["param"])
+                        if callable(self.data)
                         else copy.deepcopy(self.data),
                     },
                 },
@@ -111,7 +113,9 @@ def test_pinned_sdk_builds_private_read_requests_without_refresh(
     boundary, snapshot = wire
     boundary.data = {"tracks": [None, {"id": 1}, {"id": 1}]}
     result = asyncio.run(
-        QqProtocol().read(snapshot, operation, page=2, cursor=20, playlist_id="77", dirid="9")
+        QqProtocol().read(
+            snapshot, operation, page=2, cursor=20, playlist_id="77", dirid="9"
+        )
     )
     last = boundary.calls[-1].kwargs["json"]["req_0"]
     assert last["method"] == method and last["param"] == params
@@ -167,3 +171,72 @@ def test_real_sdk_concurrent_clients_keep_separate_frozen_credentials(wire):
         "20002",
     }
     assert a.credential()["musickey"] == "synthetic-key"
+
+
+def test_real_sdk_two_full_scans_use_offset_pages_and_keep_duplicate_unknown_entries(
+    wire, tmp_path
+):
+    from hub.domain import Principal
+    from hub.store import Store
+    from modules.catalog.qq import QqCatalog
+    from modules.catalog.qq_snapshot import QqSnapshots
+
+    boundary, credentials = wire
+    rows = [
+        {"id": i + 1, "mid": f"mid{i + 1}", "title": f"song-{i + 1}"}
+        for i in range(205)
+    ]
+    rows[100], rows[101] = rows[99], None
+
+    def response(params):
+        start = params["song_begin"]
+        selected = rows[start : start + params["song_num"]]
+        return {
+            "dirinfo": {"id": 77, "dirid": 9},
+            "songlist": selected,
+            "songlist_size": len(selected),
+            "total_song_num": len(rows),
+            "hasmore": int(start + len(selected) < len(rows)),
+        }
+
+    boundary.data = response
+    grant = {
+        "account_ref": "synthetic",
+        "binding_generation": 1,
+        "credential_revision": 1,
+        "uin": "10001",
+    }
+
+    class Accounts:
+        async def snapshot(self, owner):
+            return grant, credentials
+
+        async def validate(self, owner, given, snapshot):
+            assert given == grant and snapshot == credentials
+
+    store = Store(tmp_path / "data")
+    captures = QqSnapshots(QqCatalog(Accounts(), QqProtocol(), store))
+    owner = Principal(instance_id="synthetic-nas", user_guid="synthetic-user")
+
+    async def authenticated():
+        pass
+
+    async def execute():
+        capture = await captures.begin(
+            owner, {"provider": "qq", "id": "77", "dirid": "9"}, "synthetic"
+        )
+        return await captures.run(owner, capture["id"], lambda: None, authenticated)
+
+    capture = asyncio.run(execute())
+    assert capture["complete"]
+    entries = store.manifest(owner, capture["manifest_id"])["ordered_entries"]
+    assert len(entries) == 205
+    assert entries[99]["song"]["track"] == entries[100]["song"]["track"]
+    assert entries[101]["song"]["track"] is None
+    reads = [
+        c.kwargs["json"]["req_0"]
+        for c in boundary.calls
+        if c.kwargs["json"]["req_0"]["method"] == "CgiGetDiss"
+    ]
+    assert [r["param"]["song_begin"] for r in reads] == [0, 100, 200, 0, 100, 200]
+    assert boundary.closed == 6

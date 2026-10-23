@@ -628,3 +628,186 @@ test("QQ recommendation continuation uses the server cursor", async () => {
     r.close();
   }
 });
+
+const boundQq = {
+  provider: "qq",
+  state: "bound",
+  account_ref: "own",
+  uin: "10001",
+  binding_generation: 1,
+  credential_revision: 1,
+};
+async function openQqPlaylist(r) {
+  r.click('[data-provider="qq"]');
+  r.click('[data-discovery="playlists"]');
+  await waitFor(
+    () => r.d.querySelector(".song-card h3")?.textContent === "合成推荐歌单",
+  );
+  action(r, "查看歌单");
+  await waitFor(() =>
+    [...r.d.querySelectorAll("button")].some(
+      (b) => b.textContent === "生成完整快照",
+    ),
+  );
+}
+test("QQ capture preserves preview/rotation; immutable snapshot is read-only and recoverable", async () => {
+  const r = await boot({ qqEnabled: true, qqAccount: boundQq });
+  try {
+    await openQqPlaylist(r);
+    action(r, "生成完整快照");
+    await waitFor(() => r.rig.captures[0]?.complete);
+    await waitFor(() =>
+      [...r.d.querySelectorAll("button")].some(
+        (b) => b.textContent === "查看快照曲目",
+      ),
+    );
+    const calls = r.calls.length;
+    r.dom.window.dispatchEvent(new r.dom.window.Event("resize"));
+    assert.equal(r.calls.length, calls);
+    assert.match(r.d.querySelector("#view-content").textContent, /分页预览/);
+    action(r, "下一页歌曲");
+    await waitFor(() => r.calls.some((c) => c.path.includes("page=2")));
+    action(r, "查看快照曲目");
+    await waitFor(() =>
+      r.d.querySelector("#detail-dialog").hasAttribute("open"),
+    );
+    assert.match(
+      r.d.querySelector("#detail-body").textContent,
+      /QQ 下载尚未开放/,
+    );
+    r.click("#detail-dialog [data-close]");
+    action(r, "返回 QQ 歌单");
+    await waitFor(
+      () => r.d.querySelector(".song-card h3")?.textContent === "合成推荐歌单",
+    );
+    action(r, "查看歌单");
+    await waitFor(() =>
+      [...r.d.querySelectorAll("button")].some(
+        (b) => b.textContent === "回读已保存快照",
+      ),
+    );
+    action(r, "回读已保存快照");
+    await waitFor(() =>
+      [...r.d.querySelectorAll("button")].some(
+        (b) => b.textContent === "查看快照曲目",
+      ),
+    );
+    assert.equal(r.calls.filter((c) => c.path.endsWith("/run")).length, 1);
+    assert.equal(
+      r.calls.filter((c) => c.path === "/api/tasks" && c.method === "POST")
+        .length,
+      0,
+    );
+  } finally {
+    r.close();
+  }
+});
+
+test("capture lost run response can be read back without fetching twice", async () => {
+  const r = await boot({
+    qqEnabled: true,
+    qqAccount: boundQq,
+    hook: async (path, options, rig) => {
+      if (path.endsWith("/run")) {
+        Object.assign(rig.captures[0], {
+          complete: true,
+          status: "complete",
+          fetched_count: 1,
+          manifest_id: "qq-snapshot",
+        });
+        throw new Error("lost reply");
+      }
+    },
+  });
+  try {
+    await openQqPlaylist(r);
+    action(r, "生成完整快照");
+    await waitFor(() => !r.d.querySelector("#page-error").hidden);
+    action(r, "回读已保存快照");
+    await waitFor(() =>
+      [...r.d.querySelectorAll("button")].some(
+        (b) => b.textContent === "查看快照曲目",
+      ),
+    );
+    assert.equal(r.calls.filter((c) => c.path.endsWith("/run")).length, 1);
+    assert.equal(r.rig.captures.length, 1);
+  } finally {
+    r.close();
+  }
+});
+
+test("capture drift remains incomplete and explicit retry reuses its saved handle", async () => {
+  let fail = true;
+  const r = await boot({
+    qqEnabled: true,
+    qqAccount: boundQq,
+    hook: async (path, options, rig) => {
+      if (path.endsWith("/run") && fail) {
+        fail = false;
+        const capture = {
+          ...rig.captures[0],
+          status: "incomplete",
+          error: { code: "snapshot_changed", message: "歌单发生变化" },
+        };
+        rig.captures[0] = capture;
+        return { status: 200, body: capture };
+      }
+    },
+  });
+  try {
+    await openQqPlaylist(r);
+    action(r, "生成完整快照");
+    await waitFor(() =>
+      r.d
+        .querySelector("#view-content")
+        .textContent.includes("尚未完成：歌单发生变化"),
+    );
+    assert.ok(
+      !r.d.querySelector("#view-content").textContent.includes("查看快照曲目"),
+    );
+    action(r, "从头重试快照");
+    await waitFor(() => r.rig.captures[0].complete);
+    assert.equal(r.rig.captures.length, 1);
+    assert.equal(r.calls.filter((c) => c.path.endsWith("/run")).length, 2);
+  } finally {
+    r.close();
+  }
+});
+
+test("late capture response after logout cannot write private state into a new session", async () => {
+  let release;
+  const gate = new Promise((resolve) => {
+    release = resolve;
+  });
+  const r = await boot({
+    qqEnabled: true,
+    qqAccount: boundQq,
+    hook: async (path) => {
+      if (path.endsWith("/run")) {
+        await gate;
+        return {
+          status: 200,
+          body: {
+            complete: true,
+            fetched_count: 987,
+            manifest_id: "private-old",
+          },
+        };
+      }
+    },
+  });
+  try {
+    await openQqPlaylist(r);
+    action(r, "生成完整快照");
+    await waitFor(() => r.calls.some((c) => c.path.endsWith("/run")));
+    r.click("#logout");
+    await waitFor(() => r.d.querySelector("#shell").hidden);
+    release();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    assert.equal(r.d.querySelector("#view-content").textContent, "");
+    assert.equal(r.d.querySelector("#detail-body").textContent, "");
+  } finally {
+    release();
+    r.close();
+  }
+});

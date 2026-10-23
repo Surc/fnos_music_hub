@@ -502,7 +502,7 @@ def test_schema_one_upgrade_preserves_existing_sessions_and_favorites(qq):
         db.execute("PRAGMA user_version=1")
     upgraded = Store(qq.settings.data_dir)
     with upgraded.db() as db:
-        assert db.execute("PRAGMA user_version").fetchone()[0] == 2
+        assert db.execute("PRAGMA user_version").fetchone()[0] == 3
     assert qq.a.get("/api/me").status_code == 200
     assert qq.a.get("/api/favorites").json()["items"][0]["track"] == track
 
