@@ -2,6 +2,8 @@
 
 2026-10-24，基于 main `04677d32b96a0b824c2148001458d581f9f8f22c`。实现属于开发分支；真实网易账号与 NAS 尚未验收，未发布 FPK。
 
+PR #4 独立审核、修复及 PR #5 集成顺序见 [代码审核记录](NETEASE_REVIEW.md)。HTTP 响应 Cookie 不参与冻结凭据，异常歌曲 ID 保留未知位置。
+
 ## 方案与来源
 
 沿用旧工程已经使用的 MusicBox 协议，不引入第二套常驻音乐服务。固定 `darknessomi/musicbox` / `NetEase-MusicBox 0.5.3` 的提交 `9c405f4bae2384d0410e63f8b816a707553d72d3`，MIT；上游源码零修改。Hub 自有适配器保留其请求构造、WEAPI/EAPI 加密和目录接口，外围增加结构校验、错误分类和隔离。

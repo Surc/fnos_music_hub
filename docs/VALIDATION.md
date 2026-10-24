@@ -1,5 +1,16 @@
 # 验证记录
 
+## 2026-10-24：PR #4 独立审核与修复复核
+
+重新查询远端精确 head `8ae89c835849bb377172c8e9186107dca26760ae`，内容树 `0dbebe662e9c5240c1b5e3727b428ae056d564cf` 与本地审阅基线相同；[CI 40078403156](https://github.com/Surc/fnos_music_hub/actions/runs/40078403156) 八项均成功，审核/讨论/未解决线程为空。发现和最小修复见 [独立审核](NETEASE_REVIEW.md)，最终修复后的 head/CI 与合并结果另行记录。
+
+- 新增回归先复现响应 Cookie 进入后续请求、异常 ID 导致整页失败或错误匹配：4 failed / 2 passed。修复后完整 Python 3.12（QQ+网易）**193 passed**；新增 21 项回归包含可信 UID、在途 bind/rotate 撤销、关闭网易与缺依赖。
+- 独立干净网易依赖环境 **182 passed / 1 skipped**，pip check 通过；QQ+网易环境依赖检查也通过。只保留既有 Starlette/httpx 弃用提示。未变更任何运行依赖锁、上游源码或 schema。
+- 实际一次性 OS 子进程检查超时/取消/输出超限、非对象 JSON/非法 JSON，均回收进程、移除 0700 XDG、释放后续读取能力；9 次并发隔离临时目录且不超过 4 个同时运行。短进程输出、网络及凭据均为合成，未读取真实私人平台。
+- 前台 Node 语法、**37 项 jsdom** 和 **10 个 Chromium 视口**通过，覆盖原 QQ 快照/酷我任务及网易导航、确认/旋转/分页；[本轮报告](netease-ui-screenshots/review-browser-report.json)。Ruff、来源/摘要、diff 检查和 wheel 构建通过。运行时改动没有改前端静态文件。
+
+按默认关闭、可选只读开发版评估合并条件；真实网易 R-NE-001..004、QQ/NAS、J4125 性能与平台推荐效果仍待验，酷我 407 历史保留。不发布正式版本、不改 FPK。PR #5 必须在业务合并后同步 main、网易依赖闭包、许可证/对应源码并重新验证；现有成功预览仍不含网易目录。
+
 ## 2026-10-24：网易只读目录与账号隔离
 
 基于已合并 main `04677d32b96a0b824c2148001458d581f9f8f22c`，其 [Actions 39973794020](https://github.com/Surc/fnos_music_hub/actions/runs/39973794020) 六项全部成功。当前开发分支 `feat/netease-readonly-catalog`，实现及未开放范围见 [网易模块](NETEASE.md)。固定 MusicBox 0.5.3 / `9c405f4bae2384d0410e63f8b816a707553d72d3` 与旧 ext 接口已核对，上游源码零改动，未合并时不推进采用 SHA。
