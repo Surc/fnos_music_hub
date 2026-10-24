@@ -341,18 +341,24 @@ class Lifecycle:
             raise RuntimeError("process_stop_failed")
         self.registry.unlink(missing_ok=True)
 
+    @staticmethod
+    def check_ports(cfg):
+        ports = [PORT, *(urlsplit(e.engine_url).port for e in cfg.users.values())]
+        # TIME_WAIT belongs to closed connections, not an active listening owner.
+        # SO_REUSEADDR permits restart while still refusing an existing listener.
+        with contextlib.ExitStack() as stack:
+            for port in ports:
+                sock = stack.enter_context(socket.socket())
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                sock.bind(("127.0.0.1", port))
+
     def start(self):
         if self.running():
             return
         self.stop()  # Clean only identities recorded by this application.
         cfg = self.preflight()
         self.secrets(cfg)
-        ports = [PORT, *(urlsplit(e.engine_url).port for e in cfg.users.values())]
-        # Check all ports before creating any process; binding races still fail closed.
-        with contextlib.ExitStack() as stack:
-            for port in ports:
-                sock = stack.enter_context(socket.socket())
-                sock.bind(("127.0.0.1", port))
+        self.check_ports(cfg)
         env = self.base_env()
         process = subprocess.Popen(
             [
