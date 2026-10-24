@@ -4,6 +4,9 @@ umask 077
 action=${1:?missing action}
 : "${TRIM_APPDEST:?missing application target}"
 : "${TRIM_PKGVAR:?missing application data}"
+TRIM_APPDEST=$(readlink -f "$TRIM_APPDEST")
+TRIM_PKGVAR=$(readlink -f "$TRIM_PKGVAR")
+export TRIM_APPDEST TRIM_PKGVAR
 if [ "$(id -u)" = 0 ]; then
     printf '%s\n' '音乐 Hub 必须使用应用专用非 root 用户。' >&2
     exit 1
