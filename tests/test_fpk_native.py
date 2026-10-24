@@ -5,10 +5,12 @@ import io
 import json
 import os
 import signal
+import socket
 import subprocess
 import sys
 import tarfile
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -403,3 +405,38 @@ def test_shell_dispatch_accepts_fnOS_symlink_directory_aliases(tmp_path):
         check=True,
     )
     assert result.stdout == "saved-runtime-ok"
+
+
+def test_restart_port_probe_allows_closed_connection_time_wait(manager, monkeypatch):
+    with socket.socket() as listener:
+        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        listener.bind(("127.0.0.1", 0))
+        port = listener.getsockname()[1]
+        listener.listen(1)
+        with socket.create_connection(("127.0.0.1", port), timeout=2) as client:
+            connection, _ = listener.accept()
+            with connection:
+                connection.shutdown(socket.SHUT_WR)
+                assert client.recv(1) == b""
+        # Closing listener after the accepted socket leaves the server port in TIME_WAIT.
+    with socket.socket() as old_probe:
+        with pytest.raises(OSError) as error:
+            old_probe.bind(("127.0.0.1", port))
+        assert error.value.errno == 98
+    monkeypatch.setattr(native, "PORT", port)
+    manager.check_ports(SimpleNamespace(users={}))
+
+
+def test_restart_port_probe_still_rejects_an_active_listener(manager, monkeypatch):
+    with socket.socket() as listener:
+        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        listener.bind(("127.0.0.1", 0))
+        address = listener.getsockname()
+        listener.listen(1)
+        monkeypatch.setattr(native, "PORT", address[1])
+        with pytest.raises(OSError) as error:
+            manager.check_ports(SimpleNamespace(users={}))
+        assert error.value.errno == 98
+        with socket.create_connection(address, timeout=2):
+            accepted, _ = listener.accept()
+            accepted.close()
