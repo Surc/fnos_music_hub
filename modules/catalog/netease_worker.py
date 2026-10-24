@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import sys
+from http.cookiejar import DefaultCookiePolicy
 
 from hub.errors import HubError
 
@@ -58,11 +59,18 @@ def execute(payload):
                 response._content = b"".join(chunks)
             return response
 
+    class FrozenCookiePolicy(DefaultCookiePolicy):
+        def set_ok(self, cookie, request):
+            # Input cookies are installed explicitly. Never accept a Set-Cookie
+            # rotation into this read's frozen account, including public reads.
+            return False
+
     class Api(NetEase):
         def __init__(self):
             # Bypass NetEase's global Storage/Config/CachedSession initialization.
             self.session = Session()
             self.session.trust_env = False
+            self.session.cookies.set_policy(FrozenCookiePolicy())
             self.header = {
                 "Referer": "https://music.163.com",
                 "User-Agent": "Mozilla/5.0",
@@ -181,7 +189,9 @@ def execute(payload):
             }
             result = {
                 "items": [
-                    mapping.get(r.get("id")) if isinstance(r, dict) else None
+                    mapping.get(r["id"])
+                    if isinstance(r, dict) and type(r.get("id")) is int
+                    else None
                     for r in selected
                 ],
                 "playlist": {

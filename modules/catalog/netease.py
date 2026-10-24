@@ -89,6 +89,8 @@ class NeteaseProtocol:
                             chunks.append(chunk)
                         await process.wait()
                         result = json.loads(b"".join(chunks))
+                        if not isinstance(result, dict):
+                            raise ValueError()
                         if "error" in result:
                             code = result["error"]
                             errors = {
