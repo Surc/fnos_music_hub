@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "repository": "Surc/fnos_music_hub",
-  "stage": "astra-review-hardening-development",
-  "recorded_on": "2026-10-23",
-  "observation_policy": "Source observations remain those of the fixed-source v1.6 research on 2026-10-21, not fresh upstream heads. Adopted integration pins are backed by merged Hub code; runtime/NAS acceptance remains separate.",
+  "stage": "netease-readonly-development",
+  "recorded_on": "2026-10-24",
+  "observation_policy": "Most observations remain the fixed-source v1.6 research of 2026-10-21. MusicBox and legacy ext were rechecked on 2026-10-24 at the same recorded SHAs. Adopted pins require merged Hub code; branch implementation and real acceptance are separate.",
   "design_archive": {
     "path": "docs/design-goals-v1.6-20261021.txt",
     "version": "1.6",
@@ -113,16 +113,16 @@
     {
       "repository": "darknessomi/musicbox",
       "repository_url": "https://github.com/darknessomi/musicbox",
-      "observed_on": "2026-10-21",
-      "observed_branch": null,
+      "observed_on": "2026-10-24",
+      "observed_branch": "master",
       "observed_commit": "9c405f4bae2384d0410e63f8b816a707553d72d3",
       "version_file_or_documented_version": "0.5.3",
-      "status": "candidate",
+      "status": "candidate_implemented_in_development_branch",
       "planned_role": "网易已有协议基础；多账号与反馈/订阅需验证",
       "adopted_commit": null,
       "adoption_evidence": null,
-      "license_record": null,
-      "license_status": "not_rechecked_in_bootstrap",
+      "license_record": "MIT",
+      "license_status": "LICENSE and package metadata checked at fixed commit on 2026-10-24; optional unmodified SDK, original isolation adapter",
       "evidence_path": "docs/design-goals-v1.6-20261021.txt"
     },
     {
@@ -342,13 +342,13 @@
   ],
   "maintenance_skill": {
     "name": "maintain-fnos-music-hub",
-    "version": "1.4.2",
+    "version": "1.5.0",
     "files": {
-      "skills/maintain-fnos-music-hub/SKILL.md": "c84bd91371e1ada237dffe75ab0e81a57990f76964a8e3e34fd5c3302f5adb9a",
+      "skills/maintain-fnos-music-hub/SKILL.md": "1260f6fb357a3fa3ed17bafe942f9cd2199e77f5c6767518a22ff0884ecf2fc5",
       "skills/maintain-fnos-music-hub/agents/openai.yaml": "43f885a269d77d2173f7480c43e58afcab96777c2546511cdaeb4636349ed40d",
       "skills/maintain-fnos-music-hub/assets/icon.svg": "9be88f8dd4c5e658961515c71389eafd45142ffa68bcae58e8dcff57d178ed91"
     },
-    "personal_skill_git_commit": "1e33b59a21b2adc2c10dcca56336c2cb8c19e680"
+    "personal_skill_git_commit": "a5b2bbac3e0b123cb8aff8de009b5b9ae4fd3700"
   },
   "project_release": {
     "tag": null,
@@ -422,9 +422,28 @@
       "live_account_validation": "not_run",
       "evidence": "docs/QQ_ACCOUNTS.md",
       "snapshot_integrity": "two_full_reads; no verified atomic upstream version"
+    },
+    {
+      "component": "NetEase read-only catalog",
+      "source_repository": "darknessomi/musicbox",
+      "interface_commit": "9c405f4bae2384d0410e63f8b816a707553d72d3",
+      "integration_mode": "optional unmodified MusicBox SDK in one-shot private-XDG workers; original in-memory Session, raw-result validation and owner grants; no global SDK in Hub",
+      "files": [
+        "modules/catalog/netease.py",
+        "modules/catalog/netease_worker.py",
+        "modules/accounts/netease.py"
+      ],
+      "upstream_patch_files": [],
+      "adoption_status": "development_branch_only_until_merge",
+      "full_playlist_export": false,
+      "download_enabled": false,
+      "cloud_writes_enabled": false,
+      "personalization": "unverified",
+      "live_account_validation": "not_run",
+      "evidence": "docs/NETEASE.md"
     }
   ],
-  "implementation_branch": "fix/astra-review-hardening",
+  "implementation_branch": "feat/netease-readonly-catalog",
   "adoption_policy": "Advance adopted_commit only for an adapter or dependency already merged on main, with its integration mode and merge evidence. HTTP integration does not vendor upstream code; adoption does not imply real platform or NAS acceptance.",
   "runtime_dependencies": {
     "lockfile": "requirements.lock",
@@ -445,6 +464,18 @@
       "sdk_version": "0.8.2",
       "additional_daemon": false,
       "default_enabled": false
+    },
+    "optional_netease": {
+      "lockfile": "requirements-netease.lock",
+      "lockfile_sha256": "d14616985fdd9c90ba33d825bd4b35adfd1b4a89762afa646313a4b9db82d885",
+      "sdk_repository": "darknessomi/musicbox",
+      "sdk_commit": "9c405f4bae2384d0410e63f8b816a707553d72d3",
+      "sdk_version": "0.5.3",
+      "additional_daemon": false,
+      "default_enabled": false,
+      "runtime_isolation": "one-shot worker with private temporary XDG and immutable stdin credential",
+      "max_parallel_workers": 4,
+      "timeout_seconds": 45
     }
   },
   "acceptance": {
@@ -694,6 +725,78 @@
       "evidence_files_sha256": {
         "docs/qq-ui-screenshots/astra-browser-report.json": "66ee6eed06ad5ea9da69e849418820ee7430923b12bfee93997b31c29978a774"
       }
+    },
+    "netease_accounts_and_catalog": {
+      "recorded_on": "2026-10-24",
+      "base_main_commit": "04677d32b96a0b824c2148001458d581f9f8f22c",
+      "base_main_ci_run": 39973794020,
+      "base_main_ci_conclusion": "success",
+      "implemented_on_development_branch": true,
+      "new_python_contract_and_sdk_cases": 52,
+      "python_with_qq_and_netease": {
+        "passed": 172
+      },
+      "clean_netease_only": {
+        "passed": 161,
+        "skipped_qq_sdk_modules": 1
+      },
+      "jsdom_passed": 37,
+      "real_account": "not_run",
+      "real_nas": "not_run",
+      "fpk": "not_built",
+      "upstream_patches": [],
+      "source_adoption": "pending_merge",
+      "evidence": "docs/NETEASE.md",
+      "browser_viewports_passed": 10,
+      "local_browser_version": "153.0.8010.0",
+      "evidence_files_sha256": {
+        "docs/netease-ui-screenshots/browser-report.json": "842f4adbb16240395ca7b9a9cb82833f35db1f54c0a4c3b29d6d322bf02af26f",
+        "docs/netease-ui-screenshots/netease-mobile-landscape.png": "4c439dcd39c6ae928a3ffae63983f691591b19c8029f61be2d751ca9bcab43c0",
+        "docs/netease-ui-screenshots/netease-mobile-portrait.png": "0c3913a8e514d4ef711e5ccb32e9170daf33057ccb96065e6659f3c2fa1a7cca",
+        "docs/netease-ui-screenshots/netease-pc-landscape.png": "ca7f772eec984bae05852f21a596bb66ab2b30ebc4db592e5199b800165d7bd8",
+        "docs/netease-ui-screenshots/netease-pc-portrait.png": "a6939109cc775a81265034bb6c137b4d254772a10c2cee2ec08575c3e8b30820",
+        "docs/netease-ui-screenshots/pr-draft.jpg": "5cd09cbc2a688c046cd8ae404ef16fd8d20396c8e8ad3f466c30d336e12c7855",
+        "docs/netease-ui-screenshots/review-browser-report.json": "842f4adbb16240395ca7b9a9cb82833f35db1f54c0a4c3b29d6d322bf02af26f"
+      },
+      "pull_request": "https://github.com/Surc/fnos_music_hub/pull/4",
+      "remote_code_commit": "cd95d020556ccd7708f0953976e802e963f933c2",
+      "verified_content_tree": "727801a07856d18a02de22ed21b22816f4d9b2b7",
+      "local_tested_commit": "93d2266",
+      "ci_runs": [
+        {
+          "id": 40077854755,
+          "event": "push",
+          "conclusion": "success",
+          "jobs": 8
+        },
+        {
+          "id": 40078076740,
+          "event": "pull_request",
+          "conclusion": "success",
+          "jobs": 8
+        }
+      ],
+      "ci_scope": "Python 3.11/3.12 base, QQ and NetEase; web; standard Chromium ten viewports; dependency checks, wheels, Ruff and provenance; synthetic platform APIs"
+    },
+    "netease_independent_review": {
+      "recorded_on": "2026-10-24",
+      "reviewed_head": "8ae89c835849bb377172c8e9186107dca26760ae",
+      "reviewed_tree": "0dbebe662e9c5240c1b5e3727b428ae056d564cf",
+      "baseline_ci": 40078403156,
+      "document": "docs/NETEASE_REVIEW.md",
+      "python_with_qq_and_netease": {
+        "passed": 193
+      },
+      "clean_netease_only": {
+        "passed": 182,
+        "skipped": 1
+      },
+      "jsdom_passed": 37,
+      "chromium_viewports_passed": 10,
+      "new_regression_cases": 21,
+      "real_platform_acceptance": "not_run",
+      "nas_acceptance": "not_run",
+      "fpk_pr5_integration": "required_after_business_merge; no_packaging_changes_in_this_review"
     }
   }
 }

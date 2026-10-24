@@ -174,9 +174,18 @@
               id="discovery-tabs"
               class="page-tabs"
               role="tablist"
-              aria-label="QQ 发现内容"
+              aria-label="平台发现内容"
               hidden
             >
+              <button
+                type="button"
+                role="tab"
+                data-discovery="public"
+                aria-selected="false"
+                hidden
+              >
+                公共歌单
+              </button>
               <button
                 type="button"
                 role="tab"
@@ -235,6 +244,16 @@
               aria-controls="view-content"
             >
               已保存快照
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected="false"
+              id="netease-collection-tab"
+              aria-controls="view-content"
+              disabled
+            >
+              网易本人歌单
             </button>
           </div>
           <div

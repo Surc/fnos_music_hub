@@ -1,5 +1,22 @@
 # 开发接口 v0.1
 
+## 网易只读扩展（可选）
+
+默认 `netease_enabled=false`；固定依赖、隔离和错误语义见 [网易模块](NETEASE.md)。沿用身份、CSRF 和 no-store，Cookie 仅放在下表 POST 请求体，不进入 GET、URL 或响应。
+
+| 方法 / 路径 | 行为 |
+| --- | --- |
+| `POST /api/accounts/netease/login` | body.cookie；验证后返回 UID/昵称与 180 秒会话候选，尚未关联 |
+| `POST /api/accounts/netease/login/{id}/bind` | 再验 UID 后显式关联，重复已绑定尝试回读原关联 |
+| `POST /api/accounts/netease/credential` | cookie、binding_generation；仅同 UID 更新，递增 revision |
+| `POST /api/accounts/netease/unlink` | binding_generation；撤销，清理凭据、候选和临时元数据 |
+| `GET /api/accounts` | 增加本人 netease 状态，不含凭据 |
+| `GET /api/catalog/netease/playlists` | scope=public/account，page=1..100；30 项/页，公共模式始终空 Cookie |
+| `GET /api/catalog/netease/recommendations` | kind=playlists/songs，page=1..34；账号推荐，personalization=unverified |
+| `GET /api/catalog/netease/playlists/{id}` | scope=public/account，page=1..100；100 项/页，总数上限 10000，保序/重复/未知 |
+
+所有目录 complete=false/integrity=page_only；没有网易完整快照或云端写入端点，任务准入继续拒绝 QQ/网易。
+
 ## 本地快照历史补充
 
 - `GET /api/playlist-captures?before=<id>&limit=20`：当前飞牛用户的独立本地读取历史，不调用 QQ。返回 items/next_cursor，limit 1–50，跨用户游标 404。原 `/api/catalog/qq/playlists/{id}/snapshots` 同样支持这两个参数，额外限制来源归属。
@@ -31,7 +48,7 @@
 | `GET /api/admin/injection` | 管理员可读；当前 available=false，不修改官方 Socket |
 | `GET /` | 独立前台，静态资源在 /static |
 
-下载仍仅提交酷我。QQ 公共搜索独立于可选账号模块；启用账号模块后提供以下私人只读链路，网易与酷我私人账号未开放。
+下载仍仅提交酷我。QQ 公共搜索独立于可选账号模块；启用账号模块后提供以下私人只读链路，网易只读账号和目录端点见下表，酷我私人账号未开放。
 
 | 方法 / 路径 | 实现行为 |
 | --- | --- |

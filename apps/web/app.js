@@ -48,6 +48,9 @@ const state = {
   qqLogin: null,
   qqBusy: false,
   qqDialog: false,
+  neAccount: null,
+  neLogin: null,
+  neAction: 0,
   discovery: "search",
   collectionTab: "local",
   personal: null,
@@ -134,6 +137,7 @@ function closeDialog(id, force = false) {
     $("#download-error").textContent = "";
   }
   if (id === "detail-dialog") {
+    state.neAction++;
     state.qqDialog = false;
     $("#detail-body").replaceChildren();
   }
@@ -146,6 +150,7 @@ function showDialog(id) {
   else el.setAttribute("open", "");
 }
 function showDetails(title, body) {
+  state.neAction++;
   state.qqDialog = false;
   $("#detail-title").textContent = title;
   $("#detail-body").replaceChildren(body);
@@ -174,6 +179,9 @@ function signedOut() {
   state.removedCaptures.clear();
   state.discovery = "search";
   state.collectionTab = "local";
+  state.neAccount = null;
+  state.neLogin = null;
+  state.neAction++;
   state.selected.discover.clear();
   state.selected.collections.clear();
   state.drafts.clear();
@@ -261,10 +269,9 @@ function downloadable(song) {
 function visibleRows() {
   if (state.view === "collections") {
     if (state.collectionTab === "snapshots") return [];
-    const songs =
-      state.collectionTab === "qq"
-        ? state.playlist?.data?.items || []
-        : state.favorites;
+    const songs = ["qq", "netease"].includes(state.collectionTab)
+      ? state.playlist?.data?.items || []
+      : state.favorites;
     return songs.map((song, i) => ({ id: "collection:" + i, song }));
   }
   if (state.discovery === "songs")
@@ -659,6 +666,54 @@ function accountsPage() {
         if (account?.binding_generation > 0)
           p.append(button("重置登录尝试", unlinkQq));
       }
+    } else if (
+      provider === "netease" &&
+      capability("cloud_accounts", provider)
+    ) {
+      const account = state.neAccount;
+      const names = {
+        bound: "已关联",
+        expired: "平台登录已失效",
+        unbound: "尚未关联",
+      };
+      p.append(
+        node(
+          "p",
+          `${names[account?.state] || "正在读取账号状态"}${account?.uid ? " · 网易 UID " + account.uid : ""}`,
+          "break-text",
+        ),
+      );
+      p.append(
+        node(
+          "p",
+          "只读歌单与账号推荐；Cookie 验证后核对 UID，再显式关联。下载、云端写入和自动反馈未开放。",
+          "small muted",
+        ),
+      );
+      if (["bound", "expired"].includes(account?.state)) {
+        p.append(
+          button("更新网易凭据", () => neteaseLoginForm(true)),
+          button("解除网易关联", unlinkNetease),
+        );
+      } else {
+        p.append(
+          button(
+            state.neLogin ? "继续网易关联" : "关联网易账号",
+            () => (state.neLogin ? neteaseConfirmation() : neteaseLoginForm()),
+            "primary",
+          ),
+        );
+        if (account?.binding_generation)
+          p.append(button("取消网易登录尝试", unlinkNetease));
+      }
+      p.append(
+        button("查看网易歌单", async () => {
+          state.collectionTab = "netease";
+          state.playlist = null;
+          state.cloudPlaylists = null;
+          await navigate("collections");
+        }),
+      );
     } else {
       const bind = node("button", "绑定账号 · 待接入");
       bind.disabled = true;
@@ -701,20 +756,156 @@ function accountsPage() {
 }
 
 function clearQqContent() {
-  state.personal = null;
-  state.cloudPlaylists = null;
-  state.playlist = null;
+  clearPlatformContent("qq");
+}
+function clearPlatformContent(provider) {
+  if (state.personal?.provider === provider) state.personal = null;
+  if (state.cloudPlaylists?.provider === provider) state.cloudPlaylists = null;
+  if (state.playlist?.ref.provider === provider) state.playlist = null;
+}
+function acceptAccounts(data, invalidate = true) {
+  for (const [provider, field] of [
+    ["qq", "qqAccount"],
+    ["netease", "neAccount"],
+  ]) {
+    const next = data.items?.find((a) => a.provider === provider) || null;
+    const old = state[field];
+    if (
+      old &&
+      [
+        "account_ref",
+        "binding_generation",
+        "credential_revision",
+        "state",
+      ].some((k) => old[k] !== next?.[k])
+    ) {
+      clearPlatformContent(provider);
+      if (invalidate) state.load++;
+    }
+    state[field] = next;
+  }
 }
 async function loadAccounts() {
   const data = await api("/api/accounts");
-  const next = data.items?.find((a) => a.provider === "qq") || null;
-  if (
-    state.qqAccount &&
-    (next?.account_ref !== state.qqAccount.account_ref ||
-      next?.binding_generation !== state.qqAccount.binding_generation)
-  )
-    clearQqContent();
-  state.qqAccount = next;
+  acceptAccounts(data);
+}
+async function unlinkNetease() {
+  if (!state.neAccount) return;
+  const action = ++state.neAction;
+  const result = await api("/api/accounts/netease/unlink", {
+    method: "POST",
+    body: JSON.stringify({
+      binding_generation: state.neAccount.binding_generation,
+    }),
+  });
+  if (action !== state.neAction) return;
+  state.neAccount = result;
+  state.neLogin = null;
+  clearPlatformContent("netease");
+  state.load++;
+  closeDialog("detail-dialog");
+  render();
+}
+function neteaseLoginForm(rotate = false) {
+  const box = node("div");
+  box.append(
+    node(
+      "p",
+      rotate
+        ? `更新网易 UID ${state.neAccount?.uid} 的凭据；换号请先解除关联。`
+        : "验证后请核对网易 UID，再确认只读关联。Cookie 仅保存在服务端受保护存储，不会写入云端收藏。",
+      "notice",
+    ),
+  );
+  const label = node("label", "网易登录 Cookie");
+  const input = node("input");
+  input.id = "netease-cookie";
+  input.type = "password";
+  input.autocomplete = "off";
+  input.maxLength = 16384;
+  label.append(input);
+  box.append(
+    label,
+    button(
+      rotate ? "验证并更新同号凭据" : "验证网易账号",
+      async () => {
+        const cookie = input.value;
+        input.value = "";
+        const action = ++state.neAction;
+        const data = await api(
+          `/api/accounts/netease/${rotate ? "credential" : "login"}`,
+          {
+            method: "POST",
+            body: JSON.stringify(
+              rotate
+                ? {
+                    cookie,
+                    binding_generation: state.neAccount.binding_generation,
+                  }
+                : { cookie },
+            ),
+          },
+        );
+        if (action !== state.neAction) return;
+        if (rotate) {
+          state.neAccount = data;
+          clearPlatformContent("netease");
+          state.load++;
+          closeDialog("detail-dialog");
+          render();
+        } else {
+          state.neLogin = data;
+          await loadAccounts();
+          if (action !== state.neAction || state.neLogin?.id !== data.id)
+            return;
+          neteaseConfirmation();
+          render();
+        }
+      },
+      "primary",
+    ),
+  );
+  showDetails(rotate ? "更新网易凭据" : "关联本人网易账号", box);
+}
+function neteaseConfirmation() {
+  const attempt = state.neLogin;
+  if (!attempt) return;
+  const box = node("div");
+  box.append(
+    node(
+      "p",
+      `待关联网易 UID：${attempt.uid} · ${attempt.nickname || "昵称未知"}`,
+      "break-text",
+    ),
+    node(
+      "p",
+      "确认后允许读取此账号的歌单与推荐；不会开放下载或云端写入。",
+      "notice",
+    ),
+  );
+  box.append(
+    button(
+      "确认关联此网易账号",
+      async () => {
+        const action = ++state.neAction;
+        const account = await api(
+          `/api/accounts/netease/login/${encodeURIComponent(attempt.id)}/bind`,
+          { method: "POST" },
+        );
+        if (action !== state.neAction || state.neLogin?.id !== attempt.id)
+          return;
+        state.neAccount = account;
+        state.neLogin = null;
+        clearPlatformContent("netease");
+        state.load++;
+        closeDialog("detail-dialog");
+        render();
+      },
+      "primary",
+    ),
+    button("取消网易关联", unlinkNetease),
+  );
+  showDetails("核对网易账号", box);
 }
 async function unlinkQq() {
   if (!state.qqAccount) return;
@@ -819,15 +1010,14 @@ async function pollQqLogin() {
 }
 function playlistCards(data) {
   if (!data?.items?.length)
-    return empty(
-      "暂无歌单",
-      "关联本人 QQ 后读取平台返回的歌单；不会改用公共热门。",
-    );
+    return empty("暂无歌单", "平台未返回歌单；私人入口不会改用公共热门。");
   const grid = node("div", undefined, "results");
   for (const item of data.items) {
     const card = node("article", undefined, "song-card");
     card.append(
-      badge("QQ · 本人账号请求"),
+      badge(
+        `${providers[data.provider] || "QQ 音乐"} · ${data.scope === "public" ? "公共目录" : "本人账号请求"}`,
+      ),
       node("h3", item.title || "未知歌单"),
     );
     if (item.playlist) {
@@ -844,8 +1034,9 @@ function playlistCards(data) {
             title: item.title,
             page: 1,
             data: null,
+            scope: data.scope || "account",
           };
-          state.collectionTab = "qq";
+          state.collectionTab = item.playlist.provider;
           await navigate("collections");
         }),
       );
@@ -1189,6 +1380,68 @@ function qqCollectionPage() {
   box.append(actions);
   return box;
 }
+function neteaseCollectionPage() {
+  const current = state.playlist;
+  const box = node("div");
+  if (!current) {
+    box.append(
+      node(
+        "p",
+        "网易本人创建与已收藏的歌单；仅浏览，不会新增或取消云端订阅。",
+        "notice",
+      ),
+      playlistCards(state.cloudPlaylists),
+    );
+    const data = state.cloudPlaylists;
+    if (data?.page > 1)
+      box.append(
+        button("上一页歌单", () => loadView(false, { page: data.page - 1 })),
+      );
+    if (data?.has_more)
+      box.append(
+        button("下一页歌单", () => loadView(false, { page: data.page + 1 })),
+      );
+    return box;
+  }
+  box.append(
+    button(
+      current.scope === "public" ? "返回公共歌单" : "返回网易歌单",
+      async () => {
+        state.playlist = null;
+        state.cloudPlaylists = null;
+        if (current.scope === "public") {
+          state.provider = "netease";
+          state.discovery = "public";
+          state.personal = null;
+          await navigate("discover");
+          return;
+        }
+        render();
+        await loadView();
+      },
+    ),
+    node("h2", current.title),
+    node(
+      "p",
+      `第 ${current.page} 页 · 来源总数 ${current.data?.source_total ?? "待读取"}。分页预览未验证整单完整性；网易下载未开放。`,
+      "notice",
+    ),
+  );
+  box.append(
+    current.data?.items?.length
+      ? songCards(visibleRows())
+      : empty("当前页暂无歌曲", "未知与不可用条目保留原位置。"),
+  );
+  if (current.page > 1)
+    box.append(
+      button("上一页歌曲", () => loadView(false, { page: current.page - 1 })),
+    );
+  if (current.data?.has_more)
+    box.append(
+      button("下一页歌曲", () => loadView(false, { page: current.page + 1 })),
+    );
+  return box;
+}
 function storagePage() {
   const result = node("div");
   const storage = panel(
@@ -1245,6 +1498,14 @@ function render() {
   $("#discover-controls").hidden = view !== "discover";
   $("#collection-tabs").hidden = view !== "collections";
   $("#qq-collection-tab").disabled = !capability("account_playlists", "qq");
+  $("#netease-collection-tab").disabled = !capability(
+    "account_playlists",
+    "netease",
+  );
+  $("#netease-collection-tab").setAttribute(
+    "aria-selected",
+    String(state.collectionTab === "netease"),
+  );
   $("#qq-collection-tab").setAttribute(
     "aria-selected",
     String(state.collectionTab === "qq"),
@@ -1258,12 +1519,27 @@ function render() {
     String(state.collectionTab === "snapshots"),
   );
   $("#discovery-tabs").hidden =
-    state.provider !== "qq" || !capability("recommendations", "qq");
-  for (const b of document.querySelectorAll("[data-discovery]"))
+    !capability("recommendations", state.provider) &&
+    !capability("public_playlists", state.provider);
+  $("#discovery-tabs").setAttribute(
+    "aria-label",
+    `${providers[state.provider]}发现内容`,
+  );
+  for (const b of document.querySelectorAll("[data-discovery]")) {
+    b.hidden =
+      b.dataset.discovery === "public"
+        ? state.provider !== "netease"
+        : b.dataset.discovery === "search" &&
+          !capability("search", state.provider);
+    if (b.dataset.discovery === "songs")
+      b.textContent =
+        state.provider === "netease" ? "账号推荐歌曲" : "猜你喜欢歌曲";
     b.setAttribute(
       "aria-selected",
       String(b.dataset.discovery === state.discovery),
     );
+  }
+  $("#search-form").hidden = state.provider === "netease";
   $("#download-tabs").hidden = view !== "downloads";
   $("#download-filters").hidden = view !== "downloads";
   $("#task-filter-label").hidden = state.downloadTab !== "tasks";
@@ -1274,7 +1550,9 @@ function render() {
       String(b.dataset.downloadTab === state.downloadTab),
     );
   for (const b of document.querySelectorAll("[data-provider]")) {
-    b.disabled = !capability("search", b.dataset.provider);
+    b.disabled =
+      !capability("search", b.dataset.provider) &&
+      !capability("public_playlists", b.dataset.provider);
     b.setAttribute(
       "aria-pressed",
       String(b.dataset.provider === state.provider),
@@ -1283,11 +1561,16 @@ function render() {
   for (const opt of $("#provider").options)
     opt.disabled = !capability("search", opt.value);
   $("#provider").value = state.provider;
-  $("#source-notice").textContent = capability("search", state.provider)
-    ? state.discovery === "search"
-      ? `${providers[state.provider]} · 公共歌曲搜索。本地收藏可独立使用；平台私人内容需要本人账号关联。`
-      : "QQ · 本人账号请求。推荐歌单与猜你喜欢歌曲分开显示；个性化效果待与来源客户端对照。不会自动上报播放反馈。"
-    : "当前用户尚未配置可用的搜索引擎，请联系管理员。";
+  $("#source-notice").textContent =
+    state.provider === "netease"
+      ? state.discovery === "public"
+        ? "网易 · 公共歌单只读浏览，不使用任何平台账号 Cookie。"
+        : "网易 · 本人账号推荐，个性化效果与每日更新规律待真实平台验证。下载和云端写入未开放。"
+      : capability("search", state.provider)
+        ? state.discovery === "search"
+          ? `${providers[state.provider]} · 公共歌曲搜索。本地收藏可独立使用；平台私人内容需要本人账号关联。`
+          : "QQ · 本人账号请求。推荐歌单与猜你喜欢歌曲分开显示；个性化效果待与来源客户端对照。不会自动上报播放反馈。"
+        : "当前用户尚未配置可用的搜索引擎，请联系管理员。";
   $("#pagination").hidden =
     view !== "discover" ||
     !(state.discovery === "search" ? state.hasMore : state.personal?.has_more);
@@ -1308,12 +1591,14 @@ function render() {
         ? snapshotHistoryPage()
         : state.collectionTab === "qq"
           ? qqCollectionPage()
-          : state.favorites.length
-            ? songCards(visibleRows())
-            : empty(
-                "还没有本地收藏",
-                "在搜索结果中收藏歌曲，这里仅保存当前用户的记录。",
-              );
+          : state.collectionTab === "netease"
+            ? neteaseCollectionPage()
+            : state.favorites.length
+              ? songCards(visibleRows())
+              : empty(
+                  "还没有本地收藏",
+                  "在搜索结果中收藏歌曲，这里仅保存当前用户的记录。",
+                );
     content.setAttribute("role", "tabpanel");
     content.setAttribute(
       "aria-labelledby",
@@ -1321,19 +1606,20 @@ function render() {
         ? "snapshot-collection-tab"
         : state.collectionTab === "qq"
           ? "qq-collection-tab"
-          : "local-collection-tab",
+          : state.collectionTab === "netease"
+            ? "netease-collection-tab"
+            : "local-collection-tab",
     );
   }
   if (view === "discover" && state.discovery !== "search")
-    result =
-      state.discovery === "playlists"
-        ? playlistCards(state.personal)
-        : state.personal?.items?.length
-          ? songCards(visibleRows())
-          : empty(
-              "暂无猜你喜欢歌曲",
-              "先关联本人 QQ 账号，再读取本次推荐。此入口不是每日推荐歌曲。",
-            );
+    result = ["playlists", "public"].includes(state.discovery)
+      ? playlistCards(state.personal)
+      : state.personal?.items?.length
+        ? songCards(visibleRows())
+        : empty(
+            "暂无账号推荐歌曲",
+            "请关联有效的本人平台账号，再读取本次推荐；个性化与每日推荐效果尚未验收。",
+          );
   if (view === "downloads") {
     result = state.downloadTab === "tasks" ? taskCards() : assetCards();
     content.setAttribute("role", "tabpanel");
@@ -1368,19 +1654,29 @@ async function loadView(quiet = false, target = {}) {
     tab = state.downloadTab,
     epoch = state.epoch;
   const currentPlaylist = state.playlist;
+  const ne = state.provider === "netease";
+  const nePath = `/api/catalog/netease/`;
   const path =
     view === "discover" && state.discovery !== "search"
-      ? `/api/catalog/qq/recommendations?kind=${state.discovery}&page=${target.page ?? state.personal?.page ?? 1}&cursor=${target.cursor ?? state.personal?.cursor ?? 0}`
-      : view === "accounts" && capability("cloud_accounts", "qq")
+      ? ne
+        ? `${nePath}${state.discovery === "public" ? "playlists?scope=public" : "recommendations?kind=" + state.discovery}&page=${target.page ?? state.personal?.page ?? 1}`
+        : `/api/catalog/qq/recommendations?kind=${state.discovery}&page=${target.page ?? state.personal?.page ?? 1}&cursor=${target.cursor ?? state.personal?.cursor ?? 0}`
+      : view === "accounts" &&
+          (capability("cloud_accounts", "qq") ||
+            capability("cloud_accounts", "netease"))
         ? "/api/accounts"
         : view === "collections"
           ? state.collectionTab === "snapshots"
             ? "/api/playlist-captures"
             : state.collectionTab === "local"
               ? "/api/favorites"
-              : currentPlaylist
-                ? `/api/catalog/qq/playlists/${encodeURIComponent(currentPlaylist.ref.id)}?dirid=${encodeURIComponent(currentPlaylist.ref.dirid)}&page=${target.page ?? currentPlaylist.page}`
-                : "/api/catalog/qq/playlists"
+              : state.collectionTab === "netease"
+                ? currentPlaylist
+                  ? `${nePath}playlists/${encodeURIComponent(currentPlaylist.ref.id)}?scope=${currentPlaylist.scope || "account"}&page=${target.page ?? currentPlaylist.page}`
+                  : `${nePath}playlists?scope=account&page=${target.page ?? state.cloudPlaylists?.page ?? 1}`
+                : currentPlaylist
+                  ? `/api/catalog/qq/playlists/${encodeURIComponent(currentPlaylist.ref.id)}?dirid=${encodeURIComponent(currentPlaylist.ref.dirid)}&page=${target.page ?? currentPlaylist.page}`
+                  : "/api/catalog/qq/playlists"
           : view === "downloads"
             ? "/api/" + tab
             : view === "injection"
@@ -1407,16 +1703,12 @@ async function loadView(quiet = false, target = {}) {
     if (seq !== state.load || view !== state.view || tab !== state.downloadTab)
       return;
     if (view === "accounts") {
-      const next = data.items?.find((a) => a.provider === "qq") || null;
-      if (
-        state.qqAccount &&
-        (next?.account_ref !== state.qqAccount.account_ref ||
-          next?.binding_generation !== state.qqAccount.binding_generation)
-      )
-        clearQqContent();
-      state.qqAccount = next;
+      acceptAccounts(data, false);
     } else if (view === "discover") state.personal = data;
-    else if (view === "collections" && state.collectionTab === "qq") {
+    else if (
+      view === "collections" &&
+      ["qq", "netease"].includes(state.collectionTab)
+    ) {
       if (currentPlaylist && currentPlaylist === state.playlist) {
         currentPlaylist.page = data.page;
         currentPlaylist.data = data;
@@ -1437,10 +1729,10 @@ async function loadView(quiet = false, target = {}) {
       seq === state.load
     ) {
       if (
-        path.startsWith("/api/catalog/qq/") &&
+        path.startsWith("/api/catalog/") &&
         ["binding_changed", "platform_auth_required"].includes(e.code)
       ) {
-        clearQqContent();
+        clearPlatformContent(path.includes("/netease/") ? "netease" : "qq");
         render();
       }
       pageError(e.message);
@@ -1630,9 +1922,14 @@ async function search(append = false) {
   }
 }
 function chooseProvider(provider) {
-  if (!capability("search", provider) || provider === state.provider) return;
+  if (
+    (!capability("search", provider) &&
+      !capability("public_playlists", provider)) ||
+    provider === state.provider
+  )
+    return;
   state.provider = provider;
-  state.discovery = "search";
+  state.discovery = provider === "netease" ? "public" : "search";
   state.personal = null;
   state.load++;
   state.searchRequest++;
@@ -1647,6 +1944,7 @@ function chooseProvider(provider) {
   $("#page-status").hidden = true;
   $("#page-error").hidden = true;
   render();
+  if (provider === "netease") void loadView();
 }
 async function restore() {
   const epoch = ++state.epoch;
@@ -1751,11 +2049,13 @@ for (const b of document.querySelectorAll("[data-discovery]"))
 for (const [id, collectionTab] of [
   ["local-collection-tab", "local"],
   ["qq-collection-tab", "qq"],
+  ["netease-collection-tab", "netease"],
   ["snapshot-collection-tab", "snapshots"],
 ])
   $("#" + id).addEventListener("click", async () => {
     state.collectionTab = collectionTab;
     state.playlist = null;
+    state.cloudPlaylists = null;
     state.selected.collections.clear();
     render();
     await loadView();
@@ -1794,7 +2094,7 @@ for (const id of ["collection-tabs", "discovery-tabs"])
   $("#" + id).addEventListener("keydown", (event) => {
     if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
     const tabs = [...$("#" + id).querySelectorAll('[role="tab"]')].filter(
-      (b) => !b.disabled,
+      (b) => !b.disabled && !b.hidden,
     );
     if (!tabs.length) return;
     event.preventDefault();

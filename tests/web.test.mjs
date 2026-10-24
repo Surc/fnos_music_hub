@@ -1216,3 +1216,230 @@ test("a slow task poll cannot replace a newly selected assets view", async () =>
     r.close();
   }
 });
+
+async function bindNetease(r) {
+  r.click('[data-view="accounts"]');
+  await waitFor(() => r.d.body.textContent.includes("关联网易账号"));
+  action(r, "关联网易账号");
+  r.d.querySelector("#netease-cookie").value =
+    "MUSIC_U=synthetic-private-cookie";
+  action(r, "验证网易账号");
+  await waitFor(() => r.d.body.textContent.includes("确认关联此网易账号"));
+  assert.equal(
+    r.d.body.textContent.includes("synthetic-private-cookie"),
+    false,
+  );
+  assert.equal(r.rig.neAccount.state, "unbound");
+  action(r, "确认关联此网易账号");
+  await waitFor(() => r.d.body.textContent.includes("解除网易关联"));
+}
+
+test("NetEase public catalog is available before binding; duplicate and unknown rows remain read-only", async () => {
+  const r = await boot({ neteaseEnabled: true });
+  try {
+    r.click('[data-provider="netease"]');
+    await waitFor(() => r.d.body.textContent.includes("合成网易歌单 1"));
+    assert.equal(r.d.querySelector("#search-form").hidden, true);
+    assert.equal(r.rig.neAccount.state, "unbound");
+    action(r, "查看歌单");
+    await waitFor(() => r.d.body.textContent.includes("合成网易歌曲"));
+    assert.equal(r.d.querySelectorAll(".song-card").length, 3);
+    assert.equal(
+      r.d.querySelectorAll(".song-card h3")[0].textContent,
+      r.d.querySelectorAll(".song-card h3")[2].textContent,
+    );
+    assert.ok(
+      r.calls.some((c) =>
+        c.path.includes("/netease/playlists/88?scope=public"),
+      ),
+    );
+    assert.equal(
+      r.calls.some((c) => c.path === "/api/tasks" && c.method === "POST"),
+      false,
+    );
+    assert.equal(r.d.querySelector("#download-selected").disabled, true);
+  } finally {
+    r.close();
+  }
+});
+
+test("NetEase binding requires UID confirmation; rotation preserves form and revokes private previews", async () => {
+  const r = await boot({ neteaseEnabled: true, qqEnabled: true });
+  try {
+    await bindNetease(r);
+    const original = { ...r.rig.neAccount };
+    action(r, "更新网易凭据");
+    const input = r.d.querySelector("#netease-cookie");
+    input.value = "MUSIC_U=synthetic-new-cookie";
+    r.dom.window.dispatchEvent(new r.dom.window.Event("resize"));
+    assert.equal(input.value, "MUSIC_U=synthetic-new-cookie");
+    action(r, "验证并更新同号凭据");
+    await waitFor(() => !r.d.querySelector("#detail-dialog").open);
+    assert.equal(
+      r.rig.neAccount.binding_generation,
+      original.binding_generation,
+    );
+    assert.equal(
+      r.rig.neAccount.credential_revision,
+      original.credential_revision + 1,
+    );
+    assert.equal(r.rig.qqAccount.state, "unbound");
+    action(r, "查看网易歌单");
+    await waitFor(() => r.d.body.textContent.includes("合成网易歌单 1"));
+    assert.ok(
+      r.calls.some((c) => c.path.includes("/netease/playlists?scope=account")),
+    );
+  } finally {
+    r.close();
+  }
+});
+
+test("NetEase failed directory and song pages retry the same page without hiding current content", async () => {
+  let fail = true;
+  const r = await boot({
+    neteaseEnabled: true,
+    hook: async (path) => {
+      if (path.includes("/netease/playlists?scope=account&page=2") && fail) {
+        fail = false;
+        return {
+          status: 503,
+          body: {
+            error: {
+              code: "platform_unavailable",
+              message: "synthetic page failure",
+            },
+          },
+        };
+      }
+    },
+  });
+  try {
+    await bindNetease(r);
+    action(r, "查看网易歌单");
+    await waitFor(() => r.d.body.textContent.includes("合成网易歌单 1"));
+    action(r, "下一页歌单");
+    await waitFor(() => !r.d.querySelector("#page-error").hidden);
+    assert.ok(r.d.body.textContent.includes("合成网易歌单 1"));
+    await waitFor(() =>
+      [...r.d.querySelectorAll("button")].some(
+        (b) => b.textContent === "下一页歌单" && !b.disabled,
+      ),
+    );
+    action(r, "下一页歌单");
+    await waitFor(() => r.d.body.textContent.includes("合成网易歌单 2"));
+    assert.equal(
+      r.calls.filter((c) => c.path.includes("scope=account&page=2")).length,
+      2,
+    );
+    action(r, "查看歌单");
+    await waitFor(() => r.d.body.textContent.includes("合成网易歌曲"));
+    action(r, "下一页歌曲");
+    await waitFor(() => r.d.body.textContent.includes("第 2 页"));
+    assert.equal(r.d.querySelectorAll(".song-card").length, 3);
+  } finally {
+    r.close();
+  }
+});
+
+test("NetEase late account recommendations after unlink cannot repopulate private state", async () => {
+  let release;
+  const gate = new Promise((resolve) => {
+    release = resolve;
+  });
+  const r = await boot({
+    neteaseEnabled: true,
+    hook: async (path) => {
+      if (path.includes("/netease/recommendations?kind=songs")) {
+        await gate;
+        return {
+          status: 200,
+          body: {
+            provider: "netease",
+            scope: "account",
+            page: 1,
+            items: [{ ...song, title: "forbidden late private song" }],
+            has_more: false,
+          },
+        };
+      }
+    },
+  });
+  try {
+    await bindNetease(r);
+    r.click('[data-view="discover"]');
+    r.click('[data-provider="netease"]');
+    await waitFor(() => r.d.body.textContent.includes("合成网易歌单 1"));
+    r.click('[data-discovery="songs"]');
+    await waitFor(() =>
+      r.calls.some((c) => c.path.includes("recommendations?kind=songs")),
+    );
+    r.click('[data-view="accounts"]');
+    await waitFor(() => r.d.body.textContent.includes("解除网易关联"));
+    action(r, "解除网易关联");
+    await waitFor(() => r.rig.neAccount.state === "unbound");
+    release();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    assert.equal(
+      r.d.body.textContent.includes("forbidden late private song"),
+      false,
+    );
+    assert.equal(r.rig.neAccount.state, "unbound");
+    assert.equal(
+      r.calls.some((c) => c.path.includes("recommendations?kind=daily")),
+      false,
+    );
+  } finally {
+    release();
+    r.close();
+  }
+});
+
+test("NetEase expired account leaves fnOS signed in and never falls back to public recommendations", async () => {
+  const r = await boot({ neteaseEnabled: true });
+  try {
+    r.click('[data-provider="netease"]');
+    await waitFor(() => r.d.body.textContent.includes("合成网易歌单 1"));
+    r.click('[data-discovery="playlists"]');
+    await waitFor(() => !r.d.querySelector("#page-error").hidden);
+    assert.equal(r.d.querySelector("#shell").hidden, false);
+    assert.equal(r.d.body.textContent.includes("合成网易歌单 1"), false);
+    assert.equal(
+      r.calls.filter((c) => c.path.includes("netease/playlists?scope=public"))
+        .length,
+      1,
+    );
+  } finally {
+    r.close();
+  }
+});
+
+test("closing NetEase verification discards its late response without reopening details", async () => {
+  let release;
+  const gate = new Promise((resolve) => {
+    release = resolve;
+  });
+  const r = await boot({
+    neteaseEnabled: true,
+    hook: async (path) => {
+      if (path === "/api/accounts/netease/login") await gate;
+    },
+  });
+  try {
+    r.click('[data-view="accounts"]');
+    await waitFor(() => r.d.body.textContent.includes("关联网易账号"));
+    action(r, "关联网易账号");
+    r.d.querySelector("#netease-cookie").value = "MUSIC_U=synthetic";
+    action(r, "验证网易账号");
+    await waitFor(() =>
+      r.calls.some((c) => c.path === "/api/accounts/netease/login"),
+    );
+    r.click("#detail-dialog [data-close]");
+    release();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    assert.equal(r.d.querySelector("#detail-dialog").open, false);
+    assert.equal(r.d.body.textContent.includes("确认关联此网易账号"), false);
+  } finally {
+    release();
+    r.close();
+  }
+});
