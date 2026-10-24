@@ -1,0 +1,12 @@
+{
+  "run_id": 40080842199,
+  "job_id": 120833892584,
+  "head_sha": "7432529361f9bc4cc4e6e41f858e35374aaad14d",
+  "url": "https://github.com/Surc/fnos_music_hub/actions/runs/40080842199",
+  "conclusion": "failure",
+  "input_preparation": "passed",
+  "actual_fpk_assembly_and_static_verification": "passed",
+  "native_smoke": "failed at restart after child-exit cleanup: EADDRINUSE from a preflight socket without SO_REUSEADDR",
+  "fix": "Enable SO_REUSEADDR only for preflight probes; real TCP TIME_WAIT and active-listener regressions added; rerun required.",
+  "nas_acceptance": "not_run"
+}

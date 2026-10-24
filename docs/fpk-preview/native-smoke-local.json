@@ -1,0 +1,5 @@
+{
+  "real_nas_acceptance": "not_run",
+  "reason": "non-root and matching Linux procfs required",
+  "status": "blocked"
+}

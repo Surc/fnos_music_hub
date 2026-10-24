@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+test "$(uname -m)" = x86_64
+test "$(id -u)" != 0

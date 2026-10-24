@@ -1,0 +1,26 @@
+#!/bin/sh
+set -eu
+umask 077
+action=${1:?missing action}
+: "${TRIM_APPDEST:?missing application target}"
+: "${TRIM_PKGVAR:?missing application data}"
+TRIM_APPDEST=$(readlink -f "$TRIM_APPDEST")
+TRIM_PKGVAR=$(readlink -f "$TRIM_PKGVAR")
+export TRIM_APPDEST TRIM_PKGVAR
+if [ "$(id -u)" = 0 ]; then
+    printf '%s\n' '音乐 Hub 必须使用应用专用非 root 用户。' >&2
+    exit 1
+fi
+program=$TRIM_APPDEST
+if [ "$action" != install ] && [ "$action" != finish-upgrade ] && [ -L "$TRIM_PKGVAR/active-program" ]; then
+    program=$(readlink -f "$TRIM_PKGVAR/active-program")
+fi
+if [ "$action" = rollback ]; then
+    program=$(readlink -f "$TRIM_PKGVAR/rollback/program")
+fi
+case "$program" in
+    "$TRIM_APPDEST"|"$TRIM_PKGVAR"/backups/*/program) ;;
+    *) exit 1 ;;
+esac
+export PYTHONDONTWRITEBYTECODE=1 PYTHONNOUSERSITE=1
+exec "$program/runtime/python/bin/python3" -sB "$program/native/service.py" "$action"

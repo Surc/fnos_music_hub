@@ -1,0 +1,3 @@
+#!/bin/sh
+# target may already be gone. Do not depend on its Python or remove persistent var.
+exit 0

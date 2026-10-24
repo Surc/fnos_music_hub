@@ -1,0 +1,15 @@
+appname = fnos_music_hub
+version = 0.1.0-preview.1
+display_name = 音乐 Hub PREVIEW
+desc = 独立音乐中心预览版；J4125 实机尚待验收。需要现有音桥 API 和 HTTPS 反向代理；不接管官方音乐 Socket，不迁移 ext 数据。
+source = thirdparty
+platform = x86
+maintainer = Surc
+maintainer_url = https://github.com/Surc/fnos_music_hub
+distributor = Surc
+desktop_uidir = ui
+desktop_applaunchname = fnos_music_hub.Application
+service_port = 8790
+checkport = true
+ctl_stop = true
+disable_authorization_path = true
