@@ -1,0 +1,10 @@
+{
+  "scope": "development Linux, root child processes, synthetic GUIDs, no platform login/download; not supervisor or fnOS acceptance",
+  "checks": {
+    "python_native_imports_crypto_sqlite": "passed",
+    "hub_and_two_actual_hot_processes_health_and_private_settings": "passed",
+    "packaged_probe_and_full_decode_mp3_via_same_fd": "passed",
+    "packaged_probe_and_full_decode_flac_via_same_fd": "passed"
+  },
+  "status": "passed"
+}

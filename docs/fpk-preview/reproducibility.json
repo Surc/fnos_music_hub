@@ -1,0 +1,13 @@
+{
+  "scope": "two offline builds of commit 606f631 using one frozen input closure in isolated temporary directories",
+  "real_nas_acceptance": "not_run",
+  "both_static_validations_passed": true,
+  "installed_contents_identical": true,
+  "fpk_sha256": [
+    "68d814f27297228b14631f88165d430f7ec74837d759ccd6d76e296eb1608286",
+    "cbd4fb0b932cb4e4ffd67910f4b886cbb5e15af9aa54902f1026132416c787a1"
+  ],
+  "fpk_bytes_identical": false,
+  "source_companion_bytes_identical": true,
+  "note": "Content reproducibility verified; fnpack outer archive bytes are not promised identical."
+}
