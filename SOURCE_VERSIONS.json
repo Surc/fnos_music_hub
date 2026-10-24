@@ -708,34 +708,34 @@
     "artifacts": [
       {
         "name": "fnos-music-hub-0.1.0-preview.1-amd64.fpk",
-        "bytes": 64234846,
-        "sha256": "68d814f27297228b14631f88165d430f7ec74837d759ccd6d76e296eb1608286",
+        "bytes": 64234671,
+        "sha256": "3151ae45b87c091fe698697eab8432b5df49d95e740f25f011f77f0d2c46c831",
         "kind": "local_preview_candidate_not_release"
       },
       {
         "name": "fnos-music-hub-0.1.0-preview.1-sources.tar.gz",
-        "bytes": 18033155,
-        "sha256": "e1d1d12ea70f9242bcd23572220ebf58b7feba23eb1cf45971094b0a396312b8",
+        "bytes": 18039283,
+        "sha256": "a61c019f78bbc2dd418e11f848927c58d5bae699906fe7992576eb2dfb83200d",
         "kind": "matching_corresponding_sources"
       }
     ],
-    "candidate_commit": "606f6319490bfde4935d2bc2ee43cbfb4769a4f2",
-    "candidate_tree": "94dc5d655dd5470da3a35c7467053f51aa2a8cee",
+    "candidate_commit": "1696291e76021a5d5cd1d80eac0b702152cd5a24",
+    "candidate_tree": "f255e8a84f595e1adce42b0767aa0483947863b5",
     "validation": {
-      "python_tests": "154 passed",
-      "native_packaging_tests": "34 passed",
+      "python_tests": "155 passed",
+      "native_packaging_tests": "35 passed",
       "web_jsdom": "31 passed",
       "actual_fpk_static": "passed; 5915 installed files",
       "direct_component_runtime": "passed on development Linux as root with synthetic users; not fnOS/supervisor",
       "supervisor_local": "blocked: root and procfs/PID namespace mismatch",
       "offline_repeat": "two isolated builds passed; installed content and source archive identical; FPK outer bytes differ",
-      "github_actions": "pending after PR submission",
+      "github_actions": "See PR checks for authoritative current results; this local evidence snapshot does not claim CI execution.",
       "j4125_nas": "not_run"
     },
     "evidence_files": {
-      "docs/fpk-preview/build-report.json": "f24e6163692b4c4f75469866397f172ffec41271384c6448d03ab434c45a4a7b",
+      "docs/fpk-preview/build-report.json": "25408f34344e78ab1094f8276dd0094ea452b92d74dc4f6dea77faf70621a26b",
       "docs/fpk-preview/native-smoke-local.json": "dd6aecadf5b1bed2d882cb4acd9efdf294efa22aed84c392747b41d57db8ddac",
-      "docs/fpk-preview/reproducibility.json": "56b1171e690b8e4e34719bbfc01170b2983441c5d0412db3f067788ae66a0843",
+      "docs/fpk-preview/reproducibility.json": "dd23e5c0c007a57253d692175f85846405558f295f6242de5b9c0d5f1f79501f",
       "docs/fpk-preview/runtime-check-local.json": "033c4cceb84321f7b7c9f81db55eb388e253407dc743fbf98645113da67635ff"
     }
   }
