@@ -1,0 +1,13 @@
+{
+  ".url": {
+    "fnos_music_hub.Application": {
+      "title": "音乐 Hub PREVIEW",
+      "icon": "images/icon_{0}.png",
+      "type": "url",
+      "protocol": "",
+      "port": "",
+      "url": "/cgi/ThirdParty/fnos_music_hub/index.cgi/",
+      "allUsers": true
+    }
+  }
+}
