@@ -1,5 +1,20 @@
 # 验证记录
 
+## 2026-10-24：网易只读目录与账号隔离
+
+基于已合并 main `04677d32b96a0b824c2148001458d581f9f8f22c`，其 [Actions 39973794020](https://github.com/Surc/fnos_music_hub/actions/runs/39973794020) 六项全部成功。当前开发分支 `feat/netease-readonly-catalog`，实现及未开放范围见 [网易模块](NETEASE.md)。固定 MusicBox 0.5.3 / `9c405f4bae2384d0410e63f8b816a707553d72d3` 与旧 ext 接口已核对，上游源码零改动，未合并时不推进采用 SHA。
+
+- 完整 Python 3.12 / QQ+网易依赖环境：**172 passed**，其中新增 **52 项**网易契约/SDK用例；原 QQ 快照、账号、酷我任务、资产和审核回归一并通过。只保留既有 Starlette/httpx 弃用提示。
+- 独立干净 venv 安装网易锁：`pip check` 无冲突，**161 passed / 1 skipped**（未安装 QQ SDK）；wheel 构建通过。MusicBox 通过固定 Git SHA 安装，NAS 不需要 Git/编译器，发行需预构建 wheel。基础模式和 Python 3.11 由新增/既有 CI 矩阵检查。
+- 网易覆盖显式确认、加密存储/输出白名单、双用户并发、失效不匿名回退、不退出有效飞牛会话、UID/代次/修订、解绑换号、同号更新、旧成功和旧错误、退出、重复/未知/缺详情、来源总数/页长度、截断、CSRF、SQLite 原子回滚及不重启重试、任务门面拒绝网易下载。SDK 测试实际调用固定 MusicBox 的 WEAPI/EAPI 构造，HTTP 边界为合成，不能据此证明真实签名/设备/目录可用。
+- `npm run check`、**37 项 jsdom** 通过，包含新增 **6 项**网易交互：公开浏览、UID 确认/更新、失败目录/歌曲翻页、解绑后的迟到推荐、平台失效及关闭核对弹层后迟到响应。QQ 原有测试保留。
+- 本地 Chromium **153.0.8010.0** 的十种 PC/手机横竖视口通过，保留原 QQ 两轮快照/1000 项/酷我确认流程；新增网易 UID 关联、私人歌单、重复/未知、账号推荐、解除关联与旋转保留 Cookie 表单。首次标准 Playwright 浏览器下载失败，改用 NPM 官方 registry 的 Chromium 包；补装有校验和的 WenQuanYi 中文字体后重跑。中间一次缺字体配置的启动失败未记为通过。最终报告和四张截图见下文；CI 使用自己的标准 Chromium，独立记录。
+- Ruff、`git diff --check`、来源/锁定依赖/数据库 schema 与 skill 摘要、本地文档链接检查通过；维护规则 1.5.0 已验证并推送个人 Skills Git `114790b`。QQ/Hot/音桥已合并采用基线、旧工程双来源和酷我两首 407 历史保持不变。
+
+上述全部私人平台响应、账号与浏览器 API 为合成，音频是既有生成测试音。真实 R-NE-001..004、QQ/NAS、J4125 性能、手机键盘/安全区与 FPK 仍待执行；没有把普通推荐标为已验收个性化每日推荐，未发布 Release/FPK。
+
+浏览器证据（真实 Chromium、合成 API）：[原始报告](netease-ui-screenshots/browser-report.json)，[PC 横屏](netease-ui-screenshots/netease-pc-landscape.png)、[PC 竖屏](netease-ui-screenshots/netease-pc-portrait.png)、[手机竖屏](netease-ui-screenshots/netease-mobile-portrait.png)、[手机横屏](netease-ui-screenshots/netease-mobile-landscape.png)。
+
 ## 2026-10-23：Astra 整体审核修复
 
 基线 main `d6bef0aad6ae1c8774db9d0c023a3e17438a7359`（PR #2 已合并），其 [Actions 39955616620](https://github.com/Surc/fnos_music_hub/actions/runs/39955616620) 六项通过。本轮在 `fix/astra-review-hardening` 修复，逐项说明见 [Astra 记录](ASTRA_REVIEW_FIXES.md)。固定上游和真实平台证据未变。

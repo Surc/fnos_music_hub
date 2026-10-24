@@ -17,7 +17,7 @@
 1. 在项目目录创建 Python venv，安装 `python -m pip install -r requirements.lock`。
 2. 复制 `config.example.json` 为 `config.json`，设置稳定的 NAS 实例 ID、独立数据目录、音桥 API base URL 和前台的真实 `public_origin`。生产入口使用 HTTPS，并保留 `secure_cookie=true`；仅本机 HTTP 开发可显式设为 false。
 3. 在进程环境中设置音桥 API key（若音桥启用），以及每个用户的独立 Hot 访问令牌。配置仅保存环境变量名，不包含令牌。令牌至少 16 个字符。
-4. 为每个用户填写实际飞牛音乐 GUID、独立 Hot 端口和不重叠的下载绝对目录。GUID 必须来自可信的当前用户接口；不按用户名猜测。先不配 users 也可以登录并从 `/api/me` 核对本人 GUID，但无法搜索/下载。
+4. 为每个用户填写实际飞牛音乐 GUID、独立 Hot 端口和不重叠的下载绝对目录。GUID 必须来自可信的当前用户接口；不按用户名猜测。先不配 users 也可以登录并从 `/api/me` 核对本人 GUID，但无法搜索/下载；启用网易可独立只读浏览，不依赖 Hot。
 5. 用 `python scripts/run_hot_user.py --config config.json --guid <GUID> --binary /absolute/path/hotdownloader-server` 为该用户启动独立原生引擎。每个进程由宿主进程管理器分别守护。脚本使用 Hub 专属数据目录，首次初始化关闭音质自动降级，不读取旧 Hot/ext 的账号文件。
 6. 用 `python -m hub --config config.json --host 127.0.0.1 --port 8790` 启动网关，再通过配置的同源 HTTPS 入口访问。一个数据目录仅允许一个网关进程；不要增加 Uvicorn workers。
 
@@ -26,6 +26,8 @@
 下载目标目前只有当前用户的 `private` 目录。网关会核对 Hot 实际 downloadDir，并禁止自动音质降级。飞牛音乐库是独立索引目标，本版 `index_status=unsupported`，不会把下载成功显示成已入库。
 
 ## 数据与恢复
+
+可选网易：开发机安装 `requirements-netease.lock`，配置 `netease_enabled=true`。固定 MusicBox 仅在临时短进程中按需读取，不增加常驻服务；账号导入、确认、更新与只读界限见 [网易模块](NETEASE.md)。NAS 安装预构建依赖。
 
 SQLite schema 3 保存会话、搜索元数据、本地收藏、不可变清单、任务投递记录、资产、平台关联、加密登录尝试及歌单读取状态；schema 1/2 自动升级前先备份数据库与密钥，旧程序不能直接降级读取。完整快照保存在原 manifests 表，失败/中断仅保存状态；显式恢复从第一页开始，见 [QQ 完整快照](QQ_SNAPSHOTS.md)。快照历史提供游标分页和显式删除，删除保留小型幂等/冷却记录；数据库空闲页复用规则见快照说明。飞牛 token 用 `vault.key` 加密，数据库与密钥文件为 0600，数据目录为 0700。备份时保留数据库及密钥；密钥遗失后需要重新登录。
 
@@ -41,7 +43,7 @@ SQLite schema 3 保存会话、搜索元数据、本地收藏、不可变清单�
 
 真实 Hot 自测需在仓库外保存音频：`python scripts/live_hot_smoke.py --source /path/to/pinned/HotDownloader --work-dir /outside/project`。这会搜索并下载一首样本，记录真实音频校验结果；不测试 fnOS 身份或 FPK。当前环境两首样本均被酷我以地区限制 407 拒绝，详见 [验证记录](VALIDATION.md)。
 
-当前列表接口返回当前用户最近 500 条任务/资产/收藏，历史分页尚未实现；不作为完整歌单导出接口使用。QQ 扫码/关联、只读推荐和歌单分页已可选实现，真实账号仍待验收；QQ 两轮观测完整快照已实现但真实验收待执行；网易、云端写入、自动入库、注入接管、反馈和 FPK 均有独立准入门槛，见 [迭代计划](ITERATION.md)。
+当前列表接口返回当前用户最近 500 条任务/资产/收藏，历史分页尚未实现；不作为完整歌单导出接口使用。QQ 扫码/关联、只读推荐和歌单分页已可选实现，真实账号仍待验收；QQ 两轮观测完整快照已实现但真实验收待执行；网易只读目录已可选接入；网易下载、云端写入、自动入库、注入接管、反馈和 FPK 均有独立准入门槛，见 [迭代计划](ITERATION.md)。
 
 ## 前台开发与四种布局验证
 
