@@ -1,0 +1,14 @@
+# Optional read-only NetEase catalog. Build wheels off-NAS; no additional daemon.
+-r requirements.lock
+NetEase-MusicBox @ git+https://github.com/darknessomi/musicbox.git@9c405f4bae2384d0410e63f8b816a707553d72d3
+attrs==26.1.0
+cattrs==26.2.1
+charset-normalizer==3.5.2
+platformdirs==4.13.5
+pycryptodomex==3.24.1
+qrcode==8.2
+rapidfuzz==3.14.6
+requests==2.34.2
+requests-cache==1.3.3
+url-normalize==3.0.1
+urllib3==2.8.0
