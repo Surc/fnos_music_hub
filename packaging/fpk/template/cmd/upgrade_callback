@@ -1,0 +1,16 @@
+#!/bin/sh
+set -eu
+if "$(dirname "$0")/_dispatch" finish-upgrade; then
+    exit 0
+fi
+# Also catches an incompatible/missing NEW Python before Python lifecycle code can run.
+if "$(dirname "$0")/_dispatch" rollback; then
+    if [ -n "${TRIM_TEMP_LOGFILE:-}" ]; then
+        printf '%s\n' '新预览版启动失败，已恢复备份数据并运行旧程序；应用中心版本显示可能仍为新包，请重新安装匹配旧 FPK。' > "$TRIM_TEMP_LOGFILE"
+    fi
+else
+    if [ -n "${TRIM_TEMP_LOGFILE:-}" ]; then
+        printf '%s\n' '新预览版及自动回滚启动失败；数据备份仍保留。请停服，按说明恢复旧 FPK 与匹配备份。' > "$TRIM_TEMP_LOGFILE"
+    fi
+fi
+exit 1
