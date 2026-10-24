@@ -92,12 +92,18 @@ qq_catalog = next(a for a in manifest["implemented_adapters"] if a["component"] 
 check(qq_catalog["full_playlist_export"] == manifest["acceptance"]["qq_accounts_and_catalog"]["full_playlist_export"],
       "QQ full playlist export capability records disagree")
 
-optional = manifest.get("runtime_dependencies", {}).get("optional_qq")
-if optional:
+for name in ("qq", "netease"):
+    optional = manifest.get("runtime_dependencies", {}).get("optional_" + name)
+    if not optional:
+        continue
     check_file_digest(optional["lockfile"], optional["lockfile_sha256"])
     dependency = f"git+https://github.com/{optional['sdk_repository']}.git@{optional['sdk_commit']}"
     for path in (optional["lockfile"], "pyproject.toml"):
-        check(dependency in (ROOT / path).read_text(), f"QQ dependency pin missing: {path}")
+        check(dependency in (ROOT / path).read_text(), f"{name} dependency pin missing: {path}")
+    constants = [node.value.value for node in ast.parse((ROOT / f"modules/catalog/{name}.py").read_text()).body
+                 if isinstance(node, ast.Assign) and isinstance(node.value, ast.Constant)
+                 and any(isinstance(t, ast.Name) and t.id == "SDK_COMMIT" for t in node.targets)]
+    check(constants == [optional["sdk_commit"]], f"{name} runtime SDK pin differs from manifest")
 
 for evidence in (
     manifest.get("acceptance", {}).get("responsive_ui", {}),
@@ -105,6 +111,7 @@ for evidence in (
     manifest.get("acceptance", {}).get("qq_playlist_snapshots", {}),
     manifest.get("acceptance", {}).get("qq_snapshot_recovery", {}),
     manifest.get("acceptance", {}).get("astra_review_hardening", {}),
+    manifest.get("acceptance", {}).get("netease_accounts_and_catalog", {}),
 ):
     for path, digest in evidence.get("evidence_files_sha256", {}).items():
         check_file_digest(path, digest)
