@@ -30,6 +30,15 @@ export function fixture(options = {}) {
       uin: null,
     },
     qqAttempt: null,
+    neAccount: {
+      provider: "netease",
+      state: "unbound",
+      binding_generation: 0,
+      credential_revision: 0,
+      account_ref: null,
+      uid: null,
+    },
+    neAttempt: null,
     qqPoll: "confirmed",
     qqRecommendations: [
       {
@@ -66,6 +75,20 @@ export function fixture(options = {}) {
       account_playlists: ["qq"],
     };
   }
+  if (options.neteaseEnabled) {
+    for (const name of [
+      "recommendations",
+      "cloud_accounts",
+      "account_playlists",
+      "public_playlists",
+    ])
+      result.capabilities[name] = [
+        ...(Array.isArray(result.capabilities[name])
+          ? result.capabilities[name]
+          : []),
+        "netease",
+      ];
+  }
   return result;
 }
 export async function apiFixture(rig, path, options = {}) {
@@ -100,7 +123,99 @@ export async function apiFixture(rig, path, options = {}) {
       capabilities: rig.capabilities,
     });
   if (url.pathname === "/api/accounts")
-    return ok({ enabled: true, items: [rig.qqAccount] });
+    return ok({
+      enabled: true,
+      items: [rig.qqAccount, ...(rig.neteaseEnabled ? [rig.neAccount] : [])],
+    });
+  if (url.pathname === "/api/accounts/netease/login") {
+    rig.neAccount.binding_generation++;
+    rig.neAttempt = {
+      id: "synthetic-ne-attempt",
+      uid: "20001",
+      nickname: "合成网易账号",
+      status: "confirmed",
+    };
+    return { status: 201, body: rig.neAttempt };
+  }
+  if (
+    url.pathname === "/api/accounts/netease/login/synthetic-ne-attempt/bind"
+  ) {
+    Object.assign(rig.neAccount, {
+      state: "bound",
+      account_ref: "synthetic-ne-account",
+      credential_revision: 1,
+      uid: "20001",
+    });
+    return ok(rig.neAccount);
+  }
+  if (url.pathname === "/api/accounts/netease/unlink") {
+    Object.assign(rig.neAccount, {
+      state: "unbound",
+      account_ref: null,
+      uid: null,
+      credential_revision: 0,
+      binding_generation: rig.neAccount.binding_generation + 1,
+    });
+    return ok(rig.neAccount);
+  }
+  if (url.pathname === "/api/accounts/netease/credential") {
+    rig.neAccount.credential_revision++;
+    return ok(rig.neAccount);
+  }
+  if (url.pathname.startsWith("/api/catalog/netease/")) {
+    const scope = url.searchParams.get("scope") || "account";
+    if (scope === "account" && rig.neAccount.state !== "bound")
+      return {
+        status: 409,
+        body: {
+          error: {
+            code: "platform_auth_required",
+            message: "请关联有效的本人网易账号",
+          },
+        },
+      };
+    const page = Number(url.searchParams.get("page") || 1);
+    const base = {
+      provider: "netease",
+      scope,
+      page,
+      account: scope === "account" ? rig.neAccount : null,
+      complete: false,
+      integrity: "page_only",
+      personalization: "unverified",
+      has_more: page === 1,
+    };
+    const neSong = {
+      ...structuredClone(song),
+      track: { provider: "netease", id_type: "songid", id: "123" },
+      title: "合成网易歌曲",
+      qualities: [],
+    };
+    if (
+      url.pathname === "/api/catalog/netease/playlists/88" ||
+      url.searchParams.get("kind") === "songs"
+    )
+      return ok({
+        ...base,
+        source_total: 103,
+        items: [
+          neSong,
+          { track: null, title: "来源中的未知条目", qualities: [] },
+          { ...neSong },
+        ],
+      });
+    return ok({
+      ...base,
+      items: [
+        {
+          playlist: { provider: "netease", id: "88" },
+          title: "合成网易歌单 " + page,
+          creator: "测试账号",
+          song_count: 103,
+        },
+      ],
+    });
+  }
   if (url.pathname === "/api/accounts/qq/login") {
     rig.qqAccount = {
       ...rig.qqAccount,

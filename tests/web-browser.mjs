@@ -59,7 +59,22 @@ const report = {
     "real Chromium + synthetic same-origin HTTP API; no real fnOS/music platform/FPK acceptance",
   cases: [],
 };
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({
+  headless: true,
+  ...(process.env.HUB_TEST_CHROMIUM
+    ? {
+        executablePath: process.env.HUB_TEST_CHROMIUM,
+        args: [
+          "--no-sandbox",
+          "--disable-dev-shm-usage",
+          "--use-gl=angle",
+          "--use-angle=swiftshader",
+          "--enable-unsafe-swiftshader",
+        ],
+      }
+    : {}),
+});
+report.browser_version = browser.version();
 const sizes = [
   ["pc-landscape", 1440, 900, false],
   ["pc-wide", 1920, 1080, false],
@@ -126,6 +141,7 @@ try {
     current = fixture({
       loggedIn: false,
       qqEnabled: true,
+      neteaseEnabled: true,
       songs: [
         song,
         {
@@ -436,7 +452,9 @@ try {
     await page
       .getByRole("button", { name: "解除 QQ 关联", exact: true })
       .click();
-    await page.getByText("尚未关联", { exact: true }).waitFor();
+    await page
+      .getByRole("button", { name: "扫码登录 QQ", exact: true })
+      .waitFor();
     assert.equal(current.qqAccount.state, "unbound");
     await page.getByRole("button", { name: "我的歌单", exact: true }).click();
     await page.getByRole("tab", { name: "已保存快照", exact: true }).click();
@@ -453,6 +471,81 @@ try {
     await page
       .getByRole("button", { name: "我的与平台账号", exact: true })
       .click();
+    await page
+      .getByRole("button", { name: "关联网易账号", exact: true })
+      .click();
+    await page
+      .getByLabel("网易登录 Cookie", { exact: true })
+      .fill("MUSIC_U=synthetic-cookie");
+    if (name === "mobile-portrait") {
+      await page.setViewportSize({ width: 844, height: 390 });
+      assert.equal(
+        await page.locator("#netease-cookie").inputValue(),
+        "MUSIC_U=synthetic-cookie",
+      );
+      await layout(page);
+      await page.setViewportSize({ width, height });
+    }
+    await page
+      .getByRole("button", { name: "验证网易账号", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "确认关联此网易账号", exact: true })
+      .waitFor();
+    assert.equal(current.neAccount.state, "unbound");
+    await dialogFits(page, [
+      "#detail-dialog",
+      "#detail-dialog .dialog-header [data-close]",
+    ]);
+    await page
+      .getByRole("button", { name: "确认关联此网易账号", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "解除网易关联", exact: true })
+      .waitFor();
+    await page
+      .getByRole("button", { name: "查看网易歌单", exact: true })
+      .click();
+    await page.getByText("合成网易歌单 1", { exact: true }).waitFor();
+    await layout(page);
+    await page.getByRole("button", { name: "查看歌单", exact: true }).click();
+    await page.getByText("合成网易歌曲", { exact: true }).first().waitFor();
+    assert.equal(await page.locator(".song-card").count(), 3);
+    assert.equal(await page.locator("#download-selected").isDisabled(), true);
+    await layout(page);
+    if (
+      [
+        "pc-landscape",
+        "pc-portrait",
+        "mobile-portrait",
+        "mobile-landscape",
+      ].includes(name)
+    )
+      await page.screenshot({
+        path: `test-results/netease-${name}.png`,
+        fullPage: true,
+      });
+    await page.getByRole("button", { name: "发现", exact: true }).click();
+    await page.locator('[data-provider="netease"]').click();
+    await page.getByRole("tab", { name: "账号推荐歌曲", exact: true }).click();
+    await page.getByText("合成网易歌曲", { exact: true }).first().waitFor();
+    assert.equal(
+      await page
+        .getByRole("tab", { name: "猜你喜欢歌曲", exact: true })
+        .count(),
+      0,
+    );
+    await layout(page);
+    await page
+      .getByRole("button", { name: "我的与平台账号", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "解除网易关联", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "关联网易账号", exact: true })
+      .waitFor();
+    assert.equal(current.tasks.length, 1);
     await page
       .locator("#view-content")
       .getByRole("button", { name: "下载与曲库", exact: true })
@@ -488,7 +581,7 @@ try {
       touch: mobile,
       status: "passed",
       coverage:
-        "login/search/unknown metadata/bulk/confirmation/tasks/region details/files with actual container and codec/QQ QR confirmation and explicit binding/QQ recommendations and guess songs/QQ playlist page-only details/failed next page retries the same page/two-pass snapshot UI/1000 ordered snapshot entries/local snapshot history after unlink/confirmed local deletion/storage/injection/collections/logout/overflow",
+        "login/search/unknown metadata/bulk/confirmation/tasks/region details/files with actual container and codec/QQ QR confirmation and explicit binding/QQ recommendations and guess songs/QQ playlist page-only details/failed next page retries the same page/two-pass snapshot UI/1000 ordered snapshot entries/local snapshot history after unlink/confirmed local deletion/NetEase explicit UID consent and rotation-preserved Cookie form/private playlists/duplicate and unknown entries/read-only recommendation songs/unlink/storage/injection/collections/logout/overflow",
     });
     console.log("PASS", name, `${width}x${height}`);
     await context.close();
