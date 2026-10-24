@@ -2,15 +2,15 @@
 
 ## 2026-10-24：第一个实际 FPK 候选
 
-完整原生流程已实际执行，详见 [候选证据](fpk-preview/EVIDENCE.md) 和原始 JSON 报告。候选 `0.1.0-preview.1` 的源码提交为本地 `1696291e76021a5d5cd1d80eac0b702152cd5a24`；两次隔离临时目录的离线构建均通过 5915 个安装文件及 fnpack MD5/SHA256/权限校验，安装内容和对应源码相同，外层 FPK 字节不同，不承诺 fnpack 字节级确定性。交付选构建 A，SHA256 `3151ae45b87c091fe698697eab8432b5df49d95e740f25f011f77f0d2c46c831`。
+开发机的输入构建、离线组包和静态校验已实际执行，详见 [候选证据](fpk-preview/EVIDENCE.md) 和原始 JSON 报告。候选 `0.1.0-preview.1` 的源码提交为本地 `5a6157b0768c94ecba18865f1876e104bfbc3067`；两次隔离临时目录的离线构建均通过 5915 个安装文件及 fnpack MD5/SHA256/权限校验，安装内容和对应源码相同，外层 FPK 字节不同，不承诺 fnpack 字节级确定性。交付选构建 A，SHA256 `c0e7528e8c8e532388a3158ebf0b567becc11142e9914f15119fde3ef7117d32`。
 
-最终 Python **155 passed**（原生包装 35 项），jsdom **31 passed**，语法/Ruff/来源/差异检查通过。实际包内 Python 原生扩展/加密/SQLite、Hub + 两个 Hot 的回环健康和私有设置、生成 MP3/FLAC 的同 FD probe/完整解码通过；这组在开发机以 root 运行真实组件，没有通过监督器，也没有连接音桥或音乐平台账号。
+最终 Python **157 passed**（原生包装 37 项），jsdom **31 passed**，语法/Ruff/来源/差异检查通过。实际包内 Python 原生扩展/加密/SQLite、Hub + 两个 Hot 的回环健康和私有设置、生成 MP3/FLAC 的同 FD probe/完整解码通过；这组在开发机以 root 运行真实组件，没有通过监督器，也没有连接音桥或音乐平台账号。
 
 完整监督器本地 smoke 被 UID=0/procfs 不一致阻断，真实非 root Linux 结果留给 PR 的预览工作流。一次共享目录重复组包出现权限差异并被校验拦截，未签收；改用独立 `/tmp` 的两轮均通过。官方 fnpack 会往 app.tgz 注入两份权限配置，并把输出放在调用工作目录；已适配且拒绝重复归档成员。没有篡改/放宽实际内容校验来接受失败包。
 
 未发布正式 Release、未合并本轮 PR、未部署 NAS。J4125/fnOS 安装/升级/回滚/卸载/ACL/资源、真实身份/账号、完整音乐下载和历史酷我 407 仍单独待验。
 
-收尾补充了 TRIM_APPDEST/TRIM_PKGVAR 的符号链接路径归一化及真实 shell 包装回归；最终候选包含这处修正。
+最终候选包含 TRIM_APPDEST/TRIM_PKGVAR 符号链接路径归一化，以及首个真实非 root CI 发现的 TCP TIME_WAIT 重启修复。首轮 CI 输入和 FPK 静态步骤成功，生命周期在退出后重启时报 EADDRINUSE；端口预检已启用 SO_REUSEADDR，并以真实 TCP 测试证明仍拒绝活动监听。保留 [失败原始摘要](fpk-preview/ci-first-run.json)，修复后的工作流结果见 PR #5 检查，不覆盖失败记录。
 
 ## 2026-10-24：原生 FPK 预览实现与构建准备
 
