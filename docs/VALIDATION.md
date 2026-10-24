@@ -13,6 +13,8 @@
 
 上述全部私人平台响应、账号与浏览器 API 为合成，音频是既有生成测试音。真实 R-NE-001..004、QQ/NAS、J4125 性能、手机键盘/安全区与 FPK 仍待执行；没有把普通推荐标为已验收个性化每日推荐，未发布 Release/FPK。
 
+远端交付：[PR #4](https://github.com/Surc/fnos_music_hub/pull/4) 为 Draft/Open。代码提交 `cd95d020556ccd7708f0953976e802e963f933c2` 的内容树 `727801a07856d18a02de22ed21b22816f4d9b2b7` 与本地已测 `93d2266` 完全相同；[push 40077854755](https://github.com/Surc/fnos_music_hub/actions/runs/40077854755) 和 [PR 40078076740](https://github.com/Surc/fnos_music_hub/actions/runs/40078076740) 各八项全部通过：core/QQ/网易的 Python 3.11/3.12、web、browser。远端网易 3.11 日志确认 **161 passed / 1 skipped** 及依赖检查通过；其他矩阵和标准 Chromium 十视口同时通过。追加资料不改变运行代码、上游采用或真实验收状态。[PR 创建记录](netease-ui-screenshots/pr-draft.jpg) 为当时截图。
+
 浏览器证据（真实 Chromium、合成 API）：[原始报告](netease-ui-screenshots/browser-report.json)，[PC 横屏](netease-ui-screenshots/netease-pc-landscape.png)、[PC 竖屏](netease-ui-screenshots/netease-pc-portrait.png)、[手机竖屏](netease-ui-screenshots/netease-mobile-portrait.png)、[手机横屏](netease-ui-screenshots/netease-mobile-landscape.png)。
 
 ## 2026-10-23：Astra 整体审核修复
