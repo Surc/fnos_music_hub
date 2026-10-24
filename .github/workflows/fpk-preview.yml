@@ -1,0 +1,37 @@
+name: Native amd64 FPK preview (no Release)
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'packaging/fpk/**'
+      - 'tests/test_fpk_native.py'
+      - '.github/workflows/fpk-preview.yml'
+permissions:
+  contents: read
+jobs:
+  preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update -qq && sudo apt-get install -y gcc make binutils git cmake ca-certificates
+      - name: Fetch pins and build offline input closure (build machine only)
+        run: python packaging/fpk/fetch_inputs.py --work "$RUNNER_TEMP/fpk-work" --output "$RUNNER_TEMP/fpk-inputs" --jobs 4
+      - name: Assemble offline and verify actual FPK
+        run: sh packaging/fpk/build.sh "$RUNNER_TEMP/fpk-inputs" "$RUNNER_TEMP/fpk-output"
+      - name: Real bundled services on disposable non-root Linux
+        run: python packaging/fpk/native_smoke.py --stage "$RUNNER_TEMP/fpk-output/stage" --report "$RUNNER_TEMP/fpk-output/native-smoke.json" --require
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: fnos-music-hub-0.1.0-preview.1-amd64
+          path: |
+            ${{ runner.temp }}/fpk-output/*.fpk
+            ${{ runner.temp }}/fpk-output/*-sources.tar.gz
+            ${{ runner.temp }}/fpk-output/SHA256SUMS
+            ${{ runner.temp }}/fpk-output/build-report.json
+            ${{ runner.temp }}/fpk-output/native-smoke.json
+          if-no-files-found: error
+          retention-days: 14
