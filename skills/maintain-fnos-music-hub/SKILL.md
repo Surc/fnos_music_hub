@@ -9,7 +9,7 @@ description: 维护 Surc/fnos_music_hub 独立飞牛音乐中心。用于接续�
 
 1. 定位或按任务授权克隆 `https://github.com/Surc/fnos_music_hub.git`。检查 remote、分支、未提交修改；不要把旧 `fnos_music_ext` 当作本仓库。
 2. 读取仓库 `AGENTS.md`、`README.md`、`SOURCE_VERSIONS.json`、`docs/ITERATION.md` 和 `docs/VALIDATION.md`；先读 `docs/RUNNING.md`、`docs/HTTP_API.md` 与功能/平台两份 `docs/ACCEPTANCE_*.md`。前台任务再读 `docs/UI_REVIEW.md`，QQ 模块先读 `docs/QQ_ACCOUNTS.md`；其余按模块读取设计、契约、账号反馈、更新和迁移文档。
-3. 以当前代码和验证记录判断完成度。初始化是设计骨架；0.1.0a1 已有可运行开发服务与前台，尚无 FPK。按当前迭代区分模拟验证与真实平台/NAS验收。`docs/design-goals-v1.6-20261021.txt` 是完整历史研究，含被后续审核修订的提议；当前规范文档优先，不能只截取早期选型表。
+3. 以当前代码和验证记录判断完成度。0.1.0a1 已有开发服务和前台；原生预览打包/实际产物/实机状态另读 `packaging/fpk/README.md`、`docs/VALIDATION.md`，不要沿用初始化时无 FPK 的状态。按当前迭代区分模拟、普通 Linux、真实平台/NAS验收。`docs/design-goals-v1.6-20261021.txt` 含后续修订的历史研究；当前规范优先。
 4. 核对来源的完整 SHA、实际分支、版本文件、Git tag、观察时间、采用状态和许可证。`observed_commit` 不等于 `adopted_commit`，原工程双来源的采用基线不等于新 Hub 已采用。
 
 ## 保持模块可替换
@@ -84,3 +84,10 @@ description: 维护 Surc/fnos_music_hub 独立飞牛音乐中心。用于接续�
 - 会话撤销后，外部等待返回及提交/缓存/控制等边界重验本地会话；已经接收并持久化的下载仍归 owner 继续执行。退出清理本会话尚未绑定的登录尝试，不撤销已完成关联或他会话的新尝试，迟到扫码不能重新写回。
 - 下载文件逐级使用目录 FD 与 NOFOLLOW 打开，校验和读取使用同一 FD；覆盖父目录替换、符号链接和非普通文件。前台分页成功后才更新页码/游标，慢轮询只保留同上下文的一个在途请求，退出/切页仍使迟到响应失效。
 - 来源清单的采用 SHA 必须有已合并的适配器/依赖证据，并写明 HTTP 接入或可选 SDK，不能冒称复制上游源码或完成实机验收。检查数据库常量、完整快照能力与清单一致，保留旧工程双来源和历史地区限制结果。
+
+## 原生 FPK 预览接续
+
+- 先读 `packaging/fpk/README.md` 和 `versions.json`；在线输入准备与离线组包分开。使用官方固定 fnpack，保留输入闭包、对应源码、包内容/版本/组件 SHA256，构建提交必须清楚；不以设计或缺失工具的输出冒称 FPK 成功。
+- 应用/包用户/组为 `fnos_music_hub`，仅非 root；端口 127.0.0.1:8790，依赖已有音桥 API 与 HTTPS 反代。配置/秘密在独立 var/config，状态 var/state，下载 var/downloads；不接管 Socket、不改 ext、不迁移旧数据。逐用户 Hot/token/端口/下载隔离不变。
+- 升级先停服、完整备份程序/config/state，健康失败用保留的旧 Python/程序恢复匹配数据；卸载保留 var。检查备份失败/完整性、PID 复用/锁、坏版本 shell 回滚、密钥恢复及卸载/重装；不能用静态测试代替 fnOS 安装。
+- 运行 `tests/test_fpk_native.py`、普通 Linux 的 `native_smoke.py` 和实际 FPK 校验。root 或 procfs/PID 命名空间不一致的运行器必须记录真服务 smoke blocked，不加生产绕过；J4125/8GB 资源、真实账号/完整下载与 fnOS 安装升级另签收。预览工作流只上传 Actions 附件，本轮不发布正式 Release 或部署 NAS。
