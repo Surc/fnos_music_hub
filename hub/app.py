@@ -19,7 +19,9 @@ from starlette.background import BackgroundTask
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from modules.accounts.hot_qq import HotQqCredentials
+from modules.accounts.netease import NeteaseAccounts
 from modules.catalog.hot import HotCatalog, public_song
+from modules.catalog.netease import NeteaseCatalog, NeteaseProtocol
 from modules.catalog.qq import QqCatalog, QqProtocol
 from modules.catalog.qq_snapshot import QqSnapshots, playlist_ref
 from modules.download.assets import open_asset
@@ -65,6 +67,15 @@ class AccountLoginInput(BaseModel):
 
 class UnlinkInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
+    binding_generation: int = Field(ge=0, strict=True)
+
+
+class NeteaseLoginInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    cookie: str = Field(min_length=1, max_length=16384)
+
+
+class NeteaseRotateInput(NeteaseLoginInput):
     binding_generation: int = Field(ge=0, strict=True)
 
 
@@ -138,7 +149,12 @@ class BodyLimit:
 
 
 def create_app(
-    settings: Settings, *, transport=None, start_worker=True, qq_protocol=None
+    settings: Settings,
+    *,
+    transport=None,
+    start_worker=True,
+    qq_protocol=None,
+    netease_protocol=None,
 ):
     store = Store(settings.data_dir)
     identity, engines = (
@@ -158,6 +174,15 @@ def create_app(
     accounts = Accounts(settings, store, HotQqCredentials(settings, engines), protocol)
     qq_catalog = QqCatalog(accounts, protocol, store)
     qq_snapshots = QqSnapshots(qq_catalog)
+    ne_protocol = netease_protocol or NeteaseProtocol()
+    if (
+        settings.netease_enabled
+        and netease_protocol is None
+        and not ne_protocol.available()
+    ):
+        raise RuntimeError("NetEase requires the pinned optional MusicBox dependency")
+    ne_accounts = NeteaseAccounts(settings, store, ne_protocol)
+    ne_catalog = NeteaseCatalog(ne_accounts, ne_protocol, store)
     reconciler = Reconciler(store, engines)
     attempts = defaultdict(deque)
 
@@ -206,6 +231,7 @@ def create_app(
     app.state.store, app.state.reconciler = store, reconciler
     app.state.accounts, app.state.qq_catalog = accounts, qq_catalog
     app.state.qq_snapshots = qq_snapshots
+    app.state.netease_accounts, app.state.netease_catalog = ne_accounts, ne_catalog
     app.add_middleware(BodyLimit)
     app.add_middleware(
         TrustedHostMiddleware, allowed_hosts=[urlsplit(settings.public_origin).hostname]
@@ -325,9 +351,13 @@ def create_app(
                 "search": ["kuwo", "qq"] if cfg else [],
                 "download": ["kuwo"] if cfg else [],
                 "local_favorites": True,
-                "recommendations": ["qq"] if accounts.enabled(owner) else [],
-                "cloud_accounts": ["qq"] if accounts.enabled(owner) else [],
-                "account_playlists": ["qq"] if accounts.enabled(owner) else [],
+                "recommendations": (["qq"] if accounts.enabled(owner) else [])
+                + (["netease"] if ne_accounts.enabled(owner) else []),
+                "cloud_accounts": (["qq"] if accounts.enabled(owner) else [])
+                + (["netease"] if ne_accounts.enabled(owner) else []),
+                "account_playlists": (["qq"] if accounts.enabled(owner) else [])
+                + (["netease"] if ne_accounts.enabled(owner) else []),
+                "public_playlists": ["netease"] if ne_accounts.enabled(owner) else [],
                 "injection": False,
                 "indexing": False,
                 "playback_feedback": False,
@@ -346,7 +376,71 @@ def create_app(
 
     @app.get("/api/accounts")
     async def account_status(context=Depends(authenticated)):
-        return await accounts.status(context[0], context[1])
+        qq = await accounts.status(context[0], context[1])
+        ne = await ne_accounts.status(*context)
+        return {
+            "enabled": qq["enabled"] or ne["enabled"],
+            "items": qq["items"] + ne["items"],
+        }
+
+    @app.post("/api/accounts/netease/login", status_code=201)
+    async def ne_login(body: NeteaseLoginInput, context=Depends(authenticated)):
+        return await ne_accounts.start(*context, body.cookie)
+
+    @app.post("/api/accounts/netease/login/{attempt_id}/bind")
+    async def ne_bind(attempt_id: str, context=Depends(authenticated)):
+        return await ne_accounts.bind(*context, attempt_id)
+
+    @app.post("/api/accounts/netease/unlink")
+    async def ne_unlink(body: UnlinkInput, context=Depends(authenticated)):
+        return await ne_accounts.unlink(*context, body.binding_generation)
+
+    @app.post("/api/accounts/netease/credential")
+    async def ne_rotate(body: NeteaseRotateInput, context=Depends(authenticated)):
+        return await ne_accounts.rotate(*context, body.binding_generation, body.cookie)
+
+    @app.get("/api/catalog/netease/playlists")
+    async def ne_playlists(
+        scope: Literal["public", "account"] = "public",
+        page: int = 1,
+        context=Depends(authenticated),
+    ):
+        if not 1 <= page <= 100:
+            raise HubError("invalid_request", "网易目录页码不合法")
+        return await ne_catalog.page(
+            *context,
+            "public_playlists" if scope == "public" else "user_playlists",
+            scope,
+            page,
+        )
+
+    @app.get("/api/catalog/netease/recommendations")
+    async def ne_recommendations(
+        kind: Literal["playlists", "songs"] = "playlists",
+        page: int = 1,
+        context=Depends(authenticated),
+    ):
+        if not 1 <= page <= 34:
+            raise HubError("invalid_request", "网易推荐页码不合法")
+        return await ne_catalog.page(*context, "recommend_" + kind, "account", page)
+
+    @app.get("/api/catalog/netease/playlists/{playlist_id}")
+    async def ne_playlist(
+        playlist_id: str,
+        scope: Literal["public", "account"] = "public",
+        page: int = 1,
+        context=Depends(authenticated),
+    ):
+        if (
+            not playlist_id.isascii()
+            or not playlist_id.isdecimal()
+            or not 0 < int(playlist_id) < 10**20
+            or not 1 <= page <= 100
+        ):
+            raise HubError("invalid_request", "网易歌单或页码不合法")
+        return await ne_catalog.page(
+            *context, "playlist_page", scope, page, playlist_id
+        )
 
     @app.post("/api/accounts/qq/login", status_code=201)
     async def account_login(body: AccountLoginInput, context=Depends(authenticated)):

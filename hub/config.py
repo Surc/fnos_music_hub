@@ -52,6 +52,7 @@ class Settings(BaseModel):
     session_seconds: int = Field(default=43200, ge=60, le=604800)
     poll_seconds: float = Field(default=3, ge=0.2, le=60)
     qq_accounts_enabled: bool = False
+    netease_enabled: bool = False
 
     @field_validator("bridge_url", "public_origin")
     @classmethod
