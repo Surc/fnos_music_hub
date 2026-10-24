@@ -110,8 +110,6 @@ def assemble(inputs, output):
     )
     shutil.copytree(HERE / "template", output)
     app = output / "app"
-    # fnpack injects these two root declarations into app.tgz; inventory them up front.
-    shutil.copytree(output / "config", app / "config")
     shutil.copytree(inputs / "python", app / "runtime/python", symlinks=True)
     # Hub never uses deprecated crypt(3); avoid an extra OS libcrypt.so.1 dependency.
     for extension in (app / "runtime/python/lib/python3.12/lib-dynload").glob(
@@ -238,7 +236,15 @@ def assemble(inputs, output):
         ],
     }
     write_json(app / "bundle.json", bundle)
-    write_json(app / "CONTENTS.json", inventory(app, ("CONTENTS.json",)))
+    contents = inventory(app, ("CONTENTS.json",))
+    # fnpack appends these declarations to app.tgz. Include their expected bytes,
+    # but never place physical duplicates in app/ before calling the official tool.
+    for name in ("privilege", "resource"):
+        contents["config/" + name] = {
+            "sha256": sha256(output / "config" / name),
+            "mode": 0o644,
+        }
+    write_json(app / "CONTENTS.json", contents)
     for path in [*output.rglob("*"), output]:
         os.utime(path, (epoch, epoch), follow_symlinks=False)
     return bundle
