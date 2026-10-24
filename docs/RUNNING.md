@@ -1,5 +1,7 @@
 # 开发版原生运行
 
+2026-10-24 新增 [原生 FPK 预览打包](../packaging/fpk/README.md)，NAS 无需系统 Python/编译器/Docker；候选包构建/哈希与 NAS 验收分开记录。以下仍为源码手动运行，历史“尚未生成 FPK”描述保留对应当时阶段。
+
 执行前先读 [功能点验收清单](ACCEPTANCE_FUNCTIONS.md)、[平台验收清单](ACCEPTANCE_PLATFORMS.md)。本环境酷我 407 限制保留为历史观察，R-KW-001/002 待用户本地复测；下载、音频校验和飞牛入库分别签收。
 
 当前版本 0.1.0a1 是第一条链路的开发实现，尚未生成 FPK。网关使用 Python/FastAPI + SQLite，前台为原生 HTML/CSS/JavaScript；Hot 独立进程负责实际下载调度。无需 Docker，不需要在 NAS 上安装 Node。

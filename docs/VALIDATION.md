@@ -1,5 +1,27 @@
 # 验证记录
 
+## 2026-10-24：第一个实际 FPK 候选
+
+完整原生流程已实际执行，详见 [候选证据](fpk-preview/EVIDENCE.md) 和原始 JSON 报告。候选 `0.1.0-preview.1` 的源码提交为本地 `606f6319490bfde4935d2bc2ee43cbfb4769a4f2`；两次隔离临时目录的离线构建均通过 5915 个安装文件及 fnpack MD5/SHA256/权限校验，安装内容和对应源码相同，外层 FPK 字节不同，不承诺 fnpack 字节级确定性。交付选构建 A，SHA256 `68d814f27297228b14631f88165d430f7ec74837d759ccd6d76e296eb1608286`。
+
+最终 Python **154 passed**（原生包装 34 项），jsdom **31 passed**，语法/Ruff/来源/差异检查通过。实际包内 Python 原生扩展/加密/SQLite、Hub + 两个 Hot 的回环健康和私有设置、生成 MP3/FLAC 的同 FD probe/完整解码通过；这组在开发机以 root 运行真实组件，没有通过监督器，也没有连接音桥或音乐平台账号。
+
+完整监督器本地 smoke 被 UID=0/procfs 不一致阻断，真实非 root Linux 结果留给 PR 的预览工作流。一次共享目录重复组包出现权限差异并被校验拦截，未签收；改用独立 `/tmp` 的两轮均通过。官方 fnpack 会往 app.tgz 注入两份权限配置，并把输出放在调用工作目录；已适配且拒绝重复归档成员。没有篡改/放宽实际内容校验来接受失败包。
+
+未发布正式 Release、未合并本轮 PR、未部署 NAS。J4125/fnOS 安装/升级/回滚/卸载/ACL/资源、真实身份/账号、完整音乐下载和历史酷我 407 仍单独待验。
+
+## 2026-10-24：原生 FPK 预览实现与构建准备
+
+基线 main `04677d32b96a0b824c2148001458d581f9f8f22c`。官方 `llms-full.txt` 直接 HTTPS 可达，fnpack 1.2.3 下载摘要与 `--help/create/build --help` 已核对；固定下载/组件见 `packaging/fpk/versions.json`。原 Hot 和子模块已按固定 SHA 取得，Rust 1.99.1/musl 静态 Hot 已在开发机编译完成；不是 NAS 构建/运行验收。
+
+本地 Python 3.12.15 + 固定 QQ SDK 完整业务/打包回归 **150 passed**，包含新增 **30 项**原生包装受控测试；仅保留既有 Starlette/httpx 弃用提示。覆盖配置重装保留、私有 token、端口/路径/HTTPS 拒绝、PID 复用、串行锁、备份/失败/完整性、数据库与密钥回滚、卸载保留、输入篡改/归档穿越/音频密钥排除及图标/身份一致性。实际候选包结果完成后另追加，不以脚本通过代替 FPK 构建。
+
+当前运行器 UID=0，且 Python PID 与 procfs self PID 不一致；生产监督器拒绝此环境，真服务集成需普通非 root Linux。受控测试不算真监督器或 fnOS 安装通过。新增手动 Actions 预览工作流执行输入/组包与普通 Linux 真服务 smoke；源码接入不代表已运行。
+
+首轮离线准备在 ELF 校验中拦截 Hot：虽无 NEEDED 动态库，musl GCC 的默认 PIE 仍写入 `/lib/ld-musl-x86_64.so.1` 解释器；该轮未进入 fnpack，不记为构建成功。随后显式静态 relocation/GCC 链接遇到 Rust rlib 格式错误，改用固定工具链内的 rust-lld 和独立 target 目录，最终产物须重新检查。另移除 pip 的绝对 staging shebang/本地 direct URL，重建安装 RECORD，避免产物泄漏开发路径或因组包目录不同而漂移。
+
+保留历史酷我 407、QQ/NAS/手机实机待验状态。本轮不连接真实账号/NAS、不下载音乐、不接管官方 Socket、不改 ext，不创建正式 Release。
+
 ## 2026-10-23：Astra 整体审核修复
 
 基线 main `d6bef0aad6ae1c8774db9d0c023a3e17438a7359`（PR #2 已合并），其 [Actions 39955616620](https://github.com/Surc/fnos_music_hub/actions/runs/39955616620) 六项通过。本轮在 `fix/astra-review-hardening` 修复，逐项说明见 [Astra 记录](ASTRA_REVIEW_FIXES.md)。固定上游和真实平台证据未变。
