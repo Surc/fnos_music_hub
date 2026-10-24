@@ -2,6 +2,8 @@
 
 ## 2026-10-24：PR #4 独立审核与修复复核
 
+交付结果：修复 head `0a5118200e2d9371109371b13f2cdcf89a9d4bf8` / tree `f8d9c41300039fd0e8dfa9dea0ecbf28d0c026bf` 与本地已测一致；[该提交 PR CI 40085536584](https://github.com/Surc/fnos_music_hub/actions/runs/40085536584) 八项全部成功，含 Python 3.11/3.12 基础、QQ、网易、web、browser。无未解决线程，已提交 [Comment 审核](https://github.com/Surc/fnos_music_hub/pull/4#pullrequestreview-5637917573)；因同为 PR 作者，没有提交或宣称第三方批准。随后转 Ready 并合并，main 为 `84f814d997017b07c28b821f70db5fdc7c5cbe9b`（2026-10-24 18:26:12，UTC+8）。[合并页面凭证](netease-pr4-merged.jpg)。来源采用记录在确认合并后更新；实际账号/NAS 待验状态不变。
+
 重新查询远端精确 head `8ae89c835849bb377172c8e9186107dca26760ae`，内容树 `0dbebe662e9c5240c1b5e3727b428ae056d564cf` 与本地审阅基线相同；[CI 40078403156](https://github.com/Surc/fnos_music_hub/actions/runs/40078403156) 八项均成功，审核/讨论/未解决线程为空。发现和最小修复见 [独立审核](NETEASE_REVIEW.md)，最终修复后的 head/CI 与合并结果另行记录。
 
 - 新增回归先复现响应 Cookie 进入后续请求、异常 ID 导致整页失败或错误匹配：4 failed / 2 passed。修复后完整 Python 3.12（QQ+网易）**193 passed**；新增 21 项回归包含可信 UID、在途 bind/rotate 撤销、关闭网易与缺依赖。
