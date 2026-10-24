@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "repository": "Surc/fnos_music_hub",
-  "stage": "astra-review-hardening-development",
-  "recorded_on": "2026-10-23",
+  "stage": "native-fpk-preview-development",
+  "recorded_on": "2026-10-24",
   "observation_policy": "Source observations remain those of the fixed-source v1.6 research on 2026-10-21, not fresh upstream heads. Adopted integration pins are backed by merged Hub code; runtime/NAS acceptance remains separate.",
   "design_archive": {
     "path": "docs/design-goals-v1.6-20261021.txt",
@@ -342,13 +342,13 @@
   ],
   "maintenance_skill": {
     "name": "maintain-fnos-music-hub",
-    "version": "1.4.2",
+    "version": "1.5.0",
     "files": {
-      "skills/maintain-fnos-music-hub/SKILL.md": "c84bd91371e1ada237dffe75ab0e81a57990f76964a8e3e34fd5c3302f5adb9a",
+      "skills/maintain-fnos-music-hub/SKILL.md": "bc945894249318897388dbf6360f857d632042545387960af15f52bf9f6e1621",
       "skills/maintain-fnos-music-hub/agents/openai.yaml": "43f885a269d77d2173f7480c43e58afcab96777c2546511cdaeb4636349ed40d",
-      "skills/maintain-fnos-music-hub/assets/icon.svg": "9be88f8dd4c5e658961515c71389eafd45142ffa68bcae58e8dcff57d178ed91"
+      "skills/maintain-fnos-music-hub/assets/icon.svg": "8936b24f674a1250d999e2c2b5901374fb4240426f32bd1ae340c352a90d617d"
     },
-    "personal_skill_git_commit": "1e33b59a21b2adc2c10dcca56336c2cb8c19e680"
+    "personal_skill_git_commit": "2e3eaae2be6f42343e03a7778d19a2cccb944100"
   },
   "project_release": {
     "tag": null,
@@ -694,6 +694,49 @@
       "evidence_files_sha256": {
         "docs/qq-ui-screenshots/astra-browser-report.json": "66ee6eed06ad5ea9da69e849418820ee7430923b12bfee93997b31c29978a774"
       }
+    }
+  },
+  "native_preview": {
+    "package_version": "0.1.0-preview.1",
+    "base_main_commit": "04677d32b96a0b824c2148001458d581f9f8f22c",
+    "app_id": "fnos_music_hub",
+    "platform": "linux/amd64",
+    "pins_file": "packaging/fpk/versions.json",
+    "status": "candidate_built_static_passed",
+    "real_nas_acceptance": "not_run",
+    "release_created": false,
+    "artifacts": [
+      {
+        "name": "fnos-music-hub-0.1.0-preview.1-amd64.fpk",
+        "bytes": 64234846,
+        "sha256": "68d814f27297228b14631f88165d430f7ec74837d759ccd6d76e296eb1608286",
+        "kind": "local_preview_candidate_not_release"
+      },
+      {
+        "name": "fnos-music-hub-0.1.0-preview.1-sources.tar.gz",
+        "bytes": 18033155,
+        "sha256": "e1d1d12ea70f9242bcd23572220ebf58b7feba23eb1cf45971094b0a396312b8",
+        "kind": "matching_corresponding_sources"
+      }
+    ],
+    "candidate_commit": "606f6319490bfde4935d2bc2ee43cbfb4769a4f2",
+    "candidate_tree": "94dc5d655dd5470da3a35c7467053f51aa2a8cee",
+    "validation": {
+      "python_tests": "154 passed",
+      "native_packaging_tests": "34 passed",
+      "web_jsdom": "31 passed",
+      "actual_fpk_static": "passed; 5915 installed files",
+      "direct_component_runtime": "passed on development Linux as root with synthetic users; not fnOS/supervisor",
+      "supervisor_local": "blocked: root and procfs/PID namespace mismatch",
+      "offline_repeat": "two isolated builds passed; installed content and source archive identical; FPK outer bytes differ",
+      "github_actions": "pending after PR submission",
+      "j4125_nas": "not_run"
+    },
+    "evidence_files": {
+      "docs/fpk-preview/build-report.json": "f24e6163692b4c4f75469866397f172ffec41271384c6448d03ab434c45a4a7b",
+      "docs/fpk-preview/native-smoke-local.json": "dd6aecadf5b1bed2d882cb4acd9efdf294efa22aed84c392747b41d57db8ddac",
+      "docs/fpk-preview/reproducibility.json": "56b1171e690b8e4e34719bbfc01170b2983441c5d0412db3f067788ae66a0843",
+      "docs/fpk-preview/runtime-check-local.json": "033c4cceb84321f7b7c9f81db55eb388e253407dc743fbf98645113da67635ff"
     }
   }
 }
