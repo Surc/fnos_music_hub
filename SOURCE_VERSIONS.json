@@ -754,8 +754,28 @@
         "docs/netease-ui-screenshots/netease-mobile-landscape.png": "4c439dcd39c6ae928a3ffae63983f691591b19c8029f61be2d751ca9bcab43c0",
         "docs/netease-ui-screenshots/netease-mobile-portrait.png": "0c3913a8e514d4ef711e5ccb32e9170daf33057ccb96065e6659f3c2fa1a7cca",
         "docs/netease-ui-screenshots/netease-pc-landscape.png": "ca7f772eec984bae05852f21a596bb66ab2b30ebc4db592e5199b800165d7bd8",
-        "docs/netease-ui-screenshots/netease-pc-portrait.png": "a6939109cc775a81265034bb6c137b4d254772a10c2cee2ec08575c3e8b30820"
-      }
+        "docs/netease-ui-screenshots/netease-pc-portrait.png": "a6939109cc775a81265034bb6c137b4d254772a10c2cee2ec08575c3e8b30820",
+        "docs/netease-ui-screenshots/pr-draft.jpg": "5cd09cbc2a688c046cd8ae404ef16fd8d20396c8e8ad3f466c30d336e12c7855"
+      },
+      "pull_request": "https://github.com/Surc/fnos_music_hub/pull/4",
+      "remote_code_commit": "cd95d020556ccd7708f0953976e802e963f933c2",
+      "verified_content_tree": "727801a07856d18a02de22ed21b22816f4d9b2b7",
+      "local_tested_commit": "93d2266",
+      "ci_runs": [
+        {
+          "id": 40077854755,
+          "event": "push",
+          "conclusion": "success",
+          "jobs": 8
+        },
+        {
+          "id": 40078076740,
+          "event": "pull_request",
+          "conclusion": "success",
+          "jobs": 8
+        }
+      ],
+      "ci_scope": "Python 3.11/3.12 base, QQ and NetEase; web; standard Chromium ten viewports; dependency checks, wheels, Ruff and provenance; synthetic platform APIs"
     }
   }
 }
