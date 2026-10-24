@@ -4,6 +4,7 @@ import asyncio
 import importlib.util
 import json
 import sys
+from email.message import Message
 
 import pytest
 
@@ -51,6 +52,7 @@ def sdk(tmp_path, monkeypatch):
         account_uid = 10001
         count = 205
         tracks = ids
+        response_cookie = None
 
         def payload(self, request):
             if "nuser/account/get" in request.url:
@@ -107,6 +109,13 @@ def sdk(tmp_path, monkeypatch):
             else json.dumps(rig.payload(request)).encode()
         )
         response._content_consumed = True
+        if rig.response_cookie:
+            # Exercise the same CookieJar policy as requests.Session.send.
+            from requests.cookies import MockRequest, MockResponse
+
+            headers = Message()
+            headers.add_header("Set-Cookie", rig.response_cookie)
+            session.cookies.extract_cookies(MockResponse(headers), MockRequest(request))
         return response
 
     monkeypatch.setattr(requests.Session, "send", send)
@@ -241,3 +250,55 @@ def test_sdk_transport_timeout_is_transient_not_empty_success(sdk, monkeypatch):
     with pytest.raises(HubError) as error:
         execute(payload("public_playlists"))
     assert error.value.code == "platform_unavailable"
+
+
+@pytest.mark.parametrize("bad_id", [[], {}, True, "1", None])
+def test_sdk_malformed_track_ids_remain_unknown_without_aliasing_valid_ids(sdk, bad_id):
+    rig, captured, sent = sdk
+    rig.tracks = [{"id": 1}, {"id": bad_id}, {"id": 1}]
+    rig.count = 3
+    result = execute(payload("playlist_page"))
+    assert [r["id"] if r else None for r in result["items"]] == [1, None, 1]
+
+
+def test_sdk_response_cookies_cannot_replace_the_frozen_credential(sdk):
+    rig, captured, sent = sdk
+    rig.response_cookie = "MUSIC_U=synthetic-other; Domain=music.163.com; Path=/"
+    execute(payload("user_playlists", private=True))
+    assert len(sent) == 3
+    assert all("MUSIC_U=synthetic-a" in r.headers.get("Cookie", "") for r in sent)
+    assert all("synthetic-other" not in r.headers.get("Cookie", "") for r in sent)
+
+
+@pytest.mark.parametrize(
+    "account,profile",
+    [
+        ({}, {}),
+        ({"id": True}, {"userId": True}),
+        ({"id": "10001"}, {"userId": "10001"}),
+        ({"id": 10001}, {"userId": 20002}),
+    ],
+)
+def test_sdk_success_code_without_consistent_real_uid_cannot_verify(
+    sdk, account, profile
+):
+    rig, captured, sent = sdk
+    rig.payload = lambda request: {"code": 200, "account": account, "profile": profile}
+    with pytest.raises(HubError) as error:
+        execute(payload("verify", private=True))
+    assert error.value.code == "platform_auth_required"
+
+
+def test_sdk_uid_change_after_private_data_discards_result(sdk):
+    rig, captured, sent = sdk
+    original = rig.payload
+
+    def changed(request):
+        if len(sent) == 3:
+            rig.account_uid = 20002
+        return original(request)
+
+    rig.payload = changed
+    with pytest.raises(HubError) as error:
+        execute(payload("user_playlists", private=True))
+    assert error.value.code == "binding_changed" and len(sent) == 3

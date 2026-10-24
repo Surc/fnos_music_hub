@@ -362,6 +362,7 @@ def test_reject_invalid_cookies_without_platform_call(ne, cookie):
         "playlists?page=101",
         "playlists/abc",
         "playlists/0",
+        "playlists/" + "9" * 5000,
         "playlists/77?page=0",
         "playlists?scope=shared",
         "recommendations?kind=daily",
@@ -461,3 +462,63 @@ def test_invalid_page_does_not_cache_and_netease_download_is_rejected(ne):
     assert result.status_code == 409 and result.json()["error"]["code"] == "unsupported"
     assert a.post("/api/catalog/netease/favorites", json={}).status_code == 404
     assert not a.get("/api/tasks").json()["items"]
+
+
+@pytest.mark.parametrize("operation", ["bind", "rotate"])
+def test_late_credential_verification_cannot_restore_unlinked_account(ne, operation):
+    app, protocol, a, b = ne
+    if operation == "bind":
+        attempt = a.post("/api/accounts/netease/login", json={"cookie": COOKIE}).json()
+        path = f"/api/accounts/netease/login/{attempt['id']}/bind"
+        body = {}
+    else:
+        bound, _ = bind(a)
+        path = "/api/accounts/netease/credential"
+        body = {
+            "cookie": COOKIE + "; NMTID=new",
+            "binding_generation": bound["binding_generation"],
+        }
+    protocol.gate = "verify"
+    with ThreadPoolExecutor() as pool:
+        pending = pool.submit(a.post, path, json=body)
+        assert protocol.entered.wait(3)
+        assert unlink(a).status_code == 200
+        protocol.release.set()
+        assert pending.result(3).status_code in {404, 409}
+    assert account(a)["state"] == "unbound"
+    assert a.get("/api/catalog/netease/recommendations").status_code == 409
+
+
+def test_disabled_netease_does_not_require_or_import_sdk(tmp_path, monkeypatch):
+    from modules.catalog.netease import NeteaseProtocol
+
+    monkeypatch.setattr(NeteaseProtocol, "available", staticmethod(lambda: False))
+    settings = Settings(
+        instance_id="nas",
+        data_dir=tmp_path / "data",
+        bridge_url="http://bridge/api/v1",
+        public_origin=ORIGIN,
+        secure_cookie=False,
+    )
+    app = create_app(
+        settings, transport=httpx.MockTransport(Upstream({})), start_worker=False
+    )
+    with TestClient(app, base_url=ORIGIN, headers={"Origin": ORIGIN}) as client:
+        result = client.post(
+            "/api/auth/login", json={"username": "alice", "password": "password"}
+        )
+        client.headers["X-CSRF-Token"] = result.json()["csrf_token"]
+        caps = client.get("/api/me").json()["capabilities"]
+        assert caps["public_playlists"] == caps["cloud_accounts"] == []
+        assert client.get("/api/accounts").json() == {"enabled": False, "items": []}
+        assert client.get("/api/catalog/netease/playlists").status_code == 409
+        assert (
+            client.post(
+                "/api/accounts/netease/login", json={"cookie": COOKIE}
+            ).status_code
+            == 409
+        )
+    with pytest.raises(RuntimeError, match="pinned optional MusicBox"):
+        create_app(
+            settings.model_copy(update={"netease_enabled": True}), start_worker=False
+        )
