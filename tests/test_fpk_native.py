@@ -5,6 +5,7 @@ import io
 import json
 import os
 import signal
+import subprocess
 import sys
 import tarfile
 from pathlib import Path
@@ -368,3 +369,37 @@ def test_archive_symlinks_may_only_point_within_payload(target, valid):
         else:
             with pytest.raises(ValueError, match="unsafe"):
                 verify.members(archive)
+
+
+def test_shell_dispatch_accepts_fnOS_symlink_directory_aliases(tmp_path):
+    target, var = tmp_path / "target", tmp_path / "var"
+    python = target / "runtime/python/bin/python3"
+    python.parent.mkdir(parents=True)
+    (target / "native").mkdir()
+    var.mkdir()
+    python.write_text('#!/bin/sh\nprintf "saved-runtime-ok"\n')
+    python.chmod(0o755)
+    (var / "active-program").symlink_to(target)
+    target_alias, var_alias = tmp_path / "target-alias", tmp_path / "var-alias"
+    target_alias.symlink_to(target)
+    var_alias.symlink_to(var)
+    stub = tmp_path / "stub"
+    stub.mkdir()
+    (stub / "id").write_text('#!/bin/sh\nprintf "1001"\n')
+    (stub / "id").chmod(
+        0o755
+    )  # Test wrapper only; real service.py still rejects UID 0.
+    env = {
+        **os.environ,
+        "PATH": str(stub) + ":/usr/bin:/bin",
+        "TRIM_APPDEST": str(target_alias),
+        "TRIM_PKGVAR": str(var_alias),
+    }
+    result = subprocess.run(
+        ["sh", str(FPK / "template/cmd/_dispatch"), "start"],
+        env=env,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert result.stdout == "saved-runtime-ok"
