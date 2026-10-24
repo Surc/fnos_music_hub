@@ -8,7 +8,7 @@ description: 维护 Surc/fnos_music_hub 独立飞牛音乐中心。用于接续�
 ## 先核对当前工程
 
 1. 定位或按任务授权克隆 `https://github.com/Surc/fnos_music_hub.git`。检查 remote、分支、未提交修改；不要把旧 `fnos_music_ext` 当作本仓库。
-2. 读取仓库 `AGENTS.md`、`README.md`、`SOURCE_VERSIONS.json`、`docs/ITERATION.md` 和 `docs/VALIDATION.md`；先读 `docs/RUNNING.md`、`docs/HTTP_API.md` 与功能/平台两份 `docs/ACCEPTANCE_*.md`。前台任务再读 `docs/UI_REVIEW.md`，QQ 模块先读 `docs/QQ_ACCOUNTS.md`；其余按模块读取设计、契约、账号反馈、更新和迁移文档。
+2. 读取仓库 `AGENTS.md`、`README.md`、`SOURCE_VERSIONS.json`、`docs/ITERATION.md` 和 `docs/VALIDATION.md`；先读 `docs/RUNNING.md`、`docs/HTTP_API.md` 与功能/平台两份 `docs/ACCEPTANCE_*.md`。前台任务再读 `docs/UI_REVIEW.md`，QQ 模块先读 `docs/QQ_ACCOUNTS.md`，网易模块先读 `docs/NETEASE.md`；其余按模块读取设计、契约、账号反馈、更新和迁移文档。
 3. 以当前代码和验证记录判断完成度。初始化是设计骨架；0.1.0a1 已有可运行开发服务与前台，尚无 FPK。按当前迭代区分模拟验证与真实平台/NAS验收。`docs/design-goals-v1.6-20261021.txt` 是完整历史研究，含被后续审核修订的提议；当前规范文档优先，不能只截取早期选型表。
 4. 核对来源的完整 SHA、实际分支、版本文件、Git tag、观察时间、采用状态和许可证。`observed_commit` 不等于 `adopted_commit`，原工程双来源的采用基线不等于新 Hub 已采用。
 
@@ -84,3 +84,11 @@ description: 维护 Surc/fnos_music_hub 独立飞牛音乐中心。用于接续�
 - 会话撤销后，外部等待返回及提交/缓存/控制等边界重验本地会话；已经接收并持久化的下载仍归 owner 继续执行。退出清理本会话尚未绑定的登录尝试，不撤销已完成关联或他会话的新尝试，迟到扫码不能重新写回。
 - 下载文件逐级使用目录 FD 与 NOFOLLOW 打开，校验和读取使用同一 FD；覆盖父目录替换、符号链接和非普通文件。前台分页成功后才更新页码/游标，慢轮询只保留同上下文的一个在途请求，退出/切页仍使迟到响应失效。
 - 来源清单的采用 SHA 必须有已合并的适配器/依赖证据，并写明 HTTP 接入或可选 SDK，不能冒称复制上游源码或完成实机验收。检查数据库常量、完整快照能力与清单一致，保留旧工程双来源和历史地区限制结果。
+
+## 网易只读目录接续（2026-10-24）
+
+- 以仓库最新 `docs/NETEASE.md` 和分支/合并证据判断准入。固定 MusicBox `9c405f4bae2384d0410e63f8b816a707553d72d3` / 0.5.3 作为可选库；不在 Hub 内导入 NEMbox，不复用旧 ext 的共享账号、全局 XDG 或播放过滤/去重逻辑。每次读取临时短进程、内存 Session 与独立 XDG，凭据经 stdin，取消/超时杀死并回收；不新增常驻 SDK 服务，不改上游源码。
+- 保留 Cookie 验证候选→核对 UID→显式绑定。候选只属原飞牛会话，账号/尝试持久化原子提交；仅同 UID 更新凭据修订，换号先解绑并推进代次。加密凭据不得放在日志、参数 URL、Git、截图或响应；不读取旧服务的账号文件。
+- 公开歌单始终空 Cookie；私人请求前后核对实际 UID，Hub 返回/缓存前重验 owner、AccountRef、代次、修订和会话。旧成功/错误不能泄露或缓存，也不能把新绑定置过期。平台失效 409 不等于飞牛 401，不回退匿名。无持久私人目录响应缓存；解绑清理临时歌曲元数据，显式本地收藏独立保留。
+- 详情沿 trackIds 重建原序/重复/未知/缺详情，不能按 ID 去重输出或按取流结果删歌。30 项目录、100 项详情和 10000 来源总数是当前有界分页；complete=false/page_only，不是网易完整快照。推荐仍称账号推荐，personalization=unverified，不能以 SDK 函数名签收每日个性化效果。
+- 开启 `netease_enabled` 需固定可选依赖；网易目录不依赖 Hot，QQ/酷我仍沿原引擎授权。网易搜索/扫码/下载、云端写入和反馈均独立准入；真实 R-NE-001..004、NAS/J4125 性能与正式 FPK 不以合成 SDK/Chromium 测试代替。未合并时保留 adopted_commit=null。
