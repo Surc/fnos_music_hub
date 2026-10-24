@@ -117,10 +117,23 @@
       "observed_branch": "master",
       "observed_commit": "9c405f4bae2384d0410e63f8b816a707553d72d3",
       "version_file_or_documented_version": "0.5.3",
-      "status": "candidate_implemented_in_development_branch",
+      "status": "adopted_integration_real_acceptance_pending",
       "planned_role": "网易已有协议基础；多账号与反馈/订阅需验证",
-      "adopted_commit": null,
-      "adoption_evidence": null,
+      "adopted_commit": "9c405f4bae2384d0410e63f8b816a707553d72d3",
+      "adoption_evidence": {
+        "hub_merge_commit": "84f814d997017b07c28b821f70db5fdc7c5cbe9b",
+        "pull_request": "https://github.com/Surc/fnos_music_hub/pull/4",
+        "verified_main_commit": "84f814d997017b07c28b821f70db5fdc7c5cbe9b",
+        "verified_on": "2026-10-24",
+        "components": [
+          "NetEase read-only accounts and catalog"
+        ],
+        "integration_modes": [
+          "optional unmodified MusicBox SDK in private-XDG one-shot workers; immutable stdin credential and owner-scoped grants"
+        ],
+        "upstream_patch_files": [],
+        "real_platform_acceptance": "not_run; R-NE-001..004 and J4125/NAS remain pending"
+      },
       "license_record": "MIT",
       "license_status": "LICENSE and package metadata checked at fixed commit on 2026-10-24; optional unmodified SDK, original isolation adapter",
       "evidence_path": "docs/design-goals-v1.6-20261021.txt"
@@ -434,7 +447,7 @@
         "modules/accounts/netease.py"
       ],
       "upstream_patch_files": [],
-      "adoption_status": "development_branch_only_until_merge",
+      "adoption_status": "merged_on_main_real_acceptance_pending",
       "full_playlist_export": false,
       "download_enabled": false,
       "cloud_writes_enabled": false,
@@ -443,7 +456,7 @@
       "evidence": "docs/NETEASE.md"
     }
   ],
-  "implementation_branch": "feat/netease-readonly-catalog",
+  "implementation_branch": "main",
   "adoption_policy": "Advance adopted_commit only for an adapter or dependency already merged on main, with its integration mode and merge evidence. HTTP integration does not vendor upstream code; adoption does not imply real platform or NAS acceptance.",
   "runtime_dependencies": {
     "lockfile": "requirements.lock",
@@ -796,7 +809,14 @@
       "new_regression_cases": 21,
       "real_platform_acceptance": "not_run",
       "nas_acceptance": "not_run",
-      "fpk_pr5_integration": "required_after_business_merge; no_packaging_changes_in_this_review"
+      "fpk_pr5_integration": "required_after_business_merge; no_packaging_changes_in_this_review",
+      "validated_head": "0a5118200e2d9371109371b13f2cdcf89a9d4bf8",
+      "validated_tree": "f8d9c41300039fd0e8dfa9dea0ecbf28d0c026bf",
+      "pull_request_ci": 40085536584,
+      "pull_request_ci_result": "eight_jobs_success",
+      "review_id": 5637917573,
+      "hub_merge_commit": "84f814d997017b07c28b821f70db5fdc7c5cbe9b",
+      "merge_screenshot_sha256": "e3999e8729d5aa73379b6d545b4ff23234ee515ff3279d6603db35a7eaf96044"
     }
   }
 }
