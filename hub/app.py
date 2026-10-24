@@ -432,7 +432,8 @@ def create_app(
         context=Depends(authenticated),
     ):
         if (
-            not playlist_id.isascii()
+            not 1 <= len(playlist_id) <= 20
+            or not playlist_id.isascii()
             or not playlist_id.isdecimal()
             or not 0 < int(playlist_id) < 10**20
             or not 1 <= page <= 100
