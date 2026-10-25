@@ -129,6 +129,7 @@ def prepare(work, output, jobs):
         "musl": "musl-1.2.5.tar.gz",
         "ffmpeg": "ffmpeg-8.0.1.tar.xz",
         "fnpack": "fnpack",
+        "rapidfuzz": "rapidfuzz-3.14.6.tar.gz",
     }
     for key, filename in downloads.items():
         download(PINS[key], work / filename)
@@ -231,10 +232,11 @@ def prepare(work, output, jobs):
         run([python, "-m", "venv", builder])
     buildpy = builder / "bin/python"
     # Build backend version is explicit; never becomes a NAS build dependency.
-    run([buildpy, "-m", "pip", "install", "hatchling==1.27.0"], env=env)
+    run([buildpy, "-m", "pip", "install", "hatchling==1.27.0", "scikit-build-core==0.11.6"], env=env)
     wheels = output / "wheels"
     wheels.mkdir()
-    runtime = [f"{name}=={version}" for name, version in sorted(requirements().items())]
+    runtime = [f"{name}=={version}" for name, version in sorted(requirements().items())
+               if name != "rapidfuzz"]
     run(
         [
             buildpy,
@@ -264,6 +266,10 @@ def prepare(work, output, jobs):
         ],
         env=env,
     )
+    # Upstream-supported pure Python wheel: no NAS libstdc++/GLIBCXX or AVX runtime.
+    run([buildpy, "-m", "pip", "wheel", "--no-deps", "--no-build-isolation",
+         "--config-settings=wheel.cmake=false", "--wheel-dir", wheels,
+         work / "rapidfuzz-3.14.6.tar.gz"], env=env)
     wheel_manifest = describe(wheels)
     write_json(output / "wheelhouse.json", wheel_manifest)
     python_sources = wheel_sources(wheel_manifest, work, sources / "python-sdists")
@@ -362,6 +368,10 @@ def prepare(work, output, jobs):
                 ).strip(),
                 "ffmpeg_configure": ffargs,
                 "rustflags": rustflags,
+                "python_wheel_build": {
+                    "hatchling": "1.27.0", "scikit-build-core": "0.11.6",
+                    "rapidfuzz": "wheel.cmake=false; unmodified pinned sdist; pure Python",
+                },
                 "source_date_epoch": epoch,
                 "hub_commit": subprocess.check_output(
                     ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True

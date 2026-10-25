@@ -34,7 +34,7 @@ python3 packaging/fpk/fetch_inputs.py \
   --work /build/hub-work --output /build/hub-inputs --jobs 4
 ```
 
-准备器检查固定 Hot SHA/加密子模块、QQ SDK 与 MusicBox SHA，以及 Python/FFmpeg/musl/fnpack 下载摘要；musl 构建 Hot/FFmpeg，`cargo build --locked`，上游零补丁。Python 依赖取自基础、QQ、网易三份 lock，合并重复的相同版本并拒绝冲突/未锁定条目；QQ/MusicBox wheel 使用各自固定源码和 hatchling 1.27.0。三份锁摘要和每个 wheel 的版本、依赖、许可证路径及 SHA256 进入输入闭包；离线阶段再次核对，不接受旧闭包。`inputs.json` 冻结每个实际输入文件/链接的 SHA256、权限、编译参数和工具版本。保留输入闭包可准确重放；GCC/runner 镜像未固定为同一发行镜像，因此跨环境重新编译不承诺字节一致。
+准备器检查固定 Hot SHA/加密子模块、QQ SDK 与 MusicBox SHA，以及 Python/FFmpeg/musl/fnpack 下载摘要；musl 构建 Hot/FFmpeg，`cargo build --locked`，上游零补丁。Python 依赖取自基础、QQ、网易三份 lock，合并重复的相同版本并拒绝冲突/未锁定条目；QQ/MusicBox wheel 使用各自固定源码和 hatchling 1.27.0。RapidFuzz 3.14.6 使用固定 sdist/SHA256 与 scikit-build-core 0.11.6，按上游 `wheel.cmake=false` 构建完整纯 Python wheel，无源码补丁；避免 NAS 额外提供 libstdc++/GLIBCXX 或 SIMD 运行库。三份锁摘要和每个 wheel 的版本、依赖、许可证路径及 SHA256 进入输入闭包；离线阶段再次核对，不接受旧闭包。`inputs.json` 冻结每个实际输入文件/链接的 SHA256、权限、编译参数和工具版本。保留输入闭包可准确重放；GCC/runner 镜像未固定为同一发行镜像，因此跨环境重新编译不承诺字节一致。
 
 离线组包接受已核验的第三方输入闭包和当前干净 Hub checkout。闭包可跨 Hub 迭代复用，组包时重新生成当前 Hub 的对应源码附件，分别记录组件构建环境与当前 Hub commit：
 

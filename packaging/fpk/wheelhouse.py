@@ -62,6 +62,11 @@ def describe(wheels, root=ROOT):
             name = normalized(info["Name"])
             if name in result or expected.get(name) != info["Version"]:
                 raise ValueError("unexpected, duplicate or incorrectly versioned wheel")
+            if name == "rapidfuzz" and (
+                not wheel.name.endswith("-py3-none-any.whl")
+                or any(n.endswith((".so", ".pyd", ".dll")) for n in archive.namelist())
+            ):
+                raise ValueError("RapidFuzz must use the portable pure Python wheel")
             licenses = [
                 n for n in archive.namelist()
                 if not n.endswith("/") and any(

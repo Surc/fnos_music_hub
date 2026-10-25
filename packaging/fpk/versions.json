@@ -31,5 +31,12 @@
     "url": "https://static2.fnnas.com/fnpack/fnpack-1.2.3-linux-amd64",
     "sha256": "54b97fa7b70968c4d05c79840f5daeff508957d0bb2062fdb0376d00d9615c93"
   },
-  "netease_commit": "9c405f4bae2384d0410e63f8b816a707553d72d3"
+  "netease_commit": "9c405f4bae2384d0410e63f8b816a707553d72d3",
+  "rapidfuzz": {
+    "version": "3.14.6",
+    "url": "https://files.pythonhosted.org/packages/18/97/226c43b7b5d957bc3840ed52ea99eed261f99834c4619be7a4742cbaeafa/rapidfuzz-3.14.6.tar.gz",
+    "sha256": "e13a8160d017b499ec7a2fa9d0ce1ae2e7377080815785819f966fb235d4eb60",
+    "build_backend": "scikit-build-core==0.11.6",
+    "build_config": "wheel.cmake=false"
+  }
 }

@@ -247,6 +247,7 @@ def assemble(inputs, output):
             "qq_readonly": {"included": True, "default_enabled": False},
             "downloads": ["kuwo"],
         },
+        "rapidfuzz_implementation": "pure Python; no external libstdc++ required",
         "compatibility": compatibility,
         "build_environment": recorded["build_environment"],
         "real_nas_acceptance": "pending",
