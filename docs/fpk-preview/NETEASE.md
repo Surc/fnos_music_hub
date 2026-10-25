@@ -11,3 +11,7 @@
 GitHub Actions、实际 FPK 与普通非 root Linux 服务结果待本轮运行后填入，尚不宣称成功。构建提交、安装文件数、SHA256 和 MusicBox 集成状态均以新 build-report.json 为准；附件名为 `fnos-music-hub-0.1.0-preview.2-netease-readonly-amd64`。另存 `netease-offline-inputs-amd64` 闭包附件用于精确离线重放，均保留 14 天。
 
 真实 R-NE-001..004、QQ/飞牛账号、完整音乐下载、J4125/fnOS 安装/升级/ACL/CPU/RSS 均未执行。下载准入仍只允许酷我，历史两首地区限制 407 不变。无真实 NAS 部署、旧 ext 修改或正式 Release。
+
+首轮本次原生 CI [40172841217](https://github.com/Surc/fnos_music_hub/actions/runs/40172841217) 的输入准备通过，但 ELF 审计正确拦截 RapidFuzz 官方 C++ wheel 对外部 libstdc++.so.6 的依赖，未生成/签收 FPK。修复为上游支持的 `wheel.cmake=false`：以固定 sdist/SHA256 和 scikit-build-core 0.11.6 构建未修改的纯 Python wheel，版本不变；拒绝任何夹带原生扩展的 RapidFuzz 输入，不放宽 ELF 外部库校验。MusicBox 目录 API 不使用终端界面的模糊匹配模块；仍以包内纯 Python 实现探针/业务回归验证完整依赖。
+
+修复后本地 QQ+网易/纯 Python RapidFuzz 完整回归 **239 passed**，其中包装 46 项；实际离线探针与 pip check 通过。固定纯 Python wheel 完整闭包仍为 43 项，新增包装/SDK 定向 74 passed。等待新原生 CI 与实际产物，不以这些本地检查签收 FPK/NAS。
