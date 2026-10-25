@@ -5,6 +5,11 @@ on:
     paths:
       - 'packaging/fpk/**'
       - 'tests/test_fpk_native.py'
+      - 'hub/**'
+      - 'modules/**'
+      - 'apps/**'
+      - 'requirements*.lock'
+      - 'pyproject.toml'
       - '.github/workflows/fpk-preview.yml'
 permissions:
   contents: read
@@ -17,21 +22,45 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.12'
-      - run: sudo apt-get update -qq && sudo apt-get install -y gcc make binutils git cmake ca-certificates
+      - run: sudo apt-get update -qq && sudo apt-get install -y gcc make binutils git cmake ca-certificates ffmpeg
       - name: Fetch pins and build offline input closure (build machine only)
         run: python packaging/fpk/fetch_inputs.py --work "$RUNNER_TEMP/fpk-work" --output "$RUNNER_TEMP/fpk-inputs" --jobs 4
       - name: Assemble offline and verify actual FPK
         run: sh packaging/fpk/build.sh "$RUNNER_TEMP/fpk-inputs" "$RUNNER_TEMP/fpk-output"
+      - name: Packaged Python, QQ and NetEase contracts (synthetic, offline)
+        run: |
+          set -o pipefail
+          python -m pip install --target "$RUNNER_TEMP/fpk-test-tools" pytest==9.1.1
+          export PYTHONPATH="$RUNNER_TEMP/fpk-test-tools:$RUNNER_TEMP/fpk-output/stage/app/server:$RUNNER_TEMP/fpk-output/stage/app/runtime/site-packages:$GITHUB_WORKSPACE/tests"
+          export PATH="$RUNNER_TEMP/fpk-output/stage/app/bin:$PATH"
+          export HUB_TEST_FFMPEG=/usr/bin/ffmpeg
+          export PYTHONDONTWRITEBYTECODE=1
+          cd "$RUNNER_TEMP"
+          "$RUNNER_TEMP/fpk-output/stage/app/runtime/python/bin/python3" -sB -m pytest -c /dev/null --import-mode=importlib -q "$GITHUB_WORKSPACE/tests" | tee "$RUNNER_TEMP/fpk-output/bundle-tests.txt"
       - name: Real bundled services on disposable non-root Linux
         run: python packaging/fpk/native_smoke.py --stage "$RUNNER_TEMP/fpk-output/stage" --report "$RUNNER_TEMP/fpk-output/native-smoke.json" --require
+      - name: Freeze replayable input closure and final checksums
+        run: |
+          tar -czf "$RUNNER_TEMP/fpk-output/fnos-music-hub-0.1.0-preview.2-inputs.tar.gz" -C "$RUNNER_TEMP/fpk-inputs" .
+          cd "$RUNNER_TEMP/fpk-output"
+          sha256sum ./*.fpk ./*.tar.gz ./*.json ./bundle-tests.txt > SHA256SUMS
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: fnos-music-hub-0.1.0-preview.1-amd64
+          name: fnos-music-hub-0.1.0-preview.2-netease-readonly-amd64
           path: |
             ${{ runner.temp }}/fpk-output/*.fpk
             ${{ runner.temp }}/fpk-output/*-sources.tar.gz
             ${{ runner.temp }}/fpk-output/SHA256SUMS
             ${{ runner.temp }}/fpk-output/build-report.json
             ${{ runner.temp }}/fpk-output/native-smoke.json
+            ${{ runner.temp }}/fpk-output/bundle.json
+            ${{ runner.temp }}/fpk-output/CONTENTS.json
+            ${{ runner.temp }}/fpk-output/bundle-tests.txt
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: fnos-music-hub-0.1.0-preview.2-netease-offline-inputs-amd64
+          path: ${{ runner.temp }}/fpk-output/*-inputs.tar.gz
           if-no-files-found: error
           retention-days: 14
