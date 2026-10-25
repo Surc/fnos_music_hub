@@ -24,6 +24,7 @@ def netease():
 
         assert callable(NetEase) and callable(requests_cache.CachedSession)
         assert fuzz.ratio("offline", "offline") == 100
+        assert fuzz.ratio.__module__ == "rapidfuzz.fuzz_py"
         qr = qrcode.QRCode()
         qr.add_data("offline-probe")
         qr.make(fit=True)
