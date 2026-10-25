@@ -146,6 +146,17 @@ def test_wheel_manifest_rejects_incomplete_or_unlicensed_inputs(tmp_path, monkey
         wheelhouse.describe(tmp_path)
 
 
+def test_rapidfuzz_wheel_rejects_hidden_native_runtime_requirement(tmp_path, monkeypatch):
+    monkeypatch.setattr(wheelhouse, "requirements", lambda root: {"rapidfuzz": "3.14.6"})
+    monkeypatch.setattr(wheelhouse, "SDKS", {})
+    with zipfile.ZipFile(tmp_path / "rapidfuzz-3.14.6-py3-none-any.whl", "w") as archive:
+        archive.writestr("rapidfuzz.dist-info/METADATA", "Name: RapidFuzz\nVersion: 3.14.6\n")
+        archive.writestr("rapidfuzz.dist-info/licenses/LICENSE", "synthetic-license")
+        archive.writestr("rapidfuzz/native.so", b"synthetic-native-library")
+    with pytest.raises(ValueError, match="pure Python"):
+        wheelhouse.describe(tmp_path)
+
+
 def test_missing_config_with_existing_database_refuses_new_instance(manager):
     (manager.state / "hub.sqlite3").write_bytes(b"synthetic-existing-db")
     (manager.config / "hub.json").unlink()
