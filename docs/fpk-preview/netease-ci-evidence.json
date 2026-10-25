@@ -1,0 +1,107 @@
+{
+  "date": "2026-10-25",
+  "repository": "Surc/fnos_music_hub",
+  "pull_request": 5,
+  "state": "draft",
+  "merged_main": "823a2de946ebbd64207117d9551c7d0eb7d56237",
+  "implementation_commit": "a0a426e241bb58cfb7fd565c1ea6bcd2d41c7491",
+  "verified_tree": "a2b39c5a3fa6b6c52ceccef188f7bcf01bcdb8a4",
+  "first_native_attempt": {
+    "run_id": 40172841217,
+    "job_id": 121107155754,
+    "input_closure": "passed",
+    "fpk_assembly": "failed",
+    "error": "unbundled ELF libraries: ['libstdc++.so.6']",
+    "artifact_generated": false,
+    "fix": "Build unmodified RapidFuzz 3.14.6 pinned sdist with scikit-build-core 0.11.6 and wheel.cmake=false; do not relax ELF audit"
+  },
+  "local_validation": {
+    "python_qq_netease_pure_python_rapidfuzz": 239,
+    "native_packaging": 46,
+    "jsdom": 37,
+    "python_wheels": 43,
+    "matching_pypi_sdists": 41,
+    "clean_offline_install": "passed",
+    "wheel_tree_elf_audit": {
+      "elf_count": 53,
+      "required_glibc": "2.34",
+      "external_libstdcpp": false
+    },
+    "dependency_probe": "passed",
+    "pip_check": "passed",
+    "ruff": "passed",
+    "provenance": "passed",
+    "shell_syntax": "passed"
+  },
+  "regular_ci": {
+    "run_id": 40173694578,
+    "jobs": 9,
+    "conclusion": "success"
+  },
+  "native_ci": {
+    "run_id": 40173694577,
+    "job_id": 121109769682,
+    "conclusion": "success",
+    "bundled_python_tests": 239,
+    "lifecycle_checks": 12
+  },
+  "real_acceptance": {
+    "netease_accounts": "not_run",
+    "qq_accounts": "not_run",
+    "fnos_j4125_install_upgrade": "not_run",
+    "complete_music_download": "not_run",
+    "resources_acl": "not_run"
+  },
+  "release": false,
+  "nas_deployed": false,
+  "legacy_ext_modified": false,
+  "build_commit": "30515916895cb6b745ba48b832f3bc55afb8bc8e",
+  "artifacts": [
+    {
+      "id": 12591965469,
+      "name": "fnos-music-hub-0.1.0-preview.2-netease-readonly-amd64",
+      "size_in_bytes": 181039416,
+      "url": "https://api.github.com/repos/Surc/fnos_music_hub/actions/artifacts/12591965469",
+      "archive_download_url": "https://api.github.com/repos/Surc/fnos_music_hub/actions/artifacts/12591965469/zip",
+      "expired": false,
+      "created_at": "2026-10-25T07:45:36Z",
+      "expires_at": "2026-11-08T07:45:32Z",
+      "updated_at": "2026-10-25T07:45:36Z",
+      "digest": "sha256:6d9cbc89b170296a94891b55ad12f373803536ba149f7c76c1e9b48f53ec9f4c",
+      "workflow_run": {
+        "id": 40173694577,
+        "repository_id": 1428051212,
+        "head_repository_id": 1428051212,
+        "head_branch": "feat/native-fpk-preview",
+        "head_sha": "a0a426e241bb58cfb7fd565c1ea6bcd2d41c7491"
+      }
+    },
+    {
+      "id": 12591840881,
+      "name": "fnos-music-hub-0.1.0-preview.2-netease-offline-inputs-amd64",
+      "size_in_bytes": 181822090,
+      "url": "https://api.github.com/repos/Surc/fnos_music_hub/actions/artifacts/12591840881",
+      "archive_download_url": "https://api.github.com/repos/Surc/fnos_music_hub/actions/artifacts/12591840881/zip",
+      "expired": false,
+      "created_at": "2026-10-25T07:45:41Z",
+      "expires_at": "2026-11-08T07:45:36Z",
+      "updated_at": "2026-10-25T07:45:41Z",
+      "digest": "sha256:debbfd23b88e7261f29e6f1443d89ec06167e622fa8ca213be6a6afeeb691f98",
+      "workflow_run": {
+        "id": 40173694577,
+        "repository_id": 1428051212,
+        "head_repository_id": 1428051212,
+        "head_branch": "feat/native-fpk-preview",
+        "head_sha": "a0a426e241bb58cfb7fd565c1ea6bcd2d41c7491"
+      }
+    }
+  ],
+  "local_artifact_reverification": {
+    "zip_sha256_verified": true,
+    "fpk_all_installed_files_verified": 6623,
+    "downloaded_checksums_verified": 7,
+    "pypi_source_distributions_verified": 41,
+    "pinned_musicbox_source_and_license_verified": true,
+    "offline_input_archive": "separately uploaded; digest also declared in SHA256SUMS"
+  }
+}
