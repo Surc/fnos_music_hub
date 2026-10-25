@@ -1,6 +1,6 @@
 # J4125 原生 FPK 预览
 
-包版本 `0.1.0-preview.1`，业务版本仍为 `0.1.0a1`。本目录实现输入准备、离线组包、产物校验和原生生命周期。**是否实际生成 FPK、SHA256、普通 Linux 服务测试及 J4125 安装验收分别以 `build-report.json`、`native-smoke.json` 和 [验证记录](../../docs/VALIDATION.md) 为准。** 不发布正式 Release，不部署真实 NAS。
+包版本 `0.1.0-preview.2`，业务版本仍为 `0.1.0a1`。本目录实现输入准备、离线组包、产物校验和原生生命周期。**是否实际生成 FPK、SHA256、普通 Linux 服务测试及 J4125 安装验收分别以 `build-report.json`、`native-smoke.json` 和 [验证记录](../../docs/VALIDATION.md) 为准。** 不发布正式 Release，不部署真实 NAS。
 
 ## 官方契约与工具
 
@@ -18,10 +18,10 @@
 | Hot | 每个配置的可信 GUID 独立进程、端口、token、状态/下载目录；仅回环 HTTP |
 | 外部前置 | 已运行的音桥 HTTP API 与独立 HTTPS 根地址反向代理；本包不安装/接管音桥或官方音乐 |
 | 桌面入口 | fnOS 登录保护的 CGI 启动页链接到独立 HTTPS 地址；业务 API/SSE 不经 CGI |
-| 内含 | Python 3.12.15、锁定 wheel 闭包（含可选 QQ 只读 SDK）、Hub Python/静态前台、Hot/FFmpeg/ffprobe、CA、许可证、内容清单 |
+| 内含 | Python 3.12.15、锁定 wheel 闭包（含可选 QQ 与网易只读 SDK）、Hub Python/静态前台、Hot/FFmpeg/ffprobe、CA、许可证、内容清单 |
 | NAS 无需 | Docker、编译器、系统 Python、Node、联网安装依赖或桌面 Hot 安装包 |
 | OS 边界 | 全部 ELF 检查架构/动态库/GLIBC，构建上限 2.36，实际需求写入报告；需要 Linux pidfd 和一致的 procfs。不虚构最低已验 fnOS 版本，省略 `os_min_version` |
-| 暂不含 | 网易账号、QQ 下载、自动入库、Socket 注入、旧 ext 迁移、真实播放反馈 |
+| 暂不含 | 网易/QQ 下载、自动入库、Socket 注入、旧 ext 迁移、真实播放反馈 |
 
 运行仅使用包内媒体工具。FFmpeg 8.0.1 为音频校验构建：MP3、FLAC、AAC/M4A/ALAC、Ogg Vorbis/Opus、WAV/PCM，不提供视频转码或网络下载。唯一排除的 Python 标准库扩展 `_crypt` 不被 Hub 使用，避免依赖 NAS 的 `libcrypt.so.1`。ELF 检查不能替代 J4125 的 CPU/运行库/ACL 验收。
 
@@ -34,7 +34,7 @@ python3 packaging/fpk/fetch_inputs.py \
   --work /build/hub-work --output /build/hub-inputs --jobs 4
 ```
 
-准备器检查固定 Hot SHA/加密子模块、QQ SDK SHA，以及 Python/FFmpeg/musl/fnpack 下载摘要；musl 构建 Hot/FFmpeg，`cargo build --locked`，上游零补丁。Python 依赖来自业务 lock，QQ wheel 使用固定源码和 hatchling 1.27.0。`inputs.json` 冻结每个实际输入文件/链接的 SHA256、权限、编译参数和工具版本。保留输入闭包可准确重放；GCC/runner 镜像未固定为同一发行镜像，因此跨环境重新编译不承诺字节一致。
+准备器检查固定 Hot SHA/加密子模块、QQ SDK 与 MusicBox SHA，以及 Python/FFmpeg/musl/fnpack 下载摘要；musl 构建 Hot/FFmpeg，`cargo build --locked`，上游零补丁。Python 依赖取自基础、QQ、网易三份 lock，合并重复的相同版本并拒绝冲突/未锁定条目；QQ/MusicBox wheel 使用各自固定源码和 hatchling 1.27.0。三份锁摘要和每个 wheel 的版本、依赖、许可证路径及 SHA256 进入输入闭包；离线阶段再次核对，不接受旧闭包。`inputs.json` 冻结每个实际输入文件/链接的 SHA256、权限、编译参数和工具版本。保留输入闭包可准确重放；GCC/runner 镜像未固定为同一发行镜像，因此跨环境重新编译不承诺字节一致。
 
 离线组包接受已核验的第三方输入闭包和当前干净 Hub checkout。闭包可跨 Hub 迭代复用，组包时重新生成当前 Hub 的对应源码附件，分别记录组件构建环境与当前 Hub commit：
 
@@ -44,7 +44,7 @@ sh packaging/fpk/build.sh /build/hub-inputs /build/hub-preview
 
 不联网、不编译。以 `--no-index --no-deps --no-compile` 安装本地 wheels；仅复制明确允许且受 Git 管理的 Python/静态资源，不复制整个工作目录。官方 fnpack 完成后，直接打开实际 FPK，核对 ID/版本、非 root 权限、脚本执行位、`app.tgz` MD5 和每个安装文件的 SHA256/权限/链接。拒绝音频、数据库、密钥、用户配置、运行日志及外部链接。
 
-输出包含实际成功生成的 `fnos-music-hub-0.1.0-preview.1-amd64.fpk`、同版本 `-sources.tar.gz`、`SHA256SUMS`、`build-report.json` 和可审阅的 `stage/`。对应源码附件包含 Hot/子模块、固定 QQ SDK、FFmpeg/musl 原始源码及 Hub 源码/构建说明；不在 FPK 内携带测试音频。包内保留所有许可证及 wheel 自带许可，分发时同时提供对应源码附件。QQ SDK 仍可选启用，许可证为 GPL-3.0-or-later。
+输出包含实际成功生成的 `fnos-music-hub-0.1.0-preview.2-amd64.fpk`、同版本 `-sources.tar.gz`、`SHA256SUMS`、`build-report.json` 和可审阅的 `stage/`。对应源码附件包含 Hot/子模块、固定 QQ SDK/MusicBox、所有 PyPI wheel 对应的同版本 sdist（含下载 URL/SHA256）、FFmpeg/musl 原始源码及 Hub 源码/构建说明；不在 FPK 内携带测试音频。包内保留所有许可证及 wheel 自带许可，分发时同时提供对应源码附件。QQ SDK 仍可选启用，许可证为 GPL-3.0-or-later；MusicBox 为 MIT，原始 LICENSE 单独保留。上游没有 NOTICE 时在 PYTHON-NOTICE.txt 如实记录，所有 wheel 自带 LICENSE/NOTICE 仍在 site-packages；wheelhouse.json 与 python-sources.json 可逐组件核对。
 
 `SOURCE_DATE_EPOCH` 固定源码日期，包内容清单应稳定；fnpack 归档层的字节稳定性以实际重复构建结果为准，不因流程可重放便声称包字节一致。
 
@@ -64,7 +64,7 @@ sh packaging/fpk/build.sh /build/hub-inputs /build/hub-preview
 | `var/active-program`、`var/rollback` | 仅指向本应用 target/backups；保留旧可运行程序应对新 Python 无法启动 |
 | `var/failed-config-*`、`var/failed-state-*` | 回滚前的新状态副本，供本地排查，不上传 |
 
-安装向导填写实际 HTTPS 根地址和音桥 API，已有配置永不覆盖。首次 `users={}`、`admin_guids=[]`、`qq_accounts_enabled=false`；可登录通过 `/api/me` 核对本人可信 GUID，未配置用户不能搜索/下载。管理员停服后编辑 `var/config/hub.json`，将如下片段合并进已有配置，保留原实例 ID/state/origin：
+安装向导填写实际 HTTPS 根地址和音桥 API，已有配置永不覆盖。首次 `users={}`、`admin_guids=[]`、`qq_accounts_enabled=false`、`netease_enabled=false`；可登录通过 `/api/me` 核对本人可信 GUID，未配置用户不能搜索/下载。管理员停服后编辑 `var/config/hub.json`，将如下片段合并进已有配置，保留原实例 ID/state/origin：
 
 ```json
 {
@@ -80,11 +80,13 @@ sh packaging/fpk/build.sh /build/hub-inputs /build/hub-preview
 
 第二个 GUID 使用另一端口、变量名和私有目录。启动仅为缺失 token 生成随机值，不旋转已有凭据。音桥有密钥时仅在停服后的 `secrets.json` 中加入 `HUB_BRIDGE_KEY`，不放命令行、Git 或反馈日志。配置文件归包用户且 0600，ACL 另行实测。错误配置拒绝启动，不降级共享身份。
 
+启用网易：停服后仅把 `netease_enabled` 改为 true，再启动。依赖已在包内，无需 NAS 联网安装；首次升级不覆盖已有配置，缺该字段仍默认 false。账号 Cookie 仅从 HTTPS 前台导入并核对 UID 后显式关联，见 [网易说明](../../docs/NETEASE.md)。网易目录不要求 Hot 账号；QQ 只读通过原独立开关启用。可同时启用两者；下载准入仍只允许酷我。
+
 HTTPS 反代转发到本机 `127.0.0.1:8790`，保留正确 Host/Origin 与流式响应；外部地址与 `public_origin` 一致。包不内置 TLS 证书、不开放局域网明文密码登录，不从 fnOS 网关 Header 推断业务用户；音桥继续服务端验证身份。
 
 ## 生命周期与故障
 
-`cmd/main start|stop|status`：运行 status=0，停止 status=3；其他失败返回非零，`TRIM_TEMP_LOGFILE` 只写无秘密的错误类型。操作 flock 串行，监督器另持常驻锁。预检真实 Python 扩展、加解密、媒体工具和全部端口，再启动每用户 Hot 与单个 Hub。Hub/Hot 健康、Hot token 访问、实际私有目录和禁止音质降级均通过才报告成功。音桥/音乐平台不可达不伪造业务可用，也不阻止独立网关健康启动。
+`cmd/main start|stop|status`：运行 status=0，停止 status=3；其他失败返回非零，`TRIM_TEMP_LOGFILE` 只写无秘密的错误类型。操作 flock 串行，监督器另持常驻锁。预检真实 Python 扩展、加解密、媒体工具和全部端口；网易启用时另起临时子进程，在独立 XDG 中离线导入实际 SDK/原生扩展并验证 WEAPI/EAPI。缺依赖明确报告网易依赖缺失或损坏；关闭时不导入 NEMbox、不要求网易依赖，再启动每用户 Hot 与单个 Hub。Hub/Hot 健康、Hot token 访问、实际私有目录和禁止音质降级均通过才报告成功。音桥/音乐平台不可达不伪造业务可用，也不阻止独立网关健康启动。
 
 身份包含 PID/boot ID/start ticks/UID，发信号先打开 pidfd 再重验，不按进程名批量 kill。任一子进程退出，监督器停止其他子进程，转未运行；不无限自动重启。先 TERM、有界等待后才 KILL 已确认身份。重复操作不增实例，不误杀端口上的其他进程。默认不保留上游 stdout/stderr，避免临时 URL/Cookie 落日志；业务错误仍走已脱敏 API。
 
@@ -100,12 +102,12 @@ HTTPS 反代转发到本机 `127.0.0.1:8790`，保留正确 Host/Origin 与流�
 python -m pytest -q tests/test_fpk_native.py
 python -m ruff check hub modules tests scripts packaging/fpk
 python scripts/verify_provenance.py
-python packaging/fpk/verify.py /build/hub-preview/fnos-music-hub-0.1.0-preview.1-amd64.fpk
+python packaging/fpk/verify.py /build/hub-preview/fnos-music-hub-0.1.0-preview.2-amd64.fpk
 python packaging/fpk/native_smoke.py --stage /build/hub-preview/stage \
   --report /build/hub-preview/native-smoke.json --require
 ```
 
-常规 CI 加入打包/生命周期回归和 shell 检查。独立 [预览工作流](../../.github/workflows/fpk-preview.yml) 支持手动触发及本目录的 PR 检查；准备输入、离线构建、校验 FPK，在普通非 root Linux 上真实运行包内 Hub + 两个 Hot，验证启停、token 隔离、子进程退出、坏版本升级 shell 回滚、数据库/密钥恢复及卸载保留；只上传短期 Actions 预览附件，无 tag/Release。
+常规 CI 加入打包/生命周期回归和 shell 检查。独立 [预览工作流](../../.github/workflows/fpk-preview.yml) 支持手动触发及本目录的 PR 检查；准备输入、离线构建、校验 FPK，在普通非 root Linux 上真实运行包内 Hub + 两个 Hot，用实际包内 Python/依赖运行完整业务回归（测试工具在包外），验证网易默认关闭、双 SDK 同开、缺传递依赖时明确拒绝、关闭时基础/QQ 仍启动，以及启停、token 隔离、子进程退出、坏版本升级 shell 回滚、数据库/密钥恢复及卸载保留；只上传短期 Actions 预览附件和独立离线输入闭包（14 天），无 tag/Release。下载闭包后解包并用同一 Hub 提交运行 build.sh 可重放离线步骤；SHA256SUMS 覆盖 FPK、源码、输入闭包和安装清单/测试报告。
 
 若本运行器为 root 或 `/proc` 与 PID 命名空间不一致，真服务 smoke 必须记 blocked，不为生产身份增加绕过。单元测试与普通 Linux 真服务结果分开记录。
 

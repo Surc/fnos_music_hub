@@ -97,6 +97,19 @@ def verify(path):
             bundle = json.load(inner.extractfile(content["bundle.json"]))
             if bundle["pins"] != PINS or bundle["real_nas_acceptance"] != "pending":
                 raise ValueError("incorrect component/acceptance metadata")
+            if bundle.get("features", {}).get("netease_readonly") != {
+                "included": True, "default_enabled": False,
+                "sdk_commit": PINS["netease_commit"], "real_account": "not_run",
+            }:
+                raise ValueError("incorrect NetEase integration state")
+            required = {
+                "licenses/MusicBox-LICENSE", "licenses/PYTHON-NOTICE.txt",
+                "licenses/requirements-netease.lock", "licenses/wheelhouse.json",
+                "server/modules/catalog/netease_worker.py", "native/dependency_probe.py",
+                "runtime/site-packages/NEMbox/api.py",
+            }
+            if not required <= content.keys():
+                raise ValueError("incomplete NetEase payload/licenses")
     return {
         "schema": 1,
         "filename": path.name,

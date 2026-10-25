@@ -3,6 +3,7 @@
 
 import argparse
 import gzip
+import json
 import os
 import platform
 import shutil
@@ -13,6 +14,7 @@ import urllib.request
 from pathlib import Path
 
 from common import HERE, PINS, ROOT, inventory, sha256, write_json
+from wheelhouse import SDKS, describe, lock_digests, requirements
 
 
 def run(command, *, cwd=None, env=None):
@@ -77,6 +79,34 @@ def source_copy(source, destination):
             out = destination / rel
             out.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(path, out)
+
+
+def wheel_sources(wheels, work, sources):
+    """Retain matching PyPI sdists without executing their build/metadata hooks."""
+    result = {}
+    cache = work / "python-sources"
+    cache.mkdir(exist_ok=True)
+    sources.mkdir()
+    for name, component in wheels.items():
+        if name in SDKS:
+            continue  # Exact tracked Git source is archived separately.
+        version = component["version"]
+        with urllib.request.urlopen(
+            f"https://pypi.org/pypi/{name}/{version}/json", timeout=60
+        ) as response:
+            metadata = json.load(response)
+        candidates = [item for item in metadata["urls"] if item["packagetype"] == "sdist"]
+        if len(candidates) != 1:
+            raise ValueError(f"one matching source distribution required: {name}")
+        item = candidates[0]
+        filename = item["filename"]
+        if Path(filename).name != filename:
+            raise ValueError("invalid source distribution filename")
+        pin = {"url": item["url"], "sha256": item["digests"]["sha256"]}
+        download(pin, cache / filename)
+        shutil.copyfile(cache / filename, sources / filename)
+        result[name] = {"version": version, "file": filename, **pin}
+    return result
 
 
 def prepare(work, output, jobs):
@@ -193,6 +223,8 @@ def prepare(work, output, jobs):
     )
     qq = work / "QQMusicApi"
     checkout("https://github.com/L-1124/QQMusicApi.git", PINS["qq_commit"], qq)
+    netease = work / "MusicBox"
+    checkout("https://github.com/darknessomi/musicbox.git", PINS["netease_commit"], netease)
     python = work / "python/bin/python3"
     builder = work / "wheel-builder"
     if not builder.exists():
@@ -202,16 +234,7 @@ def prepare(work, output, jobs):
     run([buildpy, "-m", "pip", "install", "hatchling==1.27.0"], env=env)
     wheels = output / "wheels"
     wheels.mkdir()
-    requirements = [
-        line
-        for line in (ROOT / "requirements.lock").read_text().splitlines()
-        if line and not line.startswith("#")
-    ]
-    requirements += [
-        line
-        for line in (ROOT / "requirements-qq.lock").read_text().splitlines()
-        if line and not line.startswith(("#", "-r", "qqmusic-api-python"))
-    ]
+    runtime = [f"{name}=={version}" for name, version in sorted(requirements().items())]
     run(
         [
             buildpy,
@@ -222,7 +245,7 @@ def prepare(work, output, jobs):
             "--no-deps",
             "--dest",
             wheels,
-            *requirements,
+            *runtime,
         ],
         env=env,
     )
@@ -237,9 +260,13 @@ def prepare(work, output, jobs):
             "--wheel-dir",
             wheels,
             qq,
+            netease,
         ],
         env=env,
     )
+    wheel_manifest = describe(wheels)
+    write_json(output / "wheelhouse.json", wheel_manifest)
+    python_sources = wheel_sources(wheel_manifest, work, sources / "python-sdists")
     shutil.copytree(work / "python", output / "python", symlinks=True)
     for cache in list((output / "python").rglob("__pycache__")):
         shutil.rmtree(cache)
@@ -267,14 +294,31 @@ def prepare(work, output, jobs):
         (hot / "libs/um_crypto/LICENSE_APACHE", "um_crypto-LICENSE_APACHE"),
         (hot / "libs/um_crypto/LICENSE_MIT", "um_crypto-LICENSE_MIT"),
         (qq / "LICENSE", "QQMusicApi-LICENSE"),
+        (netease / "LICENSE", "MusicBox-LICENSE"),
         (musl / "COPYRIGHT", "musl-COPYRIGHT"),
         (ffmpeg / "COPYING.LGPLv2.1", "FFmpeg-COPYING.LGPLv2.1"),
         (ffmpeg / "LICENSE.md", "FFmpeg-LICENSE.md"),
     ):
         shutil.copyfile(rel, licenses / name)
+    notices = []
+    for source, label, pin in ((qq, "QQMusicApi", "qq_commit"), (netease, "MusicBox", "netease_commit")):
+        notice = source / "NOTICE"
+        if notice.is_file():
+            shutil.copyfile(notice, licenses / (label + "-NOTICE"))
+        notices.append(f"{label} commit {PINS[pin]}; upstream NOTICE: {'included' if notice.is_file() else 'not present'}; unmodified source included.\n")
+    (licenses / "PYTHON-NOTICE.txt").write_text(
+        "Fixed SDK and Python dependency distribution notice\n\n"
+        + "".join(notices)
+        + "Wheel LICENSE/NOTICE files remain in runtime/site-packages. "
+        "Exact wheel metadata/hashes: wheelhouse.json. Matching PyPI sdists and SDK Git source "
+        "are in the companion source archive; python-sources.json records their digests.\n"
+    )
     source_copy(hot, sources / "HotDownloader")
     source_copy(hot / "libs/um_crypto", sources / "HotDownloader/libs/um_crypto")
     source_copy(qq, sources / "QQMusicApi")
+    source_copy(netease, sources / "MusicBox")
+    write_json(sources / "python-sources.json", python_sources)
+    write_json(sources / "wheelhouse.json", wheel_manifest)
     for name in ("ffmpeg-8.0.1.tar.xz", "musl-1.2.5.tar.gz"):
         shutil.copyfile(work / name, sources / name)
     shutil.copytree(
@@ -286,12 +330,14 @@ def prepare(work, output, jobs):
     write_json(
         output / "sources.json",
         {
-            "companion": "fnos-music-hub-0.1.0-preview.1-sources.tar.gz",
+            "companion": f"fnos-music-hub-{PINS['package_version']}-sources.tar.gz",
             "sha256": sha256(output / "sources.tar.gz"),
             "sources": {
                 "HotDownloader": PINS["hot_commit"],
                 "um_crypto": PINS["hot_submodule"],
                 "QQMusicApi": PINS["qq_commit"],
+                "MusicBox": PINS["netease_commit"],
+                "python_sdists": python_sources,
                 "ffmpeg": PINS["ffmpeg"],
                 "musl": PINS["musl"],
                 "python": PINS["python"],
@@ -304,6 +350,7 @@ def prepare(work, output, jobs):
         {
             "schema": 1,
             "pins": PINS,
+            "runtime_locks": lock_digests(),
             "content": inventory(output, ("inputs.json",)),
             "build_environment": {
                 "os": platform.platform(),

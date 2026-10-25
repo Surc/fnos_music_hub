@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "package_version": "0.1.0-preview.1",
+  "package_version": "0.1.0-preview.2",
   "hub_version": "0.1.0a1",
   "app_id": "fnos_music_hub",
   "platform": "linux/amd64",
@@ -30,5 +30,6 @@
     "version": "1.2.3",
     "url": "https://static2.fnnas.com/fnpack/fnpack-1.2.3-linux-amd64",
     "sha256": "54b97fa7b70968c4d05c79840f5daeff508957d0bb2062fdb0376d00d9615c93"
-  }
+  },
+  "netease_commit": "9c405f4bae2384d0410e63f8b816a707553d72d3"
 }

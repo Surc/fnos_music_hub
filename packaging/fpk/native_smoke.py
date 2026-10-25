@@ -59,6 +59,7 @@ def smoke(stage, report, require):
         manager.guard()
         manager.install()
         cfg = native.read_json(manager.config / "hub.json")
+        assert cfg["netease_enabled"] is False and cfg["qq_accounts_enabled"] is False
         cfg["users"] = {
             "synthetic-a": {
                 "engine_url": "http://127.0.0.1:28787",
@@ -94,6 +95,27 @@ def smoke(stage, report, require):
             ):
                 time.sleep(0.1)
             assert not any(native.alive(p) for p in before["children"])
+            # Both SDKs enabled against actual packaged dependencies, without an account.
+            cfg.update(netease_enabled=True, qq_accounts_enabled=True)
+            native.atomic_json(manager.config / "hub.json", cfg)
+            manager.start()
+            manager.stop()
+            requests = program / "runtime/site-packages/requests"
+            missing = root / "masked-requests"
+            requests.rename(missing)
+            try:
+                result = subprocess.run([str(stage / "cmd/main"), "start"], env=env, timeout=60)
+                assert result.returncode != 0 and not manager.running()
+                assert "网易目录已启用，但固定版依赖缺失或损坏" in Path(env["TRIM_TEMP_LOGFILE"]).read_text()
+                cfg["netease_enabled"] = False
+                native.atomic_json(manager.config / "hub.json", cfg)
+                manager.start()  # Missing optional dependency does not break QQ/Kuwo mode.
+                assert manager.running()
+                manager.stop()
+            finally:
+                missing.rename(requests)
+            cfg["netease_enabled"] = True
+            native.atomic_json(manager.config / "hub.json", cfg)
             manager.start()
             snapshot = manager.backup()
             assert manager.validated_snapshot() == snapshot
@@ -128,6 +150,10 @@ def smoke(stage, report, require):
                         "start/health",
                         "idempotent start",
                         "two Hot token isolation",
+                        "NetEase and QQ default disabled",
+                        "enabled NetEase crypto/native dependencies and QQ coexist",
+                        "missing NetEase transitive dependency gives explicit startup error",
+                        "disabled NetEase tolerates missing optional dependency with dual Hot/QQ",
                         "child exit stops all",
                         "backup integrity",
                         "failed upgrade shell rollback",

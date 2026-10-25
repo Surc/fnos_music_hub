@@ -25,6 +25,7 @@ from common import (
     write_json,
 )
 from fetch_inputs import deterministic_tar, source_copy
+from wheelhouse import describe, lock_digests
 
 
 def normalize_installed_metadata(site):
@@ -90,6 +91,11 @@ def assemble(inputs, output):
         raise ValueError("input versions do not match committed pins")
     if inventory(inputs, ("inputs.json",)) != recorded["content"]:
         raise ValueError("input closure hash/path/mode mismatch")
+    if recorded.get("runtime_locks") != lock_digests():
+        raise ValueError("input runtime locks differ from current source")
+    wheels_metadata = describe(inputs / "wheels")
+    if wheels_metadata != json.loads((inputs / "wheelhouse.json").read_text()):
+        raise ValueError("wheelhouse metadata differs from actual inputs")
     if output.exists():
         raise ValueError("output must not exist")
     subprocess.run(
@@ -174,10 +180,12 @@ def assemble(inputs, output):
         "THIRD_PARTY_NOTICES.md",
         "requirements.lock",
         "requirements-qq.lock",
+        "requirements-netease.lock",
     ):
         shutil.copyfile(ROOT / name, app / "licenses" / name)
     shutil.copyfile(HERE / "README.md", app / "licenses/FPK-BUILD.md")
     shutil.copyfile(HERE / "versions.json", app / "licenses/versions.json")
+    shutil.copyfile(inputs / "wheelhouse.json", app / "licenses/wheelhouse.json")
     # Reuse frozen components across Hub commits; regenerate matching Hub sources offline.
     source_work = output.parent / "source-work"
     source_work.mkdir()
@@ -195,7 +203,11 @@ def assemble(inputs, output):
     )
     deterministic_tar(companion, {"sources": sources}, epoch)
     source_metadata = json.loads((inputs / "sources.json").read_text())
-    source_metadata.update({"sha256": sha256(companion), "hub_commit": commit})
+    source_metadata.update({
+        "companion": companion.name,
+        "sha256": sha256(companion),
+        "hub_commit": commit,
+    })
     write_json(app / "licenses/sources.json", source_metadata)
     shutil.rmtree(source_work)
     (app / "ui/images").mkdir()
@@ -227,6 +239,14 @@ def assemble(inputs, output):
         "source_date_epoch": epoch,
         "pins": PINS,
         "inputs_sha256": sha256(inputs / "inputs.json"),
+        "runtime_locks": lock_digests(),
+        "python_components": wheels_metadata,
+        "features": {
+            "netease_readonly": {"included": True, "default_enabled": False,
+                                 "sdk_commit": PINS["netease_commit"], "real_account": "not_run"},
+            "qq_readonly": {"included": True, "default_enabled": False},
+            "downloads": ["kuwo"],
+        },
         "compatibility": compatibility,
         "build_environment": recorded["build_environment"],
         "real_nas_acceptance": "pending",
