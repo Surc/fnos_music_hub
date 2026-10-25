@@ -9,6 +9,7 @@ import socket
 import subprocess
 import sys
 import tarfile
+import zipfile
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -19,6 +20,7 @@ sys.path.insert(0, str(FPK))
 import common  # noqa: E402
 import prepare  # noqa: E402
 import verify  # noqa: E402
+import wheelhouse  # noqa: E402
 
 spec = importlib.util.spec_from_file_location(
     "native_service", FPK / "native/service.py"
@@ -63,6 +65,7 @@ def set_users(manager):
 
 
 def test_install_is_idempotent_and_launch_has_no_secrets(manager, monkeypatch):
+    assert native.read_json(manager.config / "hub.json")["netease_enabled"] is False
     old = (manager.config / "hub.json").read_bytes()
     monkeypatch.setenv("wizard_public_origin", "https://other.test")
     manager.install()
@@ -70,6 +73,77 @@ def test_install_is_idempotent_and_launch_has_no_secrets(manager, monkeypatch):
     assert (manager.config / "hub.json").stat().st_mode & 0o777 == 0o600
     assert "music.test" in (manager.target / "ui/launch.html").read_text()
     assert "instance_id" not in (manager.target / "ui/launch.html").read_text()
+
+
+@pytest.mark.parametrize("enabled", [False, True])
+def test_preflight_only_probes_enabled_netease_and_reports_missing_dependency(
+    manager, monkeypatch, enabled
+):
+    cfg = native.read_json(manager.config / "hub.json")
+    cfg["netease_enabled"] = enabled
+    native.atomic_json(manager.config / "hub.json", cfg)
+    calls = []
+
+    def run(command, **kwargs):
+        calls.append(command)
+        if "--netease" in command:
+            assert kwargs["timeout"] == 20
+            assert kwargs["stderr"] == subprocess.DEVNULL
+            raise subprocess.CalledProcessError(1, command, stderr="synthetic-secret")
+
+    monkeypatch.setattr(native.subprocess, "run", run)
+    if enabled:
+        with pytest.raises(native.NeteaseDependenciesMissing) as error:
+            manager.preflight()
+        assert "synthetic-secret" not in str(error.value)
+    else:
+        assert manager.preflight().netease_enabled is False
+        assert len(calls) == 3  # Core/QQ and media only; no NEMbox import.
+
+
+def test_runtime_locks_deduplicate_shared_pins_and_reject_drift(tmp_path):
+    for lock in wheelhouse.LOCKS:
+        (tmp_path / lock).write_bytes((common.ROOT / lock).read_bytes())
+    deps = wheelhouse.requirements(tmp_path)
+    assert deps["requests"] == "2.34.2" and deps["charset-normalizer"] == "3.5.2"
+    path = tmp_path / "requirements-netease.lock"
+    path.write_text(path.read_text() + "charset-normalizer==1.0.0\n")
+    with pytest.raises(ValueError, match="conflicting"):
+        wheelhouse.requirements(tmp_path)
+    path.write_text("requests>=2\n")
+    with pytest.raises(ValueError, match="exactly pinned"):
+        wheelhouse.requirements(tmp_path)
+
+
+def test_offline_assembly_rejects_stale_runtime_lock_before_tools(tmp_path, monkeypatch):
+    inputs = tmp_path / "inputs"
+    inputs.mkdir()
+    common.write_json(inputs / "inputs.json", {
+        "pins": common.PINS, "content": {}, "runtime_locks": {},
+    })
+    monkeypatch.setattr(prepare.subprocess, "run", lambda *a, **kw: pytest.fail("tool started"))
+    with pytest.raises(ValueError, match="runtime locks"):
+        prepare.assemble(inputs, tmp_path / "output")
+
+
+@pytest.mark.parametrize("fault", ["missing", "version", "license", "duplicate"])
+def test_wheel_manifest_rejects_incomplete_or_unlicensed_inputs(tmp_path, monkeypatch, fault):
+    monkeypatch.setattr(wheelhouse, "requirements", lambda root: {"example": "1", "other": "2"})
+    monkeypatch.setattr(wheelhouse, "SDKS", {})
+
+    def wheel(filename, name, version, license=True):
+        with zipfile.ZipFile(tmp_path / filename, "w") as archive:
+            archive.writestr(f"{name}.dist-info/METADATA", f"Name: {name}\nVersion: {version}\n")
+            if license:
+                archive.writestr(f"{name}.dist-info/licenses/LICENSE", "synthetic-license")
+
+    wheel("example.whl", "example", "0" if fault == "version" else "1", fault != "license")
+    if fault != "missing":
+        wheel("other.whl", "other", "2")
+    if fault == "duplicate":
+        wheel("duplicate.whl", "example", "1")
+    with pytest.raises(ValueError):
+        wheelhouse.describe(tmp_path)
 
 
 def test_missing_config_with_existing_database_refuses_new_instance(manager):

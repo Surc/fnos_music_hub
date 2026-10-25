@@ -4,6 +4,7 @@ import asyncio
 import copy
 import hashlib
 import json
+import os
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 
@@ -396,7 +397,7 @@ def audio(tmp_path):
     path = tmp_path / "fixture.mp3"
     subprocess.run(
         [
-            "ffmpeg",
+            os.environ.get("HUB_TEST_FFMPEG", "ffmpeg"),
             "-v",
             "error",
             "-f",
