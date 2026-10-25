@@ -1,5 +1,39 @@
 # 验证记录
 
+## 2026-10-25：PR #5 网易整合预览验证
+
+本轮基线为最新 main `823a2de946ebbd64207117d9551c7d0eb7d56237` 与原生分支 `c3eb70f`。新 `preview.2` 的精确源码、构建/SHA256、CI 和自动检查单列 [整合证据](fpk-preview/NETEASE.md)，不沿用 preview.1 的 5915 文件/旧哈希。旧记录均为历史结果；真实账号、完整音乐下载与 J4125/fnOS 安装升级/性能没有执行。
+
+## 2026-10-24：PR #4 独立审核与修复复核
+
+交付结果：修复 head `0a5118200e2d9371109371b13f2cdcf89a9d4bf8` / tree `f8d9c41300039fd0e8dfa9dea0ecbf28d0c026bf` 与本地已测一致；[该提交 PR CI 40085536584](https://github.com/Surc/fnos_music_hub/actions/runs/40085536584) 八项全部成功，含 Python 3.11/3.12 基础、QQ、网易、web、browser。无未解决线程，已提交 [Comment 审核](https://github.com/Surc/fnos_music_hub/pull/4#pullrequestreview-5637917573)；因同为 PR 作者，没有提交或宣称第三方批准。随后转 Ready 并合并，main 为 `84f814d997017b07c28b821f70db5fdc7c5cbe9b`（2026-10-24 18:26:12，UTC+8）。[合并页面凭证](netease-pr4-merged.jpg)。来源采用记录在确认合并后更新；实际账号/NAS 待验状态不变。
+
+重新查询远端精确 head `8ae89c835849bb377172c8e9186107dca26760ae`，内容树 `0dbebe662e9c5240c1b5e3727b428ae056d564cf` 与本地审阅基线相同；[CI 40078403156](https://github.com/Surc/fnos_music_hub/actions/runs/40078403156) 八项均成功，审核/讨论/未解决线程为空。发现和最小修复见 [独立审核](NETEASE_REVIEW.md)，最终修复后的 head/CI 与合并结果另行记录。
+
+- 新增回归先复现响应 Cookie 进入后续请求、异常 ID 导致整页失败或错误匹配：4 failed / 2 passed。修复后完整 Python 3.12（QQ+网易）**193 passed**；新增 21 项回归包含可信 UID、在途 bind/rotate 撤销、关闭网易与缺依赖。
+- 独立干净网易依赖环境 **182 passed / 1 skipped**，pip check 通过；QQ+网易环境依赖检查也通过。只保留既有 Starlette/httpx 弃用提示。未变更任何运行依赖锁、上游源码或 schema。
+- 实际一次性 OS 子进程检查超时/取消/输出超限、非对象 JSON/非法 JSON，均回收进程、移除 0700 XDG、释放后续读取能力；9 次并发隔离临时目录且不超过 4 个同时运行。短进程输出、网络及凭据均为合成，未读取真实私人平台。
+- 前台 Node 语法、**37 项 jsdom** 和 **10 个 Chromium 视口**通过，覆盖原 QQ 快照/酷我任务及网易导航、确认/旋转/分页；[本轮报告](netease-ui-screenshots/review-browser-report.json)。Ruff、来源/摘要、diff 检查和 wheel 构建通过。运行时改动没有改前端静态文件。
+
+按默认关闭、可选只读开发版评估合并条件；真实网易 R-NE-001..004、QQ/NAS、J4125 性能与平台推荐效果仍待验，酷我 407 历史保留。不发布正式版本、不改 FPK。PR #5 必须在业务合并后同步 main、网易依赖闭包、许可证/对应源码并重新验证；现有成功预览仍不含网易目录。
+
+## 2026-10-24：网易只读目录与账号隔离
+
+基于已合并 main `04677d32b96a0b824c2148001458d581f9f8f22c`，其 [Actions 39973794020](https://github.com/Surc/fnos_music_hub/actions/runs/39973794020) 六项全部成功。当前开发分支 `feat/netease-readonly-catalog`，实现及未开放范围见 [网易模块](NETEASE.md)。固定 MusicBox 0.5.3 / `9c405f4bae2384d0410e63f8b816a707553d72d3` 与旧 ext 接口已核对，上游源码零改动，未合并时不推进采用 SHA。
+
+- 完整 Python 3.12 / QQ+网易依赖环境：**172 passed**，其中新增 **52 项**网易契约/SDK用例；原 QQ 快照、账号、酷我任务、资产和审核回归一并通过。只保留既有 Starlette/httpx 弃用提示。
+- 独立干净 venv 安装网易锁：`pip check` 无冲突，**161 passed / 1 skipped**（未安装 QQ SDK）；wheel 构建通过。MusicBox 通过固定 Git SHA 安装，NAS 不需要 Git/编译器，发行需预构建 wheel。基础模式和 Python 3.11 由新增/既有 CI 矩阵检查。
+- 网易覆盖显式确认、加密存储/输出白名单、双用户并发、失效不匿名回退、不退出有效飞牛会话、UID/代次/修订、解绑换号、同号更新、旧成功和旧错误、退出、重复/未知/缺详情、来源总数/页长度、截断、CSRF、SQLite 原子回滚及不重启重试、任务门面拒绝网易下载。SDK 测试实际调用固定 MusicBox 的 WEAPI/EAPI 构造，HTTP 边界为合成，不能据此证明真实签名/设备/目录可用。
+- `npm run check`、**37 项 jsdom** 通过，包含新增 **6 项**网易交互：公开浏览、UID 确认/更新、失败目录/歌曲翻页、解绑后的迟到推荐、平台失效及关闭核对弹层后迟到响应。QQ 原有测试保留。
+- 本地 Chromium **153.0.8010.0** 的十种 PC/手机横竖视口通过，保留原 QQ 两轮快照/1000 项/酷我确认流程；新增网易 UID 关联、私人歌单、重复/未知、账号推荐、解除关联与旋转保留 Cookie 表单。首次标准 Playwright 浏览器下载失败，改用 NPM 官方 registry 的 Chromium 包；补装有校验和的 WenQuanYi 中文字体后重跑。中间一次缺字体配置的启动失败未记为通过。最终报告和四张截图见下文；CI 使用自己的标准 Chromium，独立记录。
+- Ruff、`git diff --check`、来源/锁定依赖/数据库 schema 与 skill 摘要、本地文档链接检查通过；维护规则 1.5.0 已验证并推送个人 Skills Git `114790b`。QQ/Hot/音桥已合并采用基线、旧工程双来源和酷我两首 407 历史保持不变。
+
+上述全部私人平台响应、账号与浏览器 API 为合成，音频是既有生成测试音。真实 R-NE-001..004、QQ/NAS、J4125 性能、手机键盘/安全区与 FPK 仍待执行；没有把普通推荐标为已验收个性化每日推荐，未发布 Release/FPK。
+
+远端交付：[PR #4](https://github.com/Surc/fnos_music_hub/pull/4) 为 Draft/Open。代码提交 `cd95d020556ccd7708f0953976e802e963f933c2` 的内容树 `727801a07856d18a02de22ed21b22816f4d9b2b7` 与本地已测 `93d2266` 完全相同；[push 40077854755](https://github.com/Surc/fnos_music_hub/actions/runs/40077854755) 和 [PR 40078076740](https://github.com/Surc/fnos_music_hub/actions/runs/40078076740) 各八项全部通过：core/QQ/网易的 Python 3.11/3.12、web、browser。远端网易 3.11 日志确认 **161 passed / 1 skipped** 及依赖检查通过；其他矩阵和标准 Chromium 十视口同时通过。追加资料不改变运行代码、上游采用或真实验收状态。[PR 创建记录](netease-ui-screenshots/pr-draft.jpg) 为当时截图。
+
+浏览器证据（真实 Chromium、合成 API）：[原始报告](netease-ui-screenshots/browser-report.json)，[PC 横屏](netease-ui-screenshots/netease-pc-landscape.png)、[PC 竖屏](netease-ui-screenshots/netease-pc-portrait.png)、[手机竖屏](netease-ui-screenshots/netease-mobile-portrait.png)、[手机横屏](netease-ui-screenshots/netease-mobile-landscape.png)。
+
 ## 2026-10-24：第一个实际 FPK 候选
 
 开发机的输入构建、离线组包和静态校验已实际执行，详见 [候选证据](fpk-preview/EVIDENCE.md) 和原始 JSON 报告。候选 `0.1.0-preview.1` 的源码提交为本地 `5a6157b0768c94ecba18865f1876e104bfbc3067`；两次隔离临时目录的离线构建均通过 5915 个安装文件及 fnpack MD5/SHA256/权限校验，安装内容和对应源码相同，外层 FPK 字节不同，不承诺 fnpack 字节级确定性。交付选构建 A，SHA256 `c0e7528e8c8e532388a3158ebf0b567becc11142e9914f15119fde3ef7117d32`。

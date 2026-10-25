@@ -153,8 +153,8 @@ class Store:
         ).fetchall()
         for attempt in rows:
             row = db.execute(
-                "SELECT payload FROM accounts WHERE owner=? AND provider='qq'",
-                (attempt["owner"],),
+                "SELECT payload FROM accounts WHERE owner=? AND json_extract(payload, '$.attempt_id')=?",
+                (attempt["owner"], attempt["id"]),
             ).fetchone()
             if row:
                 account = json.loads(row[0])
@@ -168,8 +168,8 @@ class Store:
                         binding_generation=account["binding_generation"] + 1,
                     )
                     db.execute(
-                        "UPDATE accounts SET payload=? WHERE owner=? AND provider='qq'",
-                        (canonical(account), attempt["owner"]),
+                        "UPDATE accounts SET payload=? WHERE owner=? AND provider=?",
+                        (canonical(account), attempt["owner"], account["provider"]),
                     )
         db.execute("DELETE FROM account_attempts WHERE session=?", (session_id,))
         db.execute("DELETE FROM sessions WHERE id=?", (session_id,))

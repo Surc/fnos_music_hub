@@ -13,5 +13,6 @@
       "download_root": "/absolute/allowed/music/user-a"
     }
   },
-  "qq_accounts_enabled": false
+  "qq_accounts_enabled": false,
+  "netease_enabled": false
 }

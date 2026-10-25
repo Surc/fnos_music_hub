@@ -11,20 +11,20 @@ from .errors import HubError
 
 
 class AccountStore:
-    def __init__(self, store):
-        self.store = store
+    def __init__(self, store, provider="qq"):
+        self.store, self.provider = store, provider
 
     def get(self, owner):
         with self.store.db() as db:
             row = db.execute(
-                "SELECT payload FROM accounts WHERE owner=? AND provider='qq'",
-                (owner.key,),
+                "SELECT payload FROM accounts WHERE owner=? AND provider=?",
+                (owner.key, self.provider),
             ).fetchone()
         return (
             json.loads(row[0])
             if row
             else {
-                "provider": "qq",
+                "provider": self.provider,
                 "state": "unbound",
                 "binding_generation": 0,
                 "credential_revision": 0,
@@ -33,20 +33,32 @@ class AccountStore:
             }
         )
 
-    def replace(self, owner, expected, value):
+    def replace(self, owner, expected, value, *, session=None, attempt=None):
         with self.store.db() as db:
             db.execute("BEGIN IMMEDIATE")
+            if session is not None:
+                self.store.check_session(session, db)
             row = db.execute(
-                "SELECT payload FROM accounts WHERE owner=? AND provider='qq'",
-                (owner.key,),
+                "SELECT payload FROM accounts WHERE owner=? AND provider=?",
+                (owner.key, self.provider),
             ).fetchone()
             current = json.loads(row[0]) if row else self.get(owner)
             if current != expected:
                 raise HubError("conflict", "账号状态已变化，请刷新后核对", 409)
             db.execute(
-                "INSERT OR REPLACE INTO accounts VALUES(?,'qq',?)",
-                (owner.key, canonical(value)),
+                "INSERT OR REPLACE INTO accounts VALUES(?,?,?)",
+                (owner.key, self.provider, canonical(value)),
             )
+            if attempt is not None:
+                db.execute(
+                    "INSERT OR REPLACE INTO account_attempts VALUES(?,?,?,?)",
+                    (
+                        attempt["id"],
+                        owner.key,
+                        session["id"],
+                        self.store.vault.encrypt(canonical(attempt).encode()),
+                    ),
+                )
         return value
 
     def attempt(self, owner, session, attempt_id):
@@ -82,7 +94,7 @@ class AccountStore:
         self.store.check_session(session)
         old = self.get(owner)
         if old["state"] == "bound":
-            raise HubError("conflict", "请先解除当前 QQ 关联，再登录或换号", 409)
+            raise HubError("conflict", "请先解除当前平台关联，再登录或换号", 409)
         if old.get("attempt_expires", 0) > time.time():
             raise HubError("conflict", "已有登录尝试，请先继续或取消", 409)
         attempt = {
@@ -106,8 +118,9 @@ class AccountStore:
                 "attempt_id": attempt["id"],
                 "attempt_expires": attempt["expires"],
             },
+            session=session,
+            attempt=attempt,
         )
-        self.save_attempt(owner, session, attempt)
         return attempt
 
     def current_attempt(self, owner, session, attempt_id):
