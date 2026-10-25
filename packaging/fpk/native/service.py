@@ -24,6 +24,10 @@ PROGRAM = Path(__file__).resolve().parents[1]
 PORT = 8790
 
 
+class NeteaseDependenciesMissing(RuntimeError):
+    """Safe startup classification; never expose SDK errors or credentials."""
+
+
 def atomic_json(path, value):
     path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     temp = path.with_name(path.name + ".new-" + secrets.token_hex(4))
@@ -228,6 +232,7 @@ class Lifecycle:
                     "admin_guids": [],
                     "users": {},
                     "qq_accounts_enabled": False,
+                    "netease_enabled": False,
                 },
             )
             try:
@@ -273,6 +278,16 @@ class Lifecycle:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
+        if cfg.netease_enabled:
+            try:
+                subprocess.run(
+                    [str(self.program / "runtime/python/bin/python3"), "-sB",
+                     str(self.program / "native/dependency_probe.py"), "--netease"],
+                    env=env, check=True, timeout=20,
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                )
+            except (OSError, subprocess.SubprocessError):
+                raise NeteaseDependenciesMissing() from None
         for tool in ("ffmpeg", "ffprobe"):
             subprocess.run(
                 [str(self.program / "bin" / tool), "-version"],
@@ -609,6 +624,8 @@ def main():
     except Exception as exc:
         # Do not print config values, credentials, upstream bodies or exception text.
         message = (
+            "网易目录已启用，但固定版依赖缺失或损坏；请重新安装完整的网易整合预览包。"
+            if isinstance(exc, NeteaseDependenciesMissing) else
             "音乐 Hub 生命周期失败（"
             + type(exc).__name__
             + "）；请检查配置、端口和预览包说明。"
