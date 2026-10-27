@@ -1,0 +1,19 @@
+{
+  "checks": [
+    "start/health",
+    "idempotent start",
+    "two Hot token isolation",
+    "NetEase and QQ default disabled",
+    "enabled NetEase crypto/native dependencies and QQ coexist",
+    "missing NetEase transitive dependency gives explicit startup error",
+    "disabled NetEase tolerates missing optional dependency with dual Hot/QQ",
+    "child exit stops all",
+    "backup integrity",
+    "failed upgrade shell rollback",
+    "old program and database/key recovery",
+    "uninstall retains state"
+  ],
+  "real_nas_acceptance": "not_run",
+  "scope": "ordinary Linux, bundled services, synthetic users, no platform login/download",
+  "status": "passed"
+}

@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "tag": "v0.1.0-preview.2",
+  "release_id": 425576034,
+  "url": "https://github.com/Surc/fnos_music_hub/releases/tag/v0.1.0-preview.2",
+  "published_at": "2026-10-27T14:51:36Z",
+  "prerelease": true,
+  "merge_commit": "d66d395254594ab08b7f09613d5df953bf792074",
+  "build_commit": "d66d395254594ab08b7f09613d5df953bf792074",
+  "pull_request": 5,
+  "final_pr_ci": 40520258014,
+  "final_pr_ci_attempt": 2,
+  "final_pr_native_ci": 40520258147,
+  "merge_core_ci": 40522337002,
+  "release_native_ci": 40522382993,
+  "bundle_tests_passed": 239,
+  "native_lifecycle_checks": 12,
+  "installed_files": 6623,
+  "real_nas_acceptance": "not_run",
+  "local_music_technical_evidence": "docs/HOT_SMOKE_LOCAL_20261026.json",
+  "assets": [
+    {
+      "name": "build-report.json",
+      "bytes": 33121,
+      "sha256": "486a8fb99900a50ac932dabf9e7456e0aa3343ccbda1a06e5c2e37de74578a00",
+      "id": 681887983,
+      "url": "https://github.com/Surc/fnos_music_hub/releases/download/v0.1.0-preview.2/build-report.json"
+    },
+    {
+      "name": "bundle-tests.txt",
+      "bytes": 1182,
+      "sha256": "7f84f8b9c9ee286e7f6b260726038e0ab88991c2646dd98e7f0b051da6d2f454",
+      "id": 681888146,
+      "url": "https://github.com/Surc/fnos_music_hub/releases/download/v0.1.0-preview.2/bundle-tests.txt"
+    },
+    {
+      "name": "bundle.json",
+      "bytes": 31227,
+      "sha256": "d849bdb6b819352bc5717485ba7f2039debac1de885993b2305b864a249aca3f",
+      "id": 681888320,
+      "url": "https://github.com/Surc/fnos_music_hub/releases/download/v0.1.0-preview.2/bundle.json"
+    },
+    {
+      "name": "CONTENTS.json",
+      "bytes": 978240,
+      "sha256": "be4bba2c52061be5d23acca1dea496d81addf9e7a897ff6ab7302f50b95033c8",
+      "id": 681888541,
+      "url": "https://github.com/Surc/fnos_music_hub/releases/download/v0.1.0-preview.2/CONTENTS.json"
+    },
+    {
+      "name": "fnos-music-hub-0.1.0-preview.2-amd64.fpk",
+      "bytes": 66760559,
+      "sha256": "5f47eb11c23af1e2ee0c138f41c4a0e80a19f7e7efaaa1c4526fa37bfafb15e6",
+      "id": 681888799,
+      "url": "https://github.com/Surc/fnos_music_hub/releases/download/v0.1.0-preview.2/fnos-music-hub-0.1.0-preview.2-amd64.fpk"
+    },
+    {
+      "name": "fnos-music-hub-0.1.0-preview.2-inputs.tar.gz",
+      "bytes": 182133663,
+      "sha256": "691353f93d076bc84776299490b2fbe9b9c7249a8467591aab38223d3796c084",
+      "id": 681889573,
+      "url": "https://github.com/Surc/fnos_music_hub/releases/download/v0.1.0-preview.2/fnos-music-hub-0.1.0-preview.2-inputs.tar.gz"
+    },
+    {
+      "name": "fnos-music-hub-0.1.0-preview.2-sources.tar.gz",
+      "bytes": 114048402,
+      "sha256": "d6a2deb472863ec7c20baf60ecd6543eeb9c16cd99126ef1522cc136fcd6ca33",
+      "id": 681892780,
+      "url": "https://github.com/Surc/fnos_music_hub/releases/download/v0.1.0-preview.2/fnos-music-hub-0.1.0-preview.2-sources.tar.gz"
+    },
+    {
+      "name": "native-smoke.json",
+      "bytes": 668,
+      "sha256": "9a66c623d59b7d3d72f97b16c8ff6211c688246deeb6eee46746b1267709ced9",
+      "id": 681894655,
+      "url": "https://github.com/Surc/fnos_music_hub/releases/download/v0.1.0-preview.2/native-smoke.json"
+    },
+    {
+      "name": "SHA256SUMS",
+      "bytes": 755,
+      "sha256": "a7a50a194e77f3b03696f6e08134b842830b35548e87f2dc50d7435370f20ada",
+      "id": 681894867,
+      "url": "https://github.com/Surc/fnos_music_hub/releases/download/v0.1.0-preview.2/SHA256SUMS"
+    }
+  ]
+}

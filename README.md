@@ -1,5 +1,7 @@
 # fnos_music_hub
 
+已发布 [v0.1.0-preview.2 · amd64 原生预览](https://github.com/Surc/fnos_music_hub/releases/tag/v0.1.0-preview.2)，包含 FPK、对应源码、离线输入与 SHA256；最终提交/附件验证见 [发行记录](docs/fpk-preview/RELEASE_20261027.md)。**真实 J4125/fnOS 实机验收仍待完成。**
+
 当前 `0.1.0-preview.2` / amd64 原生预览集成已合并的网易只读目录，默认关闭；新构建证据见 [整合验证](docs/fpk-preview/NETEASE.md)，旧 `preview.1` 不含网易。**J4125/fnOS 实机安装和升级仍未验收**。应用独立、非 root、无 Docker，需已有音桥 API 与 HTTPS 反代；不改 ext、不接管官方音乐 Socket、不迁移旧数据。见 [预览说明](packaging/fpk/README.md)。
 
 面向飞牛音乐的独立音乐中心，目标是把**歌单推荐、歌曲下载、飞牛音乐注入**拆成可替换模块，按飞牛用户隔离推荐、收藏、平台账号与下载资产。

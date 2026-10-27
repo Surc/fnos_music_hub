@@ -1,5 +1,7 @@
 # J4125 原生 FPK 预览
 
+2026-10-27 已公开 [v0.1.0-preview.2 GitHub prerelease](https://github.com/Surc/fnos_music_hub/releases/tag/v0.1.0-preview.2)，标签与实际构建提交均为 `d66d395254594ab08b7f09613d5df953bf792074`。最终发行附件和校验见 [发行记录](../../docs/fpk-preview/RELEASE_20261027.md)；下文的原生使用/升级/验收边界继续适用。
+
 包版本 `0.1.0-preview.2`，业务版本仍为 `0.1.0a1`。本目录实现输入准备、离线组包、产物校验和原生生命周期。**是否实际生成 FPK、SHA256、普通 Linux 服务测试及 J4125 安装验收分别以 `build-report.json`、`native-smoke.json` 和 [验证记录](../../docs/VALIDATION.md) 为准。** 不发布正式 Release，不部署真实 NAS。
 
 ## 官方契约与工具

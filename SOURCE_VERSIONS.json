@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "repository": "Surc/fnos_music_hub",
-  "stage": "native-fpk-netease-preview-development",
+  "stage": "native-fpk-netease-preview-released",
   "recorded_on": "2026-10-27",
   "observation_policy": "Most observations remain the fixed-source v1.6 research of 2026-10-21. MusicBox and legacy ext were rechecked on 2026-10-24 at the same recorded SHAs. Adopted pins require merged Hub code; branch implementation and real acceptance are separate.",
   "design_archive": {
@@ -368,12 +368,78 @@
     }
   },
   "project_release": {
-    "tag": null,
-    "commit": null,
-    "assets": [],
-    "status": "prerelease_authorized_pending_final_ci",
-    "candidate_tag": "v0.1.0-preview.2",
-    "prerelease": true
+    "tag": "v0.1.0-preview.2",
+    "commit": "d66d395254594ab08b7f09613d5df953bf792074",
+    "assets": [
+      {
+        "name": "build-report.json",
+        "bytes": 33121,
+        "sha256": "486a8fb99900a50ac932dabf9e7456e0aa3343ccbda1a06e5c2e37de74578a00",
+        "id": 681887983,
+        "url": "https://github.com/Surc/fnos_music_hub/releases/download/v0.1.0-preview.2/build-report.json"
+      },
+      {
+        "name": "bundle-tests.txt",
+        "bytes": 1182,
+        "sha256": "7f84f8b9c9ee286e7f6b260726038e0ab88991c2646dd98e7f0b051da6d2f454",
+        "id": 681888146,
+        "url": "https://github.com/Surc/fnos_music_hub/releases/download/v0.1.0-preview.2/bundle-tests.txt"
+      },
+      {
+        "name": "bundle.json",
+        "bytes": 31227,
+        "sha256": "d849bdb6b819352bc5717485ba7f2039debac1de885993b2305b864a249aca3f",
+        "id": 681888320,
+        "url": "https://github.com/Surc/fnos_music_hub/releases/download/v0.1.0-preview.2/bundle.json"
+      },
+      {
+        "name": "CONTENTS.json",
+        "bytes": 978240,
+        "sha256": "be4bba2c52061be5d23acca1dea496d81addf9e7a897ff6ab7302f50b95033c8",
+        "id": 681888541,
+        "url": "https://github.com/Surc/fnos_music_hub/releases/download/v0.1.0-preview.2/CONTENTS.json"
+      },
+      {
+        "name": "fnos-music-hub-0.1.0-preview.2-amd64.fpk",
+        "bytes": 66760559,
+        "sha256": "5f47eb11c23af1e2ee0c138f41c4a0e80a19f7e7efaaa1c4526fa37bfafb15e6",
+        "id": 681888799,
+        "url": "https://github.com/Surc/fnos_music_hub/releases/download/v0.1.0-preview.2/fnos-music-hub-0.1.0-preview.2-amd64.fpk"
+      },
+      {
+        "name": "fnos-music-hub-0.1.0-preview.2-inputs.tar.gz",
+        "bytes": 182133663,
+        "sha256": "691353f93d076bc84776299490b2fbe9b9c7249a8467591aab38223d3796c084",
+        "id": 681889573,
+        "url": "https://github.com/Surc/fnos_music_hub/releases/download/v0.1.0-preview.2/fnos-music-hub-0.1.0-preview.2-inputs.tar.gz"
+      },
+      {
+        "name": "fnos-music-hub-0.1.0-preview.2-sources.tar.gz",
+        "bytes": 114048402,
+        "sha256": "d6a2deb472863ec7c20baf60ecd6543eeb9c16cd99126ef1522cc136fcd6ca33",
+        "id": 681892780,
+        "url": "https://github.com/Surc/fnos_music_hub/releases/download/v0.1.0-preview.2/fnos-music-hub-0.1.0-preview.2-sources.tar.gz"
+      },
+      {
+        "name": "native-smoke.json",
+        "bytes": 668,
+        "sha256": "9a66c623d59b7d3d72f97b16c8ff6211c688246deeb6eee46746b1267709ced9",
+        "id": 681894655,
+        "url": "https://github.com/Surc/fnos_music_hub/releases/download/v0.1.0-preview.2/native-smoke.json"
+      },
+      {
+        "name": "SHA256SUMS",
+        "bytes": 755,
+        "sha256": "a7a50a194e77f3b03696f6e08134b842830b35548e87f2dc50d7435370f20ada",
+        "id": 681894867,
+        "url": "https://github.com/Surc/fnos_music_hub/releases/download/v0.1.0-preview.2/SHA256SUMS"
+      }
+    ],
+    "status": "published_prerelease",
+    "prerelease": true,
+    "release_id": 425576034,
+    "url": "https://github.com/Surc/fnos_music_hub/releases/tag/v0.1.0-preview.2",
+    "published_at": "2026-10-27T14:51:36Z"
   },
   "development_version": "0.1.0a1",
   "implemented_adapters": [
@@ -851,116 +917,113 @@
       "native_ci": 40173694577,
       "ci_implementation_head": "a0a426e241bb58cfb7fd565c1ea6bcd2d41c7491",
       "post_ci_changes": "documentation/evidence only",
-      "decision": "eligible_for_preview_merge; final publication CI pending",
-      "real_nas_acceptance": "not_run"
+      "decision": "merged_and_published_as_preview; real NAS acceptance pending",
+      "real_nas_acceptance": "not_run",
+      "merged_commit": "d66d395254594ab08b7f09613d5df953bf792074",
+      "release_tag": "v0.1.0-preview.2",
+      "final_pr_core_ci": 40520258014,
+      "final_pr_native_ci": 40520258147
     }
   },
   "native_preview": {
     "package_version": "0.1.0-preview.2",
-    "base_main_commit": "823a2de946ebbd64207117d9551c7d0eb7d56237",
+    "hub_version": "0.1.0a1",
     "app_id": "fnos_music_hub",
     "platform": "linux/amd64",
     "pins_file": "packaging/fpk/versions.json",
-    "status": "preview_built_static_bundled_tests_and_linux_lifecycle_passed_nas_pending",
-    "netease_readonly_included": true,
-    "netease_default_enabled": false,
-    "real_nas_acceptance": "not_run",
-    "release_created": false,
+    "status": "prerelease_published_static_bundled_tests_and_linux_lifecycle_passed_nas_pending",
+    "release_created": true,
+    "release_tag": "v0.1.0-preview.2",
+    "release_url": "https://github.com/Surc/fnos_music_hub/releases/tag/v0.1.0-preview.2",
+    "merge_commit": "d66d395254594ab08b7f09613d5df953bf792074",
+    "build_commit": "d66d395254594ab08b7f09613d5df953bf792074",
     "artifacts": [
       {
-        "name": "fnos-music-hub-0.1.0-preview.2-amd64.fpk",
-        "bytes": 66760897,
-        "sha256": "109d68854b847f953335a14ec540dcc691c12f6617748056f9eb5be88dc65120",
-        "kind": "ci_fpk_preview_not_release"
+        "name": "build-report.json",
+        "bytes": 33121,
+        "sha256": "486a8fb99900a50ac932dabf9e7456e0aa3343ccbda1a06e5c2e37de74578a00",
+        "id": 681887983,
+        "url": "https://github.com/Surc/fnos_music_hub/releases/download/v0.1.0-preview.2/build-report.json"
       },
       {
-        "name": "fnos-music-hub-0.1.0-preview.2-sources.tar.gz",
-        "bytes": 113957940,
-        "sha256": "03def56f9bb28d429339fa1a5554d3fee4c31927b4ff90cfea3ba635bfb105f0",
-        "kind": "corresponding_sources"
+        "name": "bundle-tests.txt",
+        "bytes": 1182,
+        "sha256": "7f84f8b9c9ee286e7f6b260726038e0ab88991c2646dd98e7f0b051da6d2f454",
+        "id": 681888146,
+        "url": "https://github.com/Surc/fnos_music_hub/releases/download/v0.1.0-preview.2/bundle-tests.txt"
+      },
+      {
+        "name": "bundle.json",
+        "bytes": 31227,
+        "sha256": "d849bdb6b819352bc5717485ba7f2039debac1de885993b2305b864a249aca3f",
+        "id": 681888320,
+        "url": "https://github.com/Surc/fnos_music_hub/releases/download/v0.1.0-preview.2/bundle.json"
+      },
+      {
+        "name": "CONTENTS.json",
+        "bytes": 978240,
+        "sha256": "be4bba2c52061be5d23acca1dea496d81addf9e7a897ff6ab7302f50b95033c8",
+        "id": 681888541,
+        "url": "https://github.com/Surc/fnos_music_hub/releases/download/v0.1.0-preview.2/CONTENTS.json"
+      },
+      {
+        "name": "fnos-music-hub-0.1.0-preview.2-amd64.fpk",
+        "bytes": 66760559,
+        "sha256": "5f47eb11c23af1e2ee0c138f41c4a0e80a19f7e7efaaa1c4526fa37bfafb15e6",
+        "id": 681888799,
+        "url": "https://github.com/Surc/fnos_music_hub/releases/download/v0.1.0-preview.2/fnos-music-hub-0.1.0-preview.2-amd64.fpk"
       },
       {
         "name": "fnos-music-hub-0.1.0-preview.2-inputs.tar.gz",
-        "sha256": "37bbee399eac49bab72542dd239b2055e163469c2874677e658582827612e904",
-        "kind": "offline_replay_input_closure"
+        "bytes": 182133663,
+        "sha256": "691353f93d076bc84776299490b2fbe9b9c7249a8467591aab38223d3796c084",
+        "id": 681889573,
+        "url": "https://github.com/Surc/fnos_music_hub/releases/download/v0.1.0-preview.2/fnos-music-hub-0.1.0-preview.2-inputs.tar.gz"
+      },
+      {
+        "name": "fnos-music-hub-0.1.0-preview.2-sources.tar.gz",
+        "bytes": 114048402,
+        "sha256": "d6a2deb472863ec7c20baf60ecd6543eeb9c16cd99126ef1522cc136fcd6ca33",
+        "id": 681892780,
+        "url": "https://github.com/Surc/fnos_music_hub/releases/download/v0.1.0-preview.2/fnos-music-hub-0.1.0-preview.2-sources.tar.gz"
+      },
+      {
+        "name": "native-smoke.json",
+        "bytes": 668,
+        "sha256": "9a66c623d59b7d3d72f97b16c8ff6211c688246deeb6eee46746b1267709ced9",
+        "id": 681894655,
+        "url": "https://github.com/Surc/fnos_music_hub/releases/download/v0.1.0-preview.2/native-smoke.json"
+      },
+      {
+        "name": "SHA256SUMS",
+        "bytes": 755,
+        "sha256": "a7a50a194e77f3b03696f6e08134b842830b35548e87f2dc50d7435370f20ada",
+        "id": 681894867,
+        "url": "https://github.com/Surc/fnos_music_hub/releases/download/v0.1.0-preview.2/SHA256SUMS"
       }
     ],
-    "evidence": "docs/fpk-preview/NETEASE.md",
-    "candidate_commit": "30515916895cb6b745ba48b832f3bc55afb8bc8e",
-    "source_branch_head": "a0a426e241bb58cfb7fd565c1ea6bcd2d41c7491",
-    "candidate_tree": "a2b39c5a3fa6b6c52ceccef188f7bcf01bcdb8a4",
-    "installed_files": 6623,
-    "features": {
-      "downloads": [
-        "kuwo"
-      ],
-      "netease_readonly": {
-        "default_enabled": false,
-        "included": true,
-        "real_account": "not_run",
-        "sdk_commit": "9c405f4bae2384d0410e63f8b816a707553d72d3"
-      },
-      "qq_readonly": {
-        "default_enabled": false,
-        "included": true
-      }
-    },
+    "evidence": "docs/fpk-preview/RELEASE_20261027.md",
     "validation": {
-      "regular_ci": 40173694578,
-      "regular_ci_jobs": 9,
-      "native_ci": 40173694577,
-      "native_ci_conclusion": "success",
-      "bundled_python_tests": 239,
-      "non_root_linux_lifecycle": "passed",
-      "real_nas": "not_run"
+      "pr_core_run": 40520258014,
+      "pr_core_attempt": 2,
+      "pr_native_run": 40520258147,
+      "merge_core_run": 40522337002,
+      "release_native_run": 40522382993,
+      "bundle_tests_passed": 239,
+      "native_lifecycle_checks": 12,
+      "installed_files_verified": 6623,
+      "remote_assets_sha256_verified": 9
     },
-    "actions_artifacts": [
-      {
-        "id": 12591965469,
-        "name": "fnos-music-hub-0.1.0-preview.2-netease-readonly-amd64",
-        "size_in_bytes": 181039416,
-        "url": "https://api.github.com/repos/Surc/fnos_music_hub/actions/artifacts/12591965469",
-        "archive_download_url": "https://api.github.com/repos/Surc/fnos_music_hub/actions/artifacts/12591965469/zip",
-        "expired": false,
-        "created_at": "2026-10-25T07:45:36Z",
-        "expires_at": "2026-11-08T07:45:32Z",
-        "updated_at": "2026-10-25T07:45:36Z",
-        "digest": "sha256:6d9cbc89b170296a94891b55ad12f373803536ba149f7c76c1e9b48f53ec9f4c",
-        "workflow_run": {
-          "id": 40173694577,
-          "repository_id": 1428051212,
-          "head_repository_id": 1428051212,
-          "head_branch": "feat/native-fpk-preview",
-          "head_sha": "a0a426e241bb58cfb7fd565c1ea6bcd2d41c7491"
-        }
-      },
-      {
-        "id": 12591840881,
-        "name": "fnos-music-hub-0.1.0-preview.2-netease-offline-inputs-amd64",
-        "size_in_bytes": 181822090,
-        "url": "https://api.github.com/repos/Surc/fnos_music_hub/actions/artifacts/12591840881",
-        "archive_download_url": "https://api.github.com/repos/Surc/fnos_music_hub/actions/artifacts/12591840881/zip",
-        "expired": false,
-        "created_at": "2026-10-25T07:45:41Z",
-        "expires_at": "2026-11-08T07:45:36Z",
-        "updated_at": "2026-10-25T07:45:41Z",
-        "digest": "sha256:debbfd23b88e7261f29e6f1443d89ec06167e622fa8ca213be6a6afeeb691f98",
-        "workflow_run": {
-          "id": 40173694577,
-          "repository_id": 1428051212,
-          "head_repository_id": 1428051212,
-          "head_branch": "feat/native-fpk-preview",
-          "head_sha": "a0a426e241bb58cfb7fd565c1ea6bcd2d41c7491"
-        }
-      }
-    ],
-    "evidence_files": {
-      "docs/fpk-preview/netease-ci-evidence.json": "35e05b12efb9b043c32bb80a6cdc9305722cd3514de0012c87414a669ddd166b",
-      "docs/fpk-preview/netease-bundle-tests.txt": "4634115fd2d2145ca3cd3d6a39eb7fb3fe8fb5c9501fb7544d09ca80236cdc25",
-      "docs/fpk-preview/netease-native-smoke.json": "9a66c623d59b7d3d72f97b16c8ff6211c688246deeb6eee46746b1267709ced9",
-      "docs/fpk-preview/netease-SHA256SUMS": "78efb067e95f18906ef09744faefe15286b1a68a63e07b4ec04e052ba8c69a8d",
-      "docs/fpk-preview/netease-ci-success.jpg": "f7b1dd4b02caba39d18f53ac49f25a27bdef00d1428a50168a8a20e066ccbf82",
-      "docs/fpk-preview/netease-build-report.json": "895a792524371c48856ef2ca905fe7210f2e195922d9b8d4d5df26ffcd5160ec"
+    "real_nas_acceptance": "not_run",
+    "nas_deployed": false,
+    "local_music_evidence": "docs/HOT_SMOKE_LOCAL_20261026.json",
+    "evidence_files_sha256": {
+      "docs/fpk-preview/RELEASE_20261027.md": "b10f544de2b26cb909354adcc160bb87c14f607e166f957d4b59f257f0691db4",
+      "docs/fpk-preview/release-20261027.json": "b00e30096f1bb3ba0e7c69cc46eb16ecd8d85f6a11bf4792b5f46d7fec4b3971",
+      "docs/fpk-preview/release-20261027-build-report.json": "486a8fb99900a50ac932dabf9e7456e0aa3343ccbda1a06e5c2e37de74578a00",
+      "docs/fpk-preview/release-20261027-native-smoke.json": "9a66c623d59b7d3d72f97b16c8ff6211c688246deeb6eee46746b1267709ced9",
+      "docs/fpk-preview/release-20261027-bundle-tests.txt": "7f84f8b9c9ee286e7f6b260726038e0ab88991c2646dd98e7f0b051da6d2f454",
+      "docs/fpk-preview/release-20261027-SHA256SUMS": "a7a50a194e77f3b03696f6e08134b842830b35548e87f2dc50d7435370f20ada"
     }
   },
   "native_preview_history": [
@@ -1007,6 +1070,116 @@
         "docs/fpk-preview/reproducibility.json": "06cea5efa6c5e17f0efaeb266c201fb8dd473be044d0da10b90151992c6744f5",
         "docs/fpk-preview/runtime-check-local.json": "033c4cceb84321f7b7c9f81db55eb388e253407dc743fbf98645113da67635ff"
       }
+    },
+    {
+      "package_version": "0.1.0-preview.2",
+      "base_main_commit": "823a2de946ebbd64207117d9551c7d0eb7d56237",
+      "app_id": "fnos_music_hub",
+      "platform": "linux/amd64",
+      "pins_file": "packaging/fpk/versions.json",
+      "status": "preview_built_static_bundled_tests_and_linux_lifecycle_passed_nas_pending",
+      "netease_readonly_included": true,
+      "netease_default_enabled": false,
+      "real_nas_acceptance": "not_run",
+      "release_created": false,
+      "artifacts": [
+        {
+          "name": "fnos-music-hub-0.1.0-preview.2-amd64.fpk",
+          "bytes": 66760897,
+          "sha256": "109d68854b847f953335a14ec540dcc691c12f6617748056f9eb5be88dc65120",
+          "kind": "ci_fpk_preview_not_release"
+        },
+        {
+          "name": "fnos-music-hub-0.1.0-preview.2-sources.tar.gz",
+          "bytes": 113957940,
+          "sha256": "03def56f9bb28d429339fa1a5554d3fee4c31927b4ff90cfea3ba635bfb105f0",
+          "kind": "corresponding_sources"
+        },
+        {
+          "name": "fnos-music-hub-0.1.0-preview.2-inputs.tar.gz",
+          "sha256": "37bbee399eac49bab72542dd239b2055e163469c2874677e658582827612e904",
+          "kind": "offline_replay_input_closure"
+        }
+      ],
+      "evidence": "docs/fpk-preview/NETEASE.md",
+      "candidate_commit": "30515916895cb6b745ba48b832f3bc55afb8bc8e",
+      "source_branch_head": "a0a426e241bb58cfb7fd565c1ea6bcd2d41c7491",
+      "candidate_tree": "a2b39c5a3fa6b6c52ceccef188f7bcf01bcdb8a4",
+      "installed_files": 6623,
+      "features": {
+        "downloads": [
+          "kuwo"
+        ],
+        "netease_readonly": {
+          "default_enabled": false,
+          "included": true,
+          "real_account": "not_run",
+          "sdk_commit": "9c405f4bae2384d0410e63f8b816a707553d72d3"
+        },
+        "qq_readonly": {
+          "default_enabled": false,
+          "included": true
+        }
+      },
+      "validation": {
+        "regular_ci": 40173694578,
+        "regular_ci_jobs": 9,
+        "native_ci": 40173694577,
+        "native_ci_conclusion": "success",
+        "bundled_python_tests": 239,
+        "non_root_linux_lifecycle": "passed",
+        "real_nas": "not_run"
+      },
+      "actions_artifacts": [
+        {
+          "id": 12591965469,
+          "name": "fnos-music-hub-0.1.0-preview.2-netease-readonly-amd64",
+          "size_in_bytes": 181039416,
+          "url": "https://api.github.com/repos/Surc/fnos_music_hub/actions/artifacts/12591965469",
+          "archive_download_url": "https://api.github.com/repos/Surc/fnos_music_hub/actions/artifacts/12591965469/zip",
+          "expired": false,
+          "created_at": "2026-10-25T07:45:36Z",
+          "expires_at": "2026-11-08T07:45:32Z",
+          "updated_at": "2026-10-25T07:45:36Z",
+          "digest": "sha256:6d9cbc89b170296a94891b55ad12f373803536ba149f7c76c1e9b48f53ec9f4c",
+          "workflow_run": {
+            "id": 40173694577,
+            "repository_id": 1428051212,
+            "head_repository_id": 1428051212,
+            "head_branch": "feat/native-fpk-preview",
+            "head_sha": "a0a426e241bb58cfb7fd565c1ea6bcd2d41c7491"
+          }
+        },
+        {
+          "id": 12591840881,
+          "name": "fnos-music-hub-0.1.0-preview.2-netease-offline-inputs-amd64",
+          "size_in_bytes": 181822090,
+          "url": "https://api.github.com/repos/Surc/fnos_music_hub/actions/artifacts/12591840881",
+          "archive_download_url": "https://api.github.com/repos/Surc/fnos_music_hub/actions/artifacts/12591840881/zip",
+          "expired": false,
+          "created_at": "2026-10-25T07:45:41Z",
+          "expires_at": "2026-11-08T07:45:36Z",
+          "updated_at": "2026-10-25T07:45:41Z",
+          "digest": "sha256:debbfd23b88e7261f29e6f1443d89ec06167e622fa8ca213be6a6afeeb691f98",
+          "workflow_run": {
+            "id": 40173694577,
+            "repository_id": 1428051212,
+            "head_repository_id": 1428051212,
+            "head_branch": "feat/native-fpk-preview",
+            "head_sha": "a0a426e241bb58cfb7fd565c1ea6bcd2d41c7491"
+          }
+        }
+      ],
+      "evidence_files": {
+        "docs/fpk-preview/netease-ci-evidence.json": "35e05b12efb9b043c32bb80a6cdc9305722cd3514de0012c87414a669ddd166b",
+        "docs/fpk-preview/netease-bundle-tests.txt": "4634115fd2d2145ca3cd3d6a39eb7fb3fe8fb5c9501fb7544d09ca80236cdc25",
+        "docs/fpk-preview/netease-native-smoke.json": "9a66c623d59b7d3d72f97b16c8ff6211c688246deeb6eee46746b1267709ced9",
+        "docs/fpk-preview/netease-SHA256SUMS": "78efb067e95f18906ef09744faefe15286b1a68a63e07b4ec04e052ba8c69a8d",
+        "docs/fpk-preview/netease-ci-success.jpg": "f7b1dd4b02caba39d18f53ac49f25a27bdef00d1428a50168a8a20e066ccbf82",
+        "docs/fpk-preview/netease-build-report.json": "895a792524371c48856ef2ca905fe7210f2e195922d9b8d4d5df26ffcd5160ec"
+      },
+      "historical_recorded_on": "2026-10-25",
+      "superseded_by": "v0.1.0-preview.2 rebuilt from merge d66d395"
     }
   ]
 }
