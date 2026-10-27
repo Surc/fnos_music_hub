@@ -9,7 +9,7 @@ description: 维护 Surc/fnos_music_hub 独立飞牛音乐中心。用于接续�
 
 1. 定位或按任务授权克隆 `https://github.com/Surc/fnos_music_hub.git`。检查 remote、分支、未提交修改；不要把旧 `fnos_music_ext` 当作本仓库。
 2. 读取仓库 `AGENTS.md`、`README.md`、`SOURCE_VERSIONS.json`、`docs/ITERATION.md` 和 `docs/VALIDATION.md`；先读 `docs/RUNNING.md`、`docs/HTTP_API.md` 与功能/平台两份 `docs/ACCEPTANCE_*.md`。前台任务再读 `docs/UI_REVIEW.md`，QQ 模块先读 `docs/QQ_ACCOUNTS.md`，网易模块先读 `docs/NETEASE.md`；其余按模块读取设计、契约、账号反馈、更新和迁移文档。
-3. 以当前代码和验证记录判断完成度。初始化是设计骨架；0.1.0a1 已有可运行开发服务与前台，尚无 FPK。按当前迭代区分模拟验证与真实平台/NAS验收。`docs/design-goals-v1.6-20261021.txt` 是完整历史研究，含被后续审核修订的提议；当前规范文档优先，不能只截取早期选型表。
+3. 以当前代码和验证记录判断完成度。0.1.0a1 已有开发服务和前台；原生预览打包/实际产物/实机状态另读 `packaging/fpk/README.md`、`docs/VALIDATION.md`，不要沿用初始化时无 FPK 的状态。按当前迭代区分模拟、普通 Linux、真实平台/NAS验收。`docs/design-goals-v1.6-20261021.txt` 含后续修订的历史研究；当前规范优先。
 4. 核对来源的完整 SHA、实际分支、版本文件、Git tag、观察时间、采用状态和许可证。`observed_commit` 不等于 `adopted_commit`，原工程双来源的采用基线不等于新 Hub 已采用。
 
 ## 保持模块可替换
@@ -92,3 +92,18 @@ description: 维护 Surc/fnos_music_hub 独立飞牛音乐中心。用于接续�
 - 公开歌单始终空 Cookie；私人请求前后核对实际 UID，Hub 返回/缓存前重验 owner、AccountRef、代次、修订和会话。旧成功/错误不能泄露或缓存，也不能把新绑定置过期。平台失效 409 不等于飞牛 401，不回退匿名。无持久私人目录响应缓存；解绑清理临时歌曲元数据，显式本地收藏独立保留。
 - 详情沿 trackIds 重建原序/重复/未知/缺详情，不能按 ID 去重输出或按取流结果删歌。30 项目录、100 项详情和 10000 来源总数是当前有界分页；complete=false/page_only，不是网易完整快照。推荐仍称账号推荐，personalization=unverified，不能以 SDK 函数名签收每日个性化效果。
 - 开启 `netease_enabled` 需固定可选依赖；网易目录不依赖 Hot，QQ/酷我仍沿原引擎授权。网易搜索/扫码/下载、云端写入和反馈均独立准入；真实 R-NE-001..004、NAS/J4125 性能与正式 FPK 不以合成 SDK/Chromium 测试代替。未合并时保留 adopted_commit=null。
+
+## 原生 FPK 预览接续
+
+- 先读 `packaging/fpk/README.md` 和 `versions.json`；在线输入准备与离线组包分开。使用官方固定 fnpack，保留输入闭包、对应源码、包内容/版本/组件 SHA256，构建提交必须清楚；不以设计或缺失工具的输出冒称 FPK 成功。
+- 应用/包用户/组为 `fnos_music_hub`，仅非 root；端口 127.0.0.1:8790，依赖已有音桥 API 与 HTTPS 反代。配置/秘密在独立 var/config，状态 var/state，下载 var/downloads；不接管 Socket、不改 ext、不迁移旧数据。逐用户 Hot/token/端口/下载隔离不变。
+- 升级先停服、完整备份程序/config/state，健康失败用保留的旧 Python/程序恢复匹配数据；卸载保留 var。检查备份失败/完整性、PID 复用/锁、坏版本 shell 回滚、密钥恢复及卸载/重装；不能用静态测试代替 fnOS 安装。
+- 运行 `tests/test_fpk_native.py`、普通 Linux 的 `native_smoke.py` 和实际 FPK 校验。root 或 procfs/PID 命名空间不一致的运行器必须记录真服务 smoke blocked，不加生产绕过；J4125/8GB 资源、真实账号/完整下载与 fnOS 安装升级另签收。预览工作流只上传 Actions 附件，本轮不发布正式 Release 或部署 NAS。
+
+- 网易整合预览从已合并 main 接续；固定 MusicBox wheel/传递依赖及 LICENSE/NOTICE/对应源码进入离线闭包。默认关闭、启用/缺依赖与 QQ/酷我/双用户兼容必须在实际包内验证；预览版本/附件明确区分集成状态，不沿用旧包证据。
+
+## 本机下载复测与预览发行（2026-10-27）
+
+- 2026-10-26 用户本机 WSL 的 R-KW-001/002 原生 Hot 与 Hub 均取得 320 kbps MP3，完整解码/时长校验通过，各曲跨链路 SHA256 一致；证据见 docs/HOT_LOCAL_RETEST_20261026.md 与 docs/HOT_SMOKE_LOCAL_20261026.json。历史 407 保留，不把本机结果扩大为 NAS 或其他音质通过。
+- 用户于 2026-10-27 明确授权合并 PR #5 并发布预览版。发布使用 preview tag/prerelease，保留真实 NAS/账号/ACL/资源与人工试听待验；发布动作不授权部署 NAS 或升级为稳定版。后续发行仍须以新会话授权判断，不把此次授权当作永久发布授权。
+- 发布前记录精确 Git 提交、构建提交、标签、FPK/对应源码/内容清单/SHA256；代码或锁变更需重新构建验证。最终候选 CI、实际附件摘要与已发布结果分别记录，不把旧 Actions 附件冒称为新 tag 产物。

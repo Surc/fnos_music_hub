@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "package_version": "0.1.0-preview.2",
+  "hub_version": "0.1.0a1",
+  "app_id": "fnos_music_hub",
+  "platform": "linux/amd64",
+  "cpu": "x86-64-v1",
+  "glibc_max": "2.36",
+  "rust": "1.99.1",
+  "rust_target": "x86_64-unknown-linux-musl",
+  "hot_commit": "07e86c3d06243cf1350925c0dd3be704005abd29",
+  "hot_submodule": "5dad838c33c3e4aab198d995160d3fbb9968470f",
+  "qq_commit": "27861e51432ea6b6e88dc35c4e8c8e239c0339e8",
+  "python": {
+    "version": "3.12.15",
+    "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261021/cpython-3.12.15%2B20261021-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz",
+    "sha256": "6d7521138fd33afddc1ccd08abb007d9a2829e38117c2576f9efdc0ec73ce772"
+  },
+  "ffmpeg": {
+    "version": "8.0.1",
+    "url": "https://ffmpeg.org/releases/ffmpeg-8.0.1.tar.xz",
+    "sha256": "05ee0b03119b45c0bdb4df654b96802e909e0a752f72e4fe3794f487229e5a41"
+  },
+  "musl": {
+    "version": "1.2.5",
+    "url": "https://musl.libc.org/releases/musl-1.2.5.tar.gz",
+    "sha256": "a9a118bbe84d8764da0ea0d28b3ab3fae8477fc7e4085d90102b8596fc7c75e4"
+  },
+  "fnpack": {
+    "version": "1.2.3",
+    "url": "https://static2.fnnas.com/fnpack/fnpack-1.2.3-linux-amd64",
+    "sha256": "54b97fa7b70968c4d05c79840f5daeff508957d0bb2062fdb0376d00d9615c93"
+  },
+  "netease_commit": "9c405f4bae2384d0410e63f8b816a707553d72d3",
+  "rapidfuzz": {
+    "version": "3.14.6",
+    "url": "https://files.pythonhosted.org/packages/18/97/226c43b7b5d957bc3840ed52ea99eed261f99834c4619be7a4742cbaeafa/rapidfuzz-3.14.6.tar.gz",
+    "sha256": "e13a8160d017b499ec7a2fa9d0ce1ae2e7377080815785819f966fb235d4eb60",
+    "build_backend": "scikit-build-core==0.11.6",
+    "build_config": "wheel.cmake=false"
+  }
+}

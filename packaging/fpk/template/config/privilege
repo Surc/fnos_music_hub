@@ -1,0 +1,5 @@
+{
+  "defaults": {"run-as": "package"},
+  "username": "fnos_music_hub",
+  "groupname": "fnos_music_hub"
+}

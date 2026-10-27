@@ -1,6 +1,8 @@
 # 开发版原生运行
 
-执行前先读 [功能点验收清单](ACCEPTANCE_FUNCTIONS.md)、[平台验收清单](ACCEPTANCE_PLATFORMS.md)。本环境酷我 407 限制保留为历史观察，R-KW-001/002 待用户本地复测；下载、音频校验和飞牛入库分别签收。
+2026-10-24 新增 [原生 FPK 预览打包](../packaging/fpk/README.md)，NAS 无需系统 Python/编译器/Docker；候选包构建/哈希与 NAS 验收分开记录。以下仍为源码手动运行，历史“尚未生成 FPK”描述保留对应当时阶段。
+
+执行前先读 [功能点验收清单](ACCEPTANCE_FUNCTIONS.md)、[平台验收清单](ACCEPTANCE_PLATFORMS.md)。原开发环境酷我 407 限制保留为历史观察；2026-10-26 用户本机 WSL 的 R-KW-001/002 下载技术复测通过，详见 [本地报告](HOT_LOCAL_RETEST_20261026.md)。人工试听、NAS 身份/安装和飞牛入库分别签收。
 
 当前版本 0.1.0a1 是第一条链路的开发实现，尚未生成 FPK。网关使用 Python/FastAPI + SQLite，前台为原生 HTML/CSS/JavaScript；Hot 独立进程负责实际下载调度。无需 Docker，不需要在 NAS 上安装 Node。
 
@@ -41,7 +43,7 @@ SQLite schema 3 保存会话、搜索元数据、本地收藏、不可变清单�
 
 运行 `python -m pytest -q`、`python -m ruff check hub modules tests scripts`、`npm ci && npm test`、`npm run check`、`python scripts/verify_provenance.py`。Node/jsdom 仅用于开发检查。
 
-真实 Hot 自测需在仓库外保存音频：`python scripts/live_hot_smoke.py --source /path/to/pinned/HotDownloader --work-dir /outside/project`。这会搜索并下载一首样本，记录真实音频校验结果；不测试 fnOS 身份或 FPK。当前环境两首样本均被酷我以地区限制 407 拒绝，详见 [验证记录](VALIDATION.md)。
+真实 Hot 自测需在仓库外保存音频：`python scripts/live_hot_smoke.py --source /path/to/pinned/HotDownloader --work-dir /outside/project`。这会搜索并下载一首样本，记录真实音频校验结果；不测试 fnOS 身份或 FPK。历史开发环境两首均为酷我地区限制 407；2026-10-26 用户本机 WSL 两首均完成并完整解码，详见 [验证记录](VALIDATION.md)。
 
 当前列表接口返回当前用户最近 500 条任务/资产/收藏，历史分页尚未实现；不作为完整歌单导出接口使用。QQ 扫码/关联、只读推荐和歌单分页已可选实现，真实账号仍待验收；QQ 两轮观测完整快照已实现但真实验收待执行；网易只读目录已可选接入；网易下载、云端写入、自动入库、注入接管、反馈和 FPK 均有独立准入门槛，见 [迭代计划](ITERATION.md)。
 

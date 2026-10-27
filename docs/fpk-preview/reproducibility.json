@@ -1,0 +1,12 @@
+{
+  "scope": "two isolated offline builds of final candidate commit 5a6157b0768c94ecba18865f1876e104bfbc3067",
+  "both_static_validations_passed": true,
+  "installed_contents_identical": true,
+  "fpk_sha256": [
+    "c0e7528e8c8e532388a3158ebf0b567becc11142e9914f15119fde3ef7117d32",
+    "9d0bafc343426e743dc4aeb1e57d001c36cb868d2eefe619c8225b8646cdde3e"
+  ],
+  "fpk_bytes_identical": false,
+  "source_companion_bytes_identical": true,
+  "real_nas_acceptance": "not_run"
+}

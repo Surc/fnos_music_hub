@@ -1,5 +1,25 @@
 # 验证记录
 
+## 2026-10-27：PR #5 独立复核与发布授权
+
+对精确 head `18231426815bfe1c414f317c62982ec62a14df2f` 导出审阅，85 个运行/打包/测试/CI 文件逐字节核对一致。本地 Python 3.12 基础回归 **200 passed / 29 skipped**，未安装的可选 SDK 不计作通过；包装/生命周期 **46 passed**。Ruff、shell 语法、来源/摘要/175 个文档链接检查通过。确认与成功 CI 业务 head `a0a426e241bb58cfb7fd565c1ea6bcd2d41c7491` 之间只有十个资料/证据文件变化；远端常规九项成功，原生作业日志确认包内 239 passed 与非 root 生命周期步骤成功。未发现预览代码合入的阻断缺陷。
+
+用户随后于 2026-10-27 明确授权合并发布。本次将补齐本机下载证据、最终 head CI 与预览发行记录；实际 tag/构建提交/附件 SHA256 以最终发布记录为准，不提前记成已发布。NAS 实机、QQ/网易账号、ACL/资源及录音人工试听仍待验。
+
+## 2026-10-26：用户本机酷我下载复测
+
+基线 main `823a2de946ebbd64207117d9551c7d0eb7d56237`。Windows 本机已有 Ubuntu/WSL2，Python 3.12.3；固定 Hot `07e86c3d06243cf1350925c0dd3be704005abd29`、um_crypto `5dad838c33c3e4aab198d995160d3fbb9968470f`，以 Rust 1.99.1 / dev profile 构建未修改源码，220 个 registry 包均按 Cargo.lock SHA256 校验后离线编译。二进制 SHA256 `1c3fae5df821cabec25f515d5db28d1d4693e6b56e4f1bc60117c7dc6df4ed20`；这是新构建，不与历史 Linux 二进制混同。
+
+R-KW-001/002 固定 RID、320kmp3、禁止降级，以各自独立 Hot 数据目录先走仓库原有 `scripts/live_hot_smoke.py`，再单独走原生 HTTP 搜索/任务链路。两首均完成，真实 MP3 320000 bps，完整解码/时长校验通过，每首原生与 Hub 资产 SHA256 一致；独立来源协议探测均 HTTP 200 / 业务码 200。**本机未复现 407**；没有修改下载实现或上游源码。详见 [说明](HOT_LOCAL_RETEST_20261026.md) 与 [脱敏 JSON](HOT_SMOKE_LOCAL_20261026.json)。
+
+现有下载/任务恢复定向回归 `tests/test_core.py tests/test_review_regressions.py`：**40 passed**，保留既有 Starlette/httpx 弃用提示。Ruff、来源/摘要/文档链接检查和 `git diff --check` 通过；Windows 自动 CRLF 检出造成的 13 处摘要差异已按原记录 SHA256 恢复为精确 LF 字节，未改变 Git 内容。这些自动回归与上述真实下载分别记录。人工试听录音、真实飞牛身份/双用户、NAS 安装、入库与 FPK 均未验收；音频、引擎日志、凭据及临时链接不进入 Git，2026-10-21 两首 407 历史不改写。
+
+## 2026-10-25：PR #5 网易整合预览验证
+
+最终结果：常规 CI 40173694578 九项与原生 CI 40173694577 全部成功。FPK 66,760,897 bytes / 6623 安装文件、包内 239 passed、非 root 十二项生命周期/故障检查通过。已下载主附件核对 ZIP/FPK/源码与七个文件摘要；首次 libstdc++ 拦截和修复均保留。详细报告、来源与真实待验边界见 [整合证据](fpk-preview/NETEASE.md)。
+
+本轮基线为最新 main `823a2de946ebbd64207117d9551c7d0eb7d56237` 与原生分支 `c3eb70f`。新 `preview.2` 的精确源码、构建/SHA256、CI 和自动检查单列 [整合证据](fpk-preview/NETEASE.md)，不沿用 preview.1 的 5915 文件/旧哈希。旧记录均为历史结果；真实账号、完整音乐下载与 J4125/fnOS 安装升级/性能没有执行。
+
 ## 2026-10-24：PR #4 独立审核与修复复核
 
 交付结果：修复 head `0a5118200e2d9371109371b13f2cdcf89a9d4bf8` / tree `f8d9c41300039fd0e8dfa9dea0ecbf28d0c026bf` 与本地已测一致；[该提交 PR CI 40085536584](https://github.com/Surc/fnos_music_hub/actions/runs/40085536584) 八项全部成功，含 Python 3.11/3.12 基础、QQ、网易、web、browser。无未解决线程，已提交 [Comment 审核](https://github.com/Surc/fnos_music_hub/pull/4#pullrequestreview-5637917573)；因同为 PR 作者，没有提交或宣称第三方批准。随后转 Ready 并合并，main 为 `84f814d997017b07c28b821f70db5fdc7c5cbe9b`（2026-10-24 18:26:12，UTC+8）。[合并页面凭证](netease-pr4-merged.jpg)。来源采用记录在确认合并后更新；实际账号/NAS 待验状态不变。
@@ -29,6 +49,30 @@
 远端交付：[PR #4](https://github.com/Surc/fnos_music_hub/pull/4) 为 Draft/Open。代码提交 `cd95d020556ccd7708f0953976e802e963f933c2` 的内容树 `727801a07856d18a02de22ed21b22816f4d9b2b7` 与本地已测 `93d2266` 完全相同；[push 40077854755](https://github.com/Surc/fnos_music_hub/actions/runs/40077854755) 和 [PR 40078076740](https://github.com/Surc/fnos_music_hub/actions/runs/40078076740) 各八项全部通过：core/QQ/网易的 Python 3.11/3.12、web、browser。远端网易 3.11 日志确认 **161 passed / 1 skipped** 及依赖检查通过；其他矩阵和标准 Chromium 十视口同时通过。追加资料不改变运行代码、上游采用或真实验收状态。[PR 创建记录](netease-ui-screenshots/pr-draft.jpg) 为当时截图。
 
 浏览器证据（真实 Chromium、合成 API）：[原始报告](netease-ui-screenshots/browser-report.json)，[PC 横屏](netease-ui-screenshots/netease-pc-landscape.png)、[PC 竖屏](netease-ui-screenshots/netease-pc-portrait.png)、[手机竖屏](netease-ui-screenshots/netease-mobile-portrait.png)、[手机横屏](netease-ui-screenshots/netease-mobile-landscape.png)。
+
+## 2026-10-24：第一个实际 FPK 候选
+
+开发机的输入构建、离线组包和静态校验已实际执行，详见 [候选证据](fpk-preview/EVIDENCE.md) 和原始 JSON 报告。候选 `0.1.0-preview.1` 的源码提交为本地 `5a6157b0768c94ecba18865f1876e104bfbc3067`；两次隔离临时目录的离线构建均通过 5915 个安装文件及 fnpack MD5/SHA256/权限校验，安装内容和对应源码相同，外层 FPK 字节不同，不承诺 fnpack 字节级确定性。交付选构建 A，SHA256 `c0e7528e8c8e532388a3158ebf0b567becc11142e9914f15119fde3ef7117d32`。
+
+最终 Python **157 passed**（原生包装 37 项），jsdom **31 passed**，语法/Ruff/来源/差异检查通过。实际包内 Python 原生扩展/加密/SQLite、Hub + 两个 Hot 的回环健康和私有设置、生成 MP3/FLAC 的同 FD probe/完整解码通过；这组在开发机以 root 运行真实组件，没有通过监督器，也没有连接音桥或音乐平台账号。
+
+完整监督器本地 smoke 被 UID=0/procfs 不一致阻断，真实非 root Linux 结果留给 PR 的预览工作流。一次共享目录重复组包出现权限差异并被校验拦截，未签收；改用独立 `/tmp` 的两轮均通过。官方 fnpack 会往 app.tgz 注入两份权限配置，并把输出放在调用工作目录；已适配且拒绝重复归档成员。没有篡改/放宽实际内容校验来接受失败包。
+
+未发布正式 Release、未合并本轮 PR、未部署 NAS。J4125/fnOS 安装/升级/回滚/卸载/ACL/资源、真实身份/账号、完整音乐下载和历史酷我 407 仍单独待验。
+
+最终候选包含 TRIM_APPDEST/TRIM_PKGVAR 符号链接路径归一化，以及首个真实非 root CI 发现的 TCP TIME_WAIT 重启修复。首轮 CI 输入和 FPK 静态步骤成功，生命周期在退出后重启时报 EADDRINUSE；端口预检已启用 SO_REUSEADDR，并以真实 TCP 测试证明仍拒绝活动监听。保留 [失败原始摘要](fpk-preview/ci-first-run.json)，修复后的工作流结果见 PR #5 检查，不覆盖失败记录。
+
+## 2026-10-24：原生 FPK 预览实现与构建准备
+
+基线 main `04677d32b96a0b824c2148001458d581f9f8f22c`。官方 `llms-full.txt` 直接 HTTPS 可达，fnpack 1.2.3 下载摘要与 `--help/create/build --help` 已核对；固定下载/组件见 `packaging/fpk/versions.json`。原 Hot 和子模块已按固定 SHA 取得，Rust 1.99.1/musl 静态 Hot 已在开发机编译完成；不是 NAS 构建/运行验收。
+
+本地 Python 3.12.15 + 固定 QQ SDK 完整业务/打包回归 **150 passed**，包含新增 **30 项**原生包装受控测试；仅保留既有 Starlette/httpx 弃用提示。覆盖配置重装保留、私有 token、端口/路径/HTTPS 拒绝、PID 复用、串行锁、备份/失败/完整性、数据库与密钥回滚、卸载保留、输入篡改/归档穿越/音频密钥排除及图标/身份一致性。实际候选包结果完成后另追加，不以脚本通过代替 FPK 构建。
+
+当前运行器 UID=0，且 Python PID 与 procfs self PID 不一致；生产监督器拒绝此环境，真服务集成需普通非 root Linux。受控测试不算真监督器或 fnOS 安装通过。新增手动 Actions 预览工作流执行输入/组包与普通 Linux 真服务 smoke；源码接入不代表已运行。
+
+首轮离线准备在 ELF 校验中拦截 Hot：虽无 NEEDED 动态库，musl GCC 的默认 PIE 仍写入 `/lib/ld-musl-x86_64.so.1` 解释器；该轮未进入 fnpack，不记为构建成功。随后显式静态 relocation/GCC 链接遇到 Rust rlib 格式错误，改用固定工具链内的 rust-lld 和独立 target 目录，最终产物须重新检查。另移除 pip 的绝对 staging shebang/本地 direct URL，重建安装 RECORD，避免产物泄漏开发路径或因组包目录不同而漂移。
+
+保留历史酷我 407、QQ/NAS/手机实机待验状态。本轮不连接真实账号/NAS、不下载音乐、不接管官方 Socket、不改 ext，不创建正式 Release。
 
 ## 2026-10-23：Astra 整体审核修复
 

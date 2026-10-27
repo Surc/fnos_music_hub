@@ -1,0 +1,208 @@
+{
+  "run_id": "local-wsl-20261026",
+  "checked_at": "2026-10-26T16:54:03.861371+08:00",
+  "hub_commit": "823a2de946ebbd64207117d9551c7d0eb7d56237",
+  "hot_commit": "07e86c3d06243cf1350925c0dd3be704005abd29",
+  "hot_submodule_um_crypto": "5dad838c33c3e4aab198d995160d3fbb9968470f",
+  "hot_binary_sha256": "1c3fae5df821cabec25f515d5db28d1d4693e6b56e4f1bc60117c7dc6df4ed20",
+  "compiler": "rustc 1.99.1, Linux x86_64, dev profile",
+  "host": "Windows desktop + existing Ubuntu WSL2",
+  "linux_release": "6.6.87.2-microsoft-standard-WSL2",
+  "python": "3.12.3",
+  "network": "Existing local WSL network, no custom proxy or IP change; no private music-platform account",
+  "scope": "Real native Hot tasks + Hub catalog/outbox/reconciliation/full audio decode; no fnOS authentication, NAS or FPK",
+  "regression": "tests/test_core.py + tests/test_review_regressions.py: 40 passed",
+  "samples": [
+    {
+      "case_id": "R-KW-001",
+      "keyword": "DAYBREAK'S BELL",
+      "track": {
+        "provider": "kuwo",
+        "id_type": "rid",
+        "id": "142276943"
+      },
+      "requested_quality": "320kmp3",
+      "auto_downgrade": false,
+      "native_http": [
+        {
+          "method": "GET",
+          "path": "/api/settings",
+          "status": 200
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/settings",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "path": "/api/music/songs/search",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "path": "/api/tasks",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/tasks",
+          "status": 200
+        }
+      ],
+      "metadata": {
+        "title": "DAYBREAK'S BELL",
+        "artist": "L'Arc〜en〜Ciel",
+        "album": "デイブレイクズベル",
+        "duration_seconds": 252.0
+      },
+      "native_status": "completed",
+      "native_audio": {
+        "bytes": 10096054,
+        "sha256": "563bb76d71ca869a545e8dda354cecea1d0fddafde92fa98c547276069940011",
+        "duration_seconds": 252.36898,
+        "codec": "mp3",
+        "container": "mp3",
+        "bitrate": 320000,
+        "validation": "full_decode"
+      },
+      "native_audio_matches_requested_rid_metadata": true,
+      "source_link_probe": {
+        "http_status": 200,
+        "business_code": 200,
+        "bitrate_kbps": 320,
+        "format": "mp3",
+        "download_url_present": true
+      },
+      "hub": {
+        "scope": "real Hot HTTP + Hub catalog/outbox/audio validation; no fnOS auth",
+        "source_commit": "07e86c3d06243cf1350925c0dd3be704005abd29",
+        "binary_sha256": "1c3fae5df821cabec25f515d5db28d1d4693e6b56e4f1bc60117c7dc6df4ed20",
+        "keyword": "DAYBREAK'S BELL",
+        "rid": "142276943",
+        "quality": "320kmp3",
+        "search_count": 30,
+        "found_title": "DAYBREAK'S BELL",
+        "duration_expected": 252.0,
+        "task_status": "completed",
+        "assets": [
+          {
+            "track": {
+              "id": "142276943",
+              "id_type": "rid",
+              "provider": "kuwo"
+            },
+            "bytes": 10096054,
+            "sha256": "563bb76d71ca869a545e8dda354cecea1d0fddafde92fa98c547276069940011",
+            "codec": "mp3",
+            "duration_seconds": 252.36898,
+            "bitrate": 320000,
+            "validation": "full_decode",
+            "index_status": "unsupported"
+          }
+        ],
+        "errors": []
+      },
+      "comparison": "technical_pass",
+      "listening_recording_confirmation": "pending_human_listening",
+      "nas_identity_installation_indexing": "not_tested"
+    },
+    {
+      "case_id": "R-KW-002",
+      "keyword": "晴天",
+      "track": {
+        "provider": "kuwo",
+        "id_type": "rid",
+        "id": "228908"
+      },
+      "requested_quality": "320kmp3",
+      "auto_downgrade": false,
+      "native_http": [
+        {
+          "method": "GET",
+          "path": "/api/settings",
+          "status": 200
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/settings",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "path": "/api/music/songs/search",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "path": "/api/tasks",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/tasks",
+          "status": 200
+        }
+      ],
+      "metadata": {
+        "title": "晴天",
+        "artist": "周杰伦",
+        "album": "叶惠美",
+        "duration_seconds": 269.0
+      },
+      "native_status": "completed",
+      "native_audio": {
+        "bytes": 10792943,
+        "sha256": "69057d49ba210910427a5bc8c433e0cbf4fc62030f9dffb983819de4bc6ecadf",
+        "duration_seconds": 269.792653,
+        "codec": "mp3",
+        "container": "mp3",
+        "bitrate": 320000,
+        "validation": "full_decode"
+      },
+      "native_audio_matches_requested_rid_metadata": true,
+      "source_link_probe": {
+        "http_status": 200,
+        "business_code": 200,
+        "bitrate_kbps": 320,
+        "format": "mp3",
+        "download_url_present": true
+      },
+      "hub": {
+        "scope": "real Hot HTTP + Hub catalog/outbox/audio validation; no fnOS auth",
+        "source_commit": "07e86c3d06243cf1350925c0dd3be704005abd29",
+        "binary_sha256": "1c3fae5df821cabec25f515d5db28d1d4693e6b56e4f1bc60117c7dc6df4ed20",
+        "keyword": "晴天",
+        "rid": "228908",
+        "quality": "320kmp3",
+        "search_count": 30,
+        "found_title": "晴天",
+        "duration_expected": 269.0,
+        "task_status": "completed",
+        "assets": [
+          {
+            "track": {
+              "id": "228908",
+              "id_type": "rid",
+              "provider": "kuwo"
+            },
+            "bytes": 10792943,
+            "sha256": "69057d49ba210910427a5bc8c433e0cbf4fc62030f9dffb983819de4bc6ecadf",
+            "codec": "mp3",
+            "duration_seconds": 269.792653,
+            "bitrate": 320000,
+            "validation": "full_decode",
+            "index_status": "unsupported"
+          }
+        ],
+        "errors": []
+      },
+      "comparison": "technical_pass",
+      "listening_recording_confirmation": "pending_human_listening",
+      "nas_identity_installation_indexing": "not_tested"
+    }
+  ],
+  "source_http_evidence_note": "source_link_probe observes a separate request matching the pinned Hot source protocol in the same environment. It does not capture the internal Hot request response headers.",
+  "historical_evidence": "docs/HOT_SMOKE_20261021.json",
+  "human_recording_confirmation": "Not performed; matching RID/title/artist/album, duration, quality and full decode are technical checks only."
+}

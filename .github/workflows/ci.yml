@@ -16,7 +16,8 @@ jobs:
       - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg
       - run: python -m pip install -r requirements.lock -r requirements-dev.txt
       - run: python -m pytest -q
-      - run: python -m ruff check hub modules tests scripts
+      - run: python -m ruff check hub modules tests scripts packaging/fpk
+      - run: for script in packaging/fpk/template/cmd/* packaging/fpk/template/app/ui/index.cgi packaging/fpk/build.sh; do sh -n "$script"; done
       - run: python scripts/verify_provenance.py
       - run: python -m pip wheel . --no-deps --wheel-dir /tmp/hub-wheel
   web:
@@ -60,6 +61,17 @@ jobs:
       - run: python -m pip check
       - run: python -m pytest -q
       - run: python -m pip wheel '.[netease]' --no-deps --wheel-dir /tmp/hub-wheel
+  combined:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg
+      - run: python -m pip install -r requirements-qq.lock -r requirements-netease.lock -r requirements-dev.txt
+      - run: python -m pip check
+      - run: python -m pytest -q
   browser:
     runs-on: ubuntu-24.04
     steps:
