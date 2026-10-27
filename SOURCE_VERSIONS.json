@@ -363,7 +363,7 @@
     },
     "personal_skill_git_commit": "7eb69ae91521f04e6d2f7bcf0229fd791fdb477e",
     "personal_sync": {
-      "status": "pending_local_copy",
+      "status": "local_copy_verified_no_personal_git_checkout",
       "note": "No personal Skills Git checkout is configured on this host; historical personal_skill_git_commit remains historical."
     }
   },
