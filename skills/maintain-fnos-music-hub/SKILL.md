@@ -101,3 +101,9 @@ description: 维护 Surc/fnos_music_hub 独立飞牛音乐中心。用于接续�
 - 运行 `tests/test_fpk_native.py`、普通 Linux 的 `native_smoke.py` 和实际 FPK 校验。root 或 procfs/PID 命名空间不一致的运行器必须记录真服务 smoke blocked，不加生产绕过；J4125/8GB 资源、真实账号/完整下载与 fnOS 安装升级另签收。预览工作流只上传 Actions 附件，本轮不发布正式 Release 或部署 NAS。
 
 - 网易整合预览从已合并 main 接续；固定 MusicBox wheel/传递依赖及 LICENSE/NOTICE/对应源码进入离线闭包。默认关闭、启用/缺依赖与 QQ/酷我/双用户兼容必须在实际包内验证；预览版本/附件明确区分集成状态，不沿用旧包证据。
+
+## 本机下载复测与预览发行（2026-10-27）
+
+- 2026-10-26 用户本机 WSL 的 R-KW-001/002 原生 Hot 与 Hub 均取得 320 kbps MP3，完整解码/时长校验通过，各曲跨链路 SHA256 一致；证据见 docs/HOT_LOCAL_RETEST_20261026.md 与 docs/HOT_SMOKE_LOCAL_20261026.json。历史 407 保留，不把本机结果扩大为 NAS 或其他音质通过。
+- 用户于 2026-10-27 明确授权合并 PR #5 并发布预览版。发布使用 preview tag/prerelease，保留真实 NAS/账号/ACL/资源与人工试听待验；发布动作不授权部署 NAS 或升级为稳定版。后续发行仍须以新会话授权判断，不把此次授权当作永久发布授权。
+- 发布前记录精确 Git 提交、构建提交、标签、FPK/对应源码/内容清单/SHA256；代码或锁变更需重新构建验证。最终候选 CI、实际附件摘要与已发布结果分别记录，不把旧 Actions 附件冒称为新 tag 产物。

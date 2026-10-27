@@ -1,5 +1,19 @@
 # 验证记录
 
+## 2026-10-27：PR #5 独立复核与发布授权
+
+对精确 head `18231426815bfe1c414f317c62982ec62a14df2f` 导出审阅，85 个运行/打包/测试/CI 文件逐字节核对一致。本地 Python 3.12 基础回归 **200 passed / 29 skipped**，未安装的可选 SDK 不计作通过；包装/生命周期 **46 passed**。Ruff、shell 语法、来源/摘要/175 个文档链接检查通过。确认与成功 CI 业务 head `a0a426e241bb58cfb7fd565c1ea6bcd2d41c7491` 之间只有十个资料/证据文件变化；远端常规九项成功，原生作业日志确认包内 239 passed 与非 root 生命周期步骤成功。未发现预览代码合入的阻断缺陷。
+
+用户随后于 2026-10-27 明确授权合并发布。本次将补齐本机下载证据、最终 head CI 与预览发行记录；实际 tag/构建提交/附件 SHA256 以最终发布记录为准，不提前记成已发布。NAS 实机、QQ/网易账号、ACL/资源及录音人工试听仍待验。
+
+## 2026-10-26：用户本机酷我下载复测
+
+基线 main `823a2de946ebbd64207117d9551c7d0eb7d56237`。Windows 本机已有 Ubuntu/WSL2，Python 3.12.3；固定 Hot `07e86c3d06243cf1350925c0dd3be704005abd29`、um_crypto `5dad838c33c3e4aab198d995160d3fbb9968470f`，以 Rust 1.99.1 / dev profile 构建未修改源码，220 个 registry 包均按 Cargo.lock SHA256 校验后离线编译。二进制 SHA256 `1c3fae5df821cabec25f515d5db28d1d4693e6b56e4f1bc60117c7dc6df4ed20`；这是新构建，不与历史 Linux 二进制混同。
+
+R-KW-001/002 固定 RID、320kmp3、禁止降级，以各自独立 Hot 数据目录先走仓库原有 `scripts/live_hot_smoke.py`，再单独走原生 HTTP 搜索/任务链路。两首均完成，真实 MP3 320000 bps，完整解码/时长校验通过，每首原生与 Hub 资产 SHA256 一致；独立来源协议探测均 HTTP 200 / 业务码 200。**本机未复现 407**；没有修改下载实现或上游源码。详见 [说明](HOT_LOCAL_RETEST_20261026.md) 与 [脱敏 JSON](HOT_SMOKE_LOCAL_20261026.json)。
+
+现有下载/任务恢复定向回归 `tests/test_core.py tests/test_review_regressions.py`：**40 passed**，保留既有 Starlette/httpx 弃用提示。Ruff、来源/摘要/文档链接检查和 `git diff --check` 通过；Windows 自动 CRLF 检出造成的 13 处摘要差异已按原记录 SHA256 恢复为精确 LF 字节，未改变 Git 内容。这些自动回归与上述真实下载分别记录。人工试听录音、真实飞牛身份/双用户、NAS 安装、入库与 FPK 均未验收；音频、引擎日志、凭据及临时链接不进入 Git，2026-10-21 两首 407 历史不改写。
+
 ## 2026-10-25：PR #5 网易整合预览验证
 
 最终结果：常规 CI 40173694578 九项与原生 CI 40173694577 全部成功。FPK 66,760,897 bytes / 6623 安装文件、包内 239 passed、非 root 十二项生命周期/故障检查通过。已下载主附件核对 ZIP/FPK/源码与七个文件摘要；首次 libstdc++ 拦截和修复均保留。详细报告、来源与真实待验边界见 [整合证据](fpk-preview/NETEASE.md)。

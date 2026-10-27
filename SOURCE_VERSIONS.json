@@ -2,7 +2,7 @@
   "schema_version": 1,
   "repository": "Surc/fnos_music_hub",
   "stage": "native-fpk-netease-preview-development",
-  "recorded_on": "2026-10-25",
+  "recorded_on": "2026-10-27",
   "observation_policy": "Most observations remain the fixed-source v1.6 research of 2026-10-21. MusicBox and legacy ext were rechecked on 2026-10-24 at the same recorded SHAs. Adopted pins require merged Hub code; branch implementation and real acceptance are separate.",
   "design_archive": {
     "path": "docs/design-goals-v1.6-20261021.txt",
@@ -355,19 +355,25 @@
   ],
   "maintenance_skill": {
     "name": "maintain-fnos-music-hub",
-    "version": "1.5.1",
+    "version": "1.5.2",
     "files": {
-      "skills/maintain-fnos-music-hub/SKILL.md": "3d7278526351e558af9bc8ff2bf0079ccb88bab1ecc191fbba3ba187f37a0c83",
+      "skills/maintain-fnos-music-hub/SKILL.md": "2623ca6e2d0ee93db1b702f9e67eb21318296ea1abb47a9eb55fd2413f5241b4",
       "skills/maintain-fnos-music-hub/agents/openai.yaml": "43f885a269d77d2173f7480c43e58afcab96777c2546511cdaeb4636349ed40d",
       "skills/maintain-fnos-music-hub/assets/icon.svg": "8936b24f674a1250d999e2c2b5901374fb4240426f32bd1ae340c352a90d617d"
     },
-    "personal_skill_git_commit": "7eb69ae91521f04e6d2f7bcf0229fd791fdb477e"
+    "personal_skill_git_commit": "7eb69ae91521f04e6d2f7bcf0229fd791fdb477e",
+    "personal_sync": {
+      "status": "pending_local_copy",
+      "note": "No personal Skills Git checkout is configured on this host; historical personal_skill_git_commit remains historical."
+    }
   },
   "project_release": {
     "tag": null,
     "commit": null,
     "assets": [],
-    "status": "not_released"
+    "status": "prerelease_authorized_pending_final_ci",
+    "candidate_tag": "v0.1.0-preview.2",
+    "prerelease": true
   },
   "development_version": "0.1.0a1",
   "implemented_adapters": [
@@ -384,8 +390,10 @@
       "upstream_patch_files": [],
       "runtime_isolation": "one private native Hot process/data-directory/port per configured fnOS GUID",
       "live_search": "passed_two_samples",
-      "live_download": "region_restricted_407",
-      "evidence": "docs/HOT_SMOKE_20261021.json"
+      "live_download": "2026-10-26: two_fixed_samples_technical_pass_on_user_local_wsl_listening_and_nas_pending",
+      "evidence": "docs/HOT_SMOKE_LOCAL_20261026.json",
+      "historical_live_download": "2026-10-21: region_restricted_407",
+      "historical_evidence": "docs/HOT_SMOKE_20261021.json"
     },
     {
       "component": "FnIdentity",
@@ -492,18 +500,18 @@
     }
   },
   "acceptance": {
-    "recorded_on": "2026-10-23",
+    "recorded_on": "2026-10-26",
     "functional_checklist": "docs/ACCEPTANCE_FUNCTIONS.md",
     "platform_checklist": "docs/ACCEPTANCE_PLATFORMS.md",
     "ui_proposal": "docs/UI_REVIEW.md",
     "ui_review_status": "authorized_implemented_for_current_backend_capabilities",
-    "kuwo_live_download_status": "environment_limited_pending_user_local_retest",
+    "kuwo_live_download_status": "two_fixed_samples_technical_pass_on_user_local_wsl_listening_and_nas_pending",
     "local_retest_cases": [
       "R-KW-001",
       "R-KW-002"
     ],
     "historical_evidence": "docs/HOT_SMOKE_20261021.json",
-    "local_retest_evidence": null,
+    "local_retest_evidence": "docs/HOT_SMOKE_LOCAL_20261026.json",
     "responsive_ui": {
       "required_contexts": [
         "pc_landscape",
@@ -817,6 +825,34 @@
       "review_id": 5637917573,
       "hub_merge_commit": "84f814d997017b07c28b821f70db5fdc7c5cbe9b",
       "merge_screenshot_sha256": "e3999e8729d5aa73379b6d545b4ff23234ee515ff3279d6603db35a7eaf96044"
+    },
+    "kuwo_local_retest": {
+      "run_id": "local-wsl-20261026",
+      "hub_commit": "823a2de946ebbd64207117d9551c7d0eb7d56237",
+      "environment": "Windows desktop + existing Ubuntu WSL2; no custom proxy/IP change",
+      "result": "R-KW-001/002: native Hot and Hub completed, full_decode, 320000 bps, matching per-sample SHA256",
+      "source_http_and_business_status": "separate pinned-protocol source probes: HTTP 200 / business code 200 for both samples",
+      "historical_result": "2026-10-21: region_restricted_407, unchanged",
+      "human_listening": "pending",
+      "real_nas_identity_installation": "not_tested",
+      "evidence_files_sha256": {
+        "docs/HOT_SMOKE_LOCAL_20261026.json": "064c74c8877ff9455342c057e6a93de8399a4c0c31bdb73da5871174bf5ee32b"
+      }
+    },
+    "pr5_independent_review": {
+      "reviewed_head": "18231426815bfe1c414f317c62982ec62a14df2f",
+      "local_basic_python_passed": 200,
+      "local_optional_skipped": 29,
+      "native_packaging_passed": 46,
+      "ruff": "passed",
+      "shell_syntax": "passed",
+      "provenance": "passed",
+      "regular_ci": 40173694578,
+      "native_ci": 40173694577,
+      "ci_implementation_head": "a0a426e241bb58cfb7fd565c1ea6bcd2d41c7491",
+      "post_ci_changes": "documentation/evidence only",
+      "decision": "eligible_for_preview_merge; final publication CI pending",
+      "real_nas_acceptance": "not_run"
     }
   },
   "native_preview": {
