@@ -53,6 +53,9 @@ const server = http.createServer(async (req, res) => {
 });
 await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
+// Route a real insecure LAN origin to our local synthetic server. Localhost alone
+// is a secure context and would hide unsupported randomUUID calls on LAN HTTP.
+const lanOrigin = "http://192.168.1.6:8790";
 await mkdir("test-results", { recursive: true });
 const report = {
   scope:
@@ -158,10 +161,23 @@ try {
       isMobile: mobile,
       hasTouch: mobile,
     });
+    await context.route(`${lanOrigin}/**`, async (route) => {
+      const url = new URL(route.request().url());
+      await route.fulfill({
+        response: await route.fetch({
+          url: origin + url.pathname + url.search,
+        }),
+      });
+    });
     const page = await context.newPage();
     const errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
-    await page.goto(origin);
+    await page.goto(lanOrigin);
+    assert.equal(await page.evaluate(() => isSecureContext), false);
+    assert.equal(
+      await page.evaluate(() => typeof crypto.randomUUID),
+      "undefined",
+    );
     await page.locator("#login-form").waitFor();
     await layout(page);
     await page.getByLabel("用户名", { exact: true }).fill("synthetic-user");
@@ -579,6 +595,7 @@ try {
       width,
       height,
       touch: mobile,
+      transport: "insecure LAN HTTP origin routed to local synthetic API",
       status: "passed",
       coverage:
         "login/search/unknown metadata/bulk/confirmation/tasks/region details/files with actual container and codec/QQ QR confirmation and explicit binding/QQ recommendations and guess songs/QQ playlist page-only details/failed next page retries the same page/two-pass snapshot UI/1000 ordered snapshot entries/local snapshot history after unlink/confirmed local deletion/NetEase explicit UID consent and rotation-preserved Cookie form/private playlists/duplicate and unknown entries/read-only recommendation songs/unlink/storage/injection/collections/logout/overflow",

@@ -1,5 +1,11 @@
 # 验证记录
 
+## 2026-10-27：preview.3 内网 HTTP 测试候选
+
+新增显式内网模式与错误音桥默认地址修正，详见 [内网说明](fpk-preview/LAN_TEST.md)。本机 WSL Python 3.12 全量 **217 passed / 29 skipped**（未安装可选 SDK）；其中身份/原生包装定向 **83 passed**。Ruff、Node 语法、**37项 jsdom** 和来源校验通过。新增配置拒绝公网/域名/loopback/CGNAT/IPv6/链路本地、安装失败不留错误配置、指定接口端口检查、Cookie/Host/Origin/CSRF及双用户会话/清单隔离。保留已有测试，不放宽认证或改地区限制记录。
+
+本机 Edge Chromium 156.0.4314.42 以不安全 HTTP LAN origin（路由至本地合成API）检查 **十视口全部通过**（[原始报告](fpk-preview/lan-browser-report.json)），明确断言 isSecureContext=false、randomUUID不存在；覆盖登录、下载确认/幂等编号、快照、退出、旋转和布局。实际构建、包内业务回归与普通Linux的选定LAN接口真服务验证另行补录，不以此前preview.2报告替代。音桥1.0.7公开FPK的字节数/SHA256与上游一致，仅下载校验未安装；用户NAS、音桥真实登录、ACL/资源及完整下载仍待执行。
+
 ## 2026-10-27：合并提交的实际预览发行验收
 
 PR #5 合并/标签/实际构建提交均为 `d66d395254594ab08b7f09613d5df953bf792074`，GitHub prerelease 已于 2026-10-27 22:51:36 +08:00 公开。最终 PR 常规运行 40520258014 attempt 2 九项成功（仅重跑停滞的未完成组合项）；原生 40520258147 成功。合并提交常规 40522337002 九项成功，重新原生发行构建 40522382993 的包内 239 passed、非 root 十二项成功。下载两份新 CI ZIP 验 SHA256，九份附件逐项验证，实际 FPK 的 6623 文件/权限/链接通过独立复核；上传后九份 GitHub 资产大小和 SHA256 均一致。详见 [最终发行记录](fpk-preview/RELEASE_20261027.md) 和对应原始报告。

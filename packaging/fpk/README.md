@@ -2,7 +2,7 @@
 
 2026-10-27 已公开 [v0.1.0-preview.2 GitHub prerelease](https://github.com/Surc/fnos_music_hub/releases/tag/v0.1.0-preview.2)，标签与实际构建提交均为 `d66d395254594ab08b7f09613d5df953bf792074`。最终发行附件和校验见 [发行记录](../../docs/fpk-preview/RELEASE_20261027.md)；下文的原生使用/升级/验收边界继续适用。
 
-包版本 `0.1.0-preview.2`，业务版本仍为 `0.1.0a1`。本目录实现输入准备、离线组包、产物校验和原生生命周期。**是否实际生成 FPK、SHA256、普通 Linux 服务测试及 J4125 安装验收分别以 `build-report.json`、`native-smoke.json` 和 [验证记录](../../docs/VALIDATION.md) 为准。** 不发布正式 Release，不部署真实 NAS。
+当前内网测试候选包版本 `0.1.0-preview.3`（尚未发布）；已发布 preview.2 不支持直接内网 HTTP。使用步骤见 [内网测试](../../docs/fpk-preview/LAN_TEST.md)。业务版本仍为 `0.1.0a1`。本目录实现输入准备、离线组包、产物校验和原生生命周期。**是否实际生成 FPK、SHA256、普通 Linux 服务测试及 J4125 安装验收分别以 `build-report.json`、`native-smoke.json` 和 [验证记录](../../docs/VALIDATION.md) 为准。** 不发布正式 Release，不部署真实 NAS。
 
 ## 官方契约与工具
 
@@ -46,7 +46,7 @@ sh packaging/fpk/build.sh /build/hub-inputs /build/hub-preview
 
 不联网、不编译。以 `--no-index --no-deps --no-compile` 安装本地 wheels；仅复制明确允许且受 Git 管理的 Python/静态资源，不复制整个工作目录。官方 fnpack 完成后，直接打开实际 FPK，核对 ID/版本、非 root 权限、脚本执行位、`app.tgz` MD5 和每个安装文件的 SHA256/权限/链接。拒绝音频、数据库、密钥、用户配置、运行日志及外部链接。
 
-输出包含实际成功生成的 `fnos-music-hub-0.1.0-preview.2-amd64.fpk`、同版本 `-sources.tar.gz`、`SHA256SUMS`、`build-report.json` 和可审阅的 `stage/`。对应源码附件包含 Hot/子模块、固定 QQ SDK/MusicBox、所有 PyPI wheel 对应的同版本 sdist（含下载 URL/SHA256）、FFmpeg/musl 原始源码及 Hub 源码/构建说明；不在 FPK 内携带测试音频。包内保留所有许可证及 wheel 自带许可，分发时同时提供对应源码附件。QQ SDK 仍可选启用，许可证为 GPL-3.0-or-later；MusicBox 为 MIT，原始 LICENSE 单独保留。上游没有 NOTICE 时在 PYTHON-NOTICE.txt 如实记录，所有 wheel 自带 LICENSE/NOTICE 仍在 site-packages；wheelhouse.json 与 python-sources.json 可逐组件核对。
+输出包含实际成功生成的 `fnos-music-hub-0.1.0-preview.3-amd64.fpk`、同版本 `-sources.tar.gz`、`SHA256SUMS`、`build-report.json` 和可审阅的 `stage/`。对应源码附件包含 Hot/子模块、固定 QQ SDK/MusicBox、所有 PyPI wheel 对应的同版本 sdist（含下载 URL/SHA256）、FFmpeg/musl 原始源码及 Hub 源码/构建说明；不在 FPK 内携带测试音频。包内保留所有许可证及 wheel 自带许可，分发时同时提供对应源码附件。QQ SDK 仍可选启用，许可证为 GPL-3.0-or-later；MusicBox 为 MIT，原始 LICENSE 单独保留。上游没有 NOTICE 时在 PYTHON-NOTICE.txt 如实记录，所有 wheel 自带 LICENSE/NOTICE 仍在 site-packages；wheelhouse.json 与 python-sources.json 可逐组件核对。
 
 `SOURCE_DATE_EPOCH` 固定源码日期，包内容清单应稳定；fnpack 归档层的字节稳定性以实际重复构建结果为准，不因流程可重放便声称包字节一致。
 
@@ -57,7 +57,7 @@ sh packaging/fpk/build.sh /build/hub-inputs /build/hub-preview
 | 路径 | 行为 |
 | --- | --- |
 | `target/runtime`、`server`、`bin`、`native`、`ui`、`licenses` | 可替换程序/资源，无用户数据 |
-| `var/config/hub.json` | 独立实例 ID、音桥 URL、HTTPS origin、GUID/端口/下载目录；0600，仅首次初始化 |
+| `var/config/hub.json` | 独立实例 ID、音桥 URL、访问 origin/显式内网测试开关、GUID/端口/下载目录；0600，仅首次初始化 |
 | `var/config/secrets.json` | 可选音桥 key 与本机生成的逐用户 Hot token；0600，不记录/展示内容 |
 | `var/state` | Hub 数据库/vault.key、会话/收藏/快照、逐用户 Hot 状态；0700；备份完整目录含 SQLite 辅助文件 |
 | `var/downloads/<用户目录>` | 用户互不重叠的私有下载根；不随升级复制，不扫描旧 ext，不自动入库 |
@@ -66,7 +66,7 @@ sh packaging/fpk/build.sh /build/hub-inputs /build/hub-preview
 | `var/active-program`、`var/rollback` | 仅指向本应用 target/backups；保留旧可运行程序应对新 Python 无法启动 |
 | `var/failed-config-*`、`var/failed-state-*` | 回滚前的新状态副本，供本地排查，不上传 |
 
-安装向导填写实际 HTTPS 根地址和音桥 API，已有配置永不覆盖。首次 `users={}`、`admin_guids=[]`、`qq_accounts_enabled=false`、`netease_enabled=false`；可登录通过 `/api/me` 核对本人可信 GUID，未配置用户不能搜索/下载。管理员停服后编辑 `var/config/hub.json`，将如下片段合并进已有配置，保留原实例 ID/state/origin：
+安装向导默认选择 HTTPS；也可显式选择内网 HTTP 测试，填写 `http://NAS私有IPv4:8790`。音桥 1.0.7 的默认 API 是 `http://127.0.0.1:18090/yinqiao/v1`（旧向导的 18086/api/v1 有误）；需先安装并启动音桥。填写实际根地址和音桥 API，已有配置永不覆盖。首次 `users={}`、`admin_guids=[]`、`qq_accounts_enabled=false`、`netease_enabled=false`；可登录通过 `/api/me` 核对本人可信 GUID，未配置用户不能搜索/下载。管理员停服后编辑 `var/config/hub.json`，将如下片段合并进已有配置，保留原实例 ID/state/origin：
 
 ```json
 {
@@ -84,7 +84,7 @@ sh packaging/fpk/build.sh /build/hub-inputs /build/hub-preview
 
 启用网易：停服后仅把 `netease_enabled` 改为 true，再启动。依赖已在包内，无需 NAS 联网安装；首次升级不覆盖已有配置，缺该字段仍默认 false。账号 Cookie 仅从 HTTPS 前台导入并核对 UID 后显式关联，见 [网易说明](../../docs/NETEASE.md)。网易目录不要求 Hot 账号；QQ 只读通过原独立开关启用。可同时启用两者；下载准入仍只允许酷我。
 
-HTTPS 反代转发到本机 `127.0.0.1:8790`，保留正确 Host/Origin 与流式响应；外部地址与 `public_origin` 一致。包不内置 TLS 证书、不开放局域网明文密码登录，不从 fnOS 网关 Header 推断业务用户；音桥继续服务端验证身份。
+HTTPS 反代转发到本机 `127.0.0.1:8790`，保留正确 Host/Origin 与流式响应；外部地址与 `public_origin` 一致。包不内置 TLS 证书。默认不开放局域网明文登录；显式 `lan_http_test=true` 且 `secure_cookie=false` 时，只绑定 public_origin 指定的 RFC1918 私有 IPv4:8790，直接访问无需反代。密码和会话经明文传输，仅供可信内网测试；公网 IP、域名、loopback、IPv6、链路本地和 CGNAT 地址拒绝，Hot 仍仅 loopback。不从 fnOS 网关 Header 推断业务用户；音桥继续服务端验证身份。
 
 ## 生命周期与故障
 
@@ -104,7 +104,7 @@ HTTPS 反代转发到本机 `127.0.0.1:8790`，保留正确 Host/Origin 与流�
 python -m pytest -q tests/test_fpk_native.py
 python -m ruff check hub modules tests scripts packaging/fpk
 python scripts/verify_provenance.py
-python packaging/fpk/verify.py /build/hub-preview/fnos-music-hub-0.1.0-preview.2-amd64.fpk
+python packaging/fpk/verify.py /build/hub-preview/fnos-music-hub-0.1.0-preview.3-amd64.fpk
 python packaging/fpk/native_smoke.py --stage /build/hub-preview/stage \
   --report /build/hub-preview/native-smoke.json --require
 ```

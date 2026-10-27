@@ -1,0 +1,96 @@
+{
+  "scope": "real Chromium + synthetic same-origin HTTP API; no real fnOS/music platform/FPK acceptance",
+  "cases": [
+    {
+      "name": "pc-landscape",
+      "width": 1440,
+      "height": 900,
+      "touch": false,
+      "transport": "insecure LAN HTTP origin routed to local synthetic API",
+      "status": "passed",
+      "coverage": "login/search/unknown metadata/bulk/confirmation/tasks/region details/files with actual container and codec/QQ QR confirmation and explicit binding/QQ recommendations and guess songs/QQ playlist page-only details/failed next page retries the same page/two-pass snapshot UI/1000 ordered snapshot entries/local snapshot history after unlink/confirmed local deletion/NetEase explicit UID consent and rotation-preserved Cookie form/private playlists/duplicate and unknown entries/read-only recommendation songs/unlink/storage/injection/collections/logout/overflow"
+    },
+    {
+      "name": "pc-wide",
+      "width": 1920,
+      "height": 1080,
+      "touch": false,
+      "transport": "insecure LAN HTTP origin routed to local synthetic API",
+      "status": "passed",
+      "coverage": "login/search/unknown metadata/bulk/confirmation/tasks/region details/files with actual container and codec/QQ QR confirmation and explicit binding/QQ recommendations and guess songs/QQ playlist page-only details/failed next page retries the same page/two-pass snapshot UI/1000 ordered snapshot entries/local snapshot history after unlink/confirmed local deletion/NetEase explicit UID consent and rotation-preserved Cookie form/private playlists/duplicate and unknown entries/read-only recommendation songs/unlink/storage/injection/collections/logout/overflow"
+    },
+    {
+      "name": "pc-portrait",
+      "width": 900,
+      "height": 1440,
+      "touch": false,
+      "transport": "insecure LAN HTTP origin routed to local synthetic API",
+      "status": "passed",
+      "coverage": "login/search/unknown metadata/bulk/confirmation/tasks/region details/files with actual container and codec/QQ QR confirmation and explicit binding/QQ recommendations and guess songs/QQ playlist page-only details/failed next page retries the same page/two-pass snapshot UI/1000 ordered snapshot entries/local snapshot history after unlink/confirmed local deletion/NetEase explicit UID consent and rotation-preserved Cookie form/private playlists/duplicate and unknown entries/read-only recommendation songs/unlink/storage/injection/collections/logout/overflow"
+    },
+    {
+      "name": "pc-tall",
+      "width": 1080,
+      "height": 1920,
+      "touch": false,
+      "transport": "insecure LAN HTTP origin routed to local synthetic API",
+      "status": "passed",
+      "coverage": "login/search/unknown metadata/bulk/confirmation/tasks/region details/files with actual container and codec/QQ QR confirmation and explicit binding/QQ recommendations and guess songs/QQ playlist page-only details/failed next page retries the same page/two-pass snapshot UI/1000 ordered snapshot entries/local snapshot history after unlink/confirmed local deletion/NetEase explicit UID consent and rotation-preserved Cookie form/private playlists/duplicate and unknown entries/read-only recommendation songs/unlink/storage/injection/collections/logout/overflow"
+    },
+    {
+      "name": "pc-narrow",
+      "width": 720,
+      "height": 1000,
+      "touch": false,
+      "transport": "insecure LAN HTTP origin routed to local synthetic API",
+      "status": "passed",
+      "coverage": "login/search/unknown metadata/bulk/confirmation/tasks/region details/files with actual container and codec/QQ QR confirmation and explicit binding/QQ recommendations and guess songs/QQ playlist page-only details/failed next page retries the same page/two-pass snapshot UI/1000 ordered snapshot entries/local snapshot history after unlink/confirmed local deletion/NetEase explicit UID consent and rotation-preserved Cookie form/private playlists/duplicate and unknown entries/read-only recommendation songs/unlink/storage/injection/collections/logout/overflow"
+    },
+    {
+      "name": "mobile-small",
+      "width": 320,
+      "height": 568,
+      "touch": true,
+      "transport": "insecure LAN HTTP origin routed to local synthetic API",
+      "status": "passed",
+      "coverage": "login/search/unknown metadata/bulk/confirmation/tasks/region details/files with actual container and codec/QQ QR confirmation and explicit binding/QQ recommendations and guess songs/QQ playlist page-only details/failed next page retries the same page/two-pass snapshot UI/1000 ordered snapshot entries/local snapshot history after unlink/confirmed local deletion/NetEase explicit UID consent and rotation-preserved Cookie form/private playlists/duplicate and unknown entries/read-only recommendation songs/unlink/storage/injection/collections/logout/overflow"
+    },
+    {
+      "name": "mobile-portrait",
+      "width": 390,
+      "height": 844,
+      "touch": true,
+      "transport": "insecure LAN HTTP origin routed to local synthetic API",
+      "status": "passed",
+      "coverage": "login/search/unknown metadata/bulk/confirmation/tasks/region details/files with actual container and codec/QQ QR confirmation and explicit binding/QQ recommendations and guess songs/QQ playlist page-only details/failed next page retries the same page/two-pass snapshot UI/1000 ordered snapshot entries/local snapshot history after unlink/confirmed local deletion/NetEase explicit UID consent and rotation-preserved Cookie form/private playlists/duplicate and unknown entries/read-only recommendation songs/unlink/storage/injection/collections/logout/overflow"
+    },
+    {
+      "name": "mobile-large",
+      "width": 412,
+      "height": 915,
+      "touch": true,
+      "transport": "insecure LAN HTTP origin routed to local synthetic API",
+      "status": "passed",
+      "coverage": "login/search/unknown metadata/bulk/confirmation/tasks/region details/files with actual container and codec/QQ QR confirmation and explicit binding/QQ recommendations and guess songs/QQ playlist page-only details/failed next page retries the same page/two-pass snapshot UI/1000 ordered snapshot entries/local snapshot history after unlink/confirmed local deletion/NetEase explicit UID consent and rotation-preserved Cookie form/private playlists/duplicate and unknown entries/read-only recommendation songs/unlink/storage/injection/collections/logout/overflow"
+    },
+    {
+      "name": "mobile-landscape",
+      "width": 844,
+      "height": 390,
+      "touch": true,
+      "transport": "insecure LAN HTTP origin routed to local synthetic API",
+      "status": "passed",
+      "coverage": "login/search/unknown metadata/bulk/confirmation/tasks/region details/files with actual container and codec/QQ QR confirmation and explicit binding/QQ recommendations and guess songs/QQ playlist page-only details/failed next page retries the same page/two-pass snapshot UI/1000 ordered snapshot entries/local snapshot history after unlink/confirmed local deletion/NetEase explicit UID consent and rotation-preserved Cookie form/private playlists/duplicate and unknown entries/read-only recommendation songs/unlink/storage/injection/collections/logout/overflow"
+    },
+    {
+      "name": "mobile-landscape-small",
+      "width": 667,
+      "height": 375,
+      "touch": true,
+      "transport": "insecure LAN HTTP origin routed to local synthetic API",
+      "status": "passed",
+      "coverage": "login/search/unknown metadata/bulk/confirmation/tasks/region details/files with actual container and codec/QQ QR confirmation and explicit binding/QQ recommendations and guess songs/QQ playlist page-only details/failed next page retries the same page/two-pass snapshot UI/1000 ordered snapshot entries/local snapshot history after unlink/confirmed local deletion/NetEase explicit UID consent and rotation-preserved Cookie form/private playlists/duplicate and unknown entries/read-only recommendation songs/unlink/storage/injection/collections/logout/overflow"
+    }
+  ],
+  "browser_version": "156.0.4314.42"
+}

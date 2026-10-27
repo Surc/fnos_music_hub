@@ -7,6 +7,7 @@ import json
 import os
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import closing
 
 import httpx
 import pytest
@@ -248,6 +249,79 @@ def test_private_endpoints_require_verified_identity(rig):
     rig.upstream.identity_error = True
     assert rig.a.get("/api/tasks").status_code == 503
     assert rig.upstream.creates == 0
+
+
+@pytest.mark.parametrize(
+    "origin",
+    [
+        "http://8.8.8.8:8790",
+        "http://127.0.0.1:8790",
+        "http://169.254.1.2:8790",
+        "http://100.64.0.1:8790",
+        "http://192.0.2.1:8790",
+        "http://music.test:8790",
+        "http://[fd00::1]:8790",
+        "https://192.168.1.6:8790",
+        "http://192.168.1.6",
+    ],
+)
+def test_lan_mode_rejects_non_rfc1918_or_non_http_origins(rig, origin):
+    with pytest.raises(ValueError):
+        Settings.model_validate(
+            {
+                **rig.settings.model_dump(),
+                "public_origin": origin,
+                "lan_http_test": True,
+            }
+        )
+
+
+def test_lan_http_session_preserves_identity_origin_csrf_and_user_isolation(
+    rig, tmp_path
+):
+    origin = "http://192.168.1.6:8790"
+    cfg = Settings.model_validate(
+        {
+            **rig.settings.model_dump(),
+            "data_dir": tmp_path / "lan-data",
+            "public_origin": origin,
+            "lan_http_test": True,
+        }
+    )
+    app = create_app(cfg, transport=rig.transport, start_worker=False)
+    with TestClient(app, base_url=origin, headers={"Origin": origin}) as a:
+        with closing(TestClient(app, base_url=origin, headers={"Origin": origin})) as b:
+            assert a.get("/api/me").status_code == 401
+            login = rig.login(a, "alice")
+            rig.login(b, "bob")
+            cookie = login.headers["set-cookie"].lower()
+            assert (
+                "secure" not in cookie
+                and "httponly" in cookie
+                and "samesite=strict" in cookie
+            )
+            assert a.get("/api/me").json()["principal"]["user_guid"] == "user-a"
+            assert b.get("/api/me").json()["principal"]["user_guid"] == "user-b"
+            assert a.get("/api/me", headers={"Host": "evil.test"}).status_code == 400
+            assert (
+                a.post(
+                    "/api/auth/logout", headers={"Origin": "http://evil.test"}
+                ).status_code
+                == 403
+            )
+            assert (
+                a.post(
+                    "/api/auth/logout", headers={"X-CSRF-Token": "wrong"}
+                ).status_code
+                == 403
+            )
+            manifest = rig.manifest(a)
+            assert b.get(f"/api/manifests/{manifest}").status_code == 404
+            assert a.post("/api/auth/logout").status_code == 200
+            assert a.get("/api/me").status_code == 401
+            assert b.get("/api/me").status_code == 200
+            rig.upstream.no_guid = True
+            assert b.get("/api/me").status_code == 401
 
 
 def test_login_never_returns_or_stores_plain_tokens(rig):

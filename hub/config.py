@@ -1,4 +1,5 @@
 import json
+from ipaddress import IPv4Address, IPv4Network
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -47,6 +48,7 @@ class Settings(BaseModel):
     bridge_key_env: str = "HUB_BRIDGE_KEY"
     public_origin: str
     secure_cookie: bool = True
+    lan_http_test: bool = False
     admin_guids: frozenset[str] = frozenset()
     users: dict[str, EngineConfig] = Field(default_factory=dict)
     session_seconds: int = Field(default=43200, ge=60, le=604800)
@@ -90,6 +92,22 @@ class Settings(BaseModel):
             raise ValueError("public_origin must be an origin")
         if self.secure_cookie and not self.public_origin.startswith("https://"):
             raise ValueError("secure cookies require HTTPS public_origin")
+        if self.lan_http_test:
+            origin = urlsplit(self.public_origin)
+            address = IPv4Address(origin.hostname)
+            if (
+                origin.scheme != "http"
+                or self.secure_cookie
+                or not origin.port
+                or not 1024 <= origin.port <= 65535
+                or not any(
+                    address in IPv4Network(network)
+                    for network in ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16")
+                )
+            ):
+                raise ValueError(
+                    "LAN HTTP test requires an RFC1918 IPv4 origin and insecure cookie"
+                )
         return self
 
     @classmethod

@@ -1,10 +1,11 @@
 {
   "instance_id": "replace-with-a-stable-nas-instance-id",
   "data_dir": "./data",
-  "bridge_url": "http://127.0.0.1:18086/api/v1",
+  "bridge_url": "http://127.0.0.1:18090/yinqiao/v1",
   "bridge_key_env": "HUB_BRIDGE_KEY",
   "public_origin": "https://music.example.com",
   "secure_cookie": true,
+  "lan_http_test": false,
   "admin_guids": [],
   "users": {
     "replace-with-verified-fn-music-user-guid": {

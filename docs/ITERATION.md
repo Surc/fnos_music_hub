@@ -1,5 +1,11 @@
 # 迭代记录
 
+## 2026-10-27：内网 HTTP 测试候选 preview.3
+
+用户要求先在内网测试，新增向导显式选择 `lan_http_test`：只绑定指定 RFC1918 私有 IPv4:8790，使用非 Secure 的 HttpOnly/SameSite Cookie；默认仍为 HTTPS 反代和 loopback。保留可信音桥 GUID、Host/Origin、CSRF、撤销及双用户 Hot 隔离。前台以 getRandomValues 生成幂等编号，补足不安全 HTTP 上缺少 randomUUID 导致无法下载/生成快照的问题。
+
+核对固定音桥源码和公开 1.0.7 FPK 后，将默认 API 更正为 `http://127.0.0.1:18090/yinqiao/v1`；旧向导的18086/api/v1有误。用户尚未安装/不确定音桥，先提供上游原包与 [内网步骤](fpk-preview/LAN_TEST.md)，不绕过身份，也不代用户填写密码。preview.3 为独立测试候选，构建/验证单独记录，preview.2 的已发布标签与附件保留。真实 NAS 安装、音桥登录、用户配置及下载仍待验。
+
 ## 2026-10-27：PR #5 已合并并发布 preview.2
 
 已合并 PR #5，提交 `d66d395254594ab08b7f09613d5df953bf792074`；[v0.1.0-preview.2 预发布](https://github.com/Surc/fnos_music_hub/releases/tag/v0.1.0-preview.2) 已公开。最终 PR 常规/原生 CI 与合并提交常规/重新原生构建均成功；实际包内 239 项、十二项生命周期、6623 安装文件及九份远端资产 SHA256 已核验。FPK、对应源码和离线闭包均来自实际合并提交，详见 [发行记录](fpk-preview/RELEASE_20261027.md)。标签固定在实际构建提交，后续资料不重指标签；NAS/真实账号/ACL/资源及人工试听仍待验。
