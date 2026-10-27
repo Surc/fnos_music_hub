@@ -114,3 +114,5 @@ description: 维护 Surc/fnos_music_hub 独立飞牛音乐中心。用于接续�
 - 先读 docs/fpk-preview/LAN_TEST.md。音桥固定上游 1.0.7 默认 API 是 `http://127.0.0.1:18090/yinqiao/v1`，旧向导默认 18086/api/v1 有误；14040 是播放器/管理入口。缺音桥时不能完成真实登录。
 - 前台请求编号使用 getRandomValues，在真实不安全 HTTP origin 的 Chromium 下覆盖下载幂等/快照和十视口，不拿 localhost 的安全上下文代替。普通 Linux bundled smoke 检查选定 LAN 接口实际监听；真实 fnOS 安装、音桥登录和下载仍待验。
 - preview.3 为独立测试候选，不能覆盖已发布 preview.2 或沿用其产物摘要；本次内网测试授权不扩大为后续永久发布授权。
+
+- 2026-10-28 用户明确授权合并PR #6，main合并提交为 `d67e558eb7790ca499e8a31b2b050ab85a0151e5`。已验证测试FPK仍来自PR合成构建 `fbb1dcfae0d31e893b84ae3397e8fc521bff72f8`，不可重标为合并后产物；本轮没有新建Release。实际NAS安装、音桥GUID登录、ACL/资源和完整下载仍待验，后续按LAN_TEST.md接续。

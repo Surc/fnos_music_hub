@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "repository": "Surc/fnos_music_hub",
-  "stage": "native-fpk-netease-preview-released",
-  "recorded_on": "2026-10-27",
+  "stage": "native-fpk-lan-http-merged-candidate",
+  "recorded_on": "2026-10-28",
   "observation_policy": "Most observations remain the fixed-source v1.6 research of 2026-10-21. MusicBox and legacy ext were rechecked on 2026-10-24 at the same recorded SHAs. Adopted pins require merged Hub code; branch implementation and real acceptance are separate.",
   "design_archive": {
     "path": "docs/design-goals-v1.6-20261021.txt",
@@ -355,9 +355,9 @@
   ],
   "maintenance_skill": {
     "name": "maintain-fnos-music-hub",
-    "version": "1.5.3",
+    "version": "1.5.4",
     "files": {
-      "skills/maintain-fnos-music-hub/SKILL.md": "69bbed62bbf6b010cd5fb2ef0f1d282c77ac505c65f715d7c671136631370be8",
+      "skills/maintain-fnos-music-hub/SKILL.md": "d12589be21cc6b59cdd9ea82799eb0bc7d38d936aa46b9565b8956a4d3f3ed0e",
       "skills/maintain-fnos-music-hub/agents/openai.yaml": "43f885a269d77d2173f7480c43e58afcab96777c2546511cdaeb4636349ed40d",
       "skills/maintain-fnos-music-hub/assets/icon.svg": "8936b24f674a1250d999e2c2b5901374fb4240426f32bd1ae340c352a90d617d"
     },
@@ -931,7 +931,7 @@
     "app_id": "fnos_music_hub",
     "platform": "linux/amd64",
     "pins_file": "packaging/fpk/versions.json",
-    "status": "candidate_static_bundled_tests_and_linux_lifecycle_passed_nas_pending",
+    "status": "merged_candidate_static_bundled_tests_and_linux_lifecycle_passed_nas_pending",
     "release_created": false,
     "real_nas_acceptance": "not_run",
     "instructions": "docs/fpk-preview/LAN_TEST.md",
@@ -1013,7 +1013,12 @@
       "docs/fpk-preview/lan-20261028-SHA256SUMS": "3fcad3717e2aec6bd90d585a913e76e506d9e1d846ee15e3d12fa9207901b1ec",
       "docs/fpk-preview/lan-20261028.json": "0c7ce68a71719b2a86144ba83749b697dd45dff6ac73393682dd6257833a1c2e"
     },
-    "legacy_workflow_names": "Unchanged CI still labels the ZIP/input archive preview.2; actual FPK/source/bundle are verified preview.3."
+    "legacy_workflow_names": "Unchanged CI still labels the ZIP/input archive preview.2; actual FPK/source/bundle are verified preview.3.",
+    "merge_commit": "d67e558eb7790ca499e8a31b2b050ab85a0151e5",
+    "merged_at": "2026-10-27T23:43:44Z",
+    "merged_head": "b0d102b3a0409755ed0cd4f3fdc2f55583ba5350",
+    "merge_tree_matches_head": true,
+    "merge_evidence": "docs/fpk-preview/LAN_20261028.md"
   },
   "native_preview_history": [
     {

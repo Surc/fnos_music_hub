@@ -1,6 +1,6 @@
 # fnos_music_hub
 
-新增 `preview.3` 内网测试候选：无需域名/HTTPS 反代，显式选择后直接访问 NAS 私有 IPv4:8790；仍需音桥验证身份。安装和填写说明见 [内网测试](docs/fpk-preview/LAN_TEST.md)。此候选与下方已发布 preview.2 分开记录。
+`preview.3` 内网测试支持已通过 [PR #6](https://github.com/Surc/fnos_music_hub/pull/6) 合入 main：无需域名/HTTPS 反代，显式选择后直接访问 NAS 私有 IPv4:8790；仍需音桥验证身份。安装和填写说明见 [内网测试](docs/fpk-preview/LAN_TEST.md)。现有测试包仍来自 PR 构建，尚未发布 preview.3 Release，与下方已发布 preview.2 分开记录。
 
 已发布 [v0.1.0-preview.2 · amd64 原生预览](https://github.com/Surc/fnos_music_hub/releases/tag/v0.1.0-preview.2)，包含 FPK、对应源码、离线输入与 SHA256；最终提交/附件验证见 [发行记录](docs/fpk-preview/RELEASE_20261027.md)。**真实 J4125/fnOS 实机验收仍待完成。**
 
