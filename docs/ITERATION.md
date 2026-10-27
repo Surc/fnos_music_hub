@@ -1,5 +1,9 @@
 # 迭代记录
 
+## 2026-10-28：内网测试候选包已生成并核验
+
+PR #6 的运行代码 head `6d7619deb1e833ff8692a433de8f5a7cda0aae6e` 已通过常规九项和原生构建（均attempt2，保留成功项，仅重试停滞的Ubuntu依赖下载）。实际CI合成构建提交 `fbb1dcfae0d31e893b84ae3397e8fc521bff72f8`，FPK为preview.3；包内256项、十三项普通Linux真实生命周期成功，含选定LAN接口实际监听。下载后重新核验ZIP、八份已取附件及6623安装文件。详见 [候选记录](fpk-preview/LAN_20261028.md)；PR保持草稿，未合并或新建Release，NAS实机待验。
+
 ## 2026-10-27：内网 HTTP 测试候选 preview.3
 
 用户要求先在内网测试，新增向导显式选择 `lan_http_test`：只绑定指定 RFC1918 私有 IPv4:8790，使用非 Secure 的 HttpOnly/SameSite Cookie；默认仍为 HTTPS 反代和 loopback。保留可信音桥 GUID、Host/Origin、CSRF、撤销及双用户 Hot 隔离。前台以 getRandomValues 生成幂等编号，补足不安全 HTTP 上缺少 randomUUID 导致无法下载/生成快照的问题。

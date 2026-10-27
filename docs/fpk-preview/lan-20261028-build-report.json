@@ -1,0 +1,810 @@
+{
+  "bundle": {
+    "build_environment": {
+      "ffmpeg_configure": [
+        "./configure",
+        "--cc=/home/runner/work/_temp/fpk-work/musl-install/bin/musl-gcc",
+        "--host-cc=gcc",
+        "--disable-everything",
+        "--disable-autodetect",
+        "--disable-x86asm",
+        "--disable-doc",
+        "--disable-debug",
+        "--disable-network",
+        "--disable-shared",
+        "--enable-static",
+        "--enable-ffmpeg",
+        "--enable-ffprobe",
+        "--enable-protocol=file,pipe",
+        "--enable-demuxer=aac,flac,mp3,mov,ogg,wav",
+        "--enable-decoder=aac,alac,flac,mp3,mp3float,opus,vorbis,pcm_s16le,pcm_s24le,pcm_s32le,pcm_f32le,pcm_f64le",
+        "--enable-parser=aac,flac,mpegaudio,opus,vorbis",
+        "--enable-encoder=pcm_s16le",
+        "--enable-muxer=null",
+        "--enable-filter=anull,aresample,aformat,abuffer,abuffersink",
+        "--enable-swresample",
+        "--extra-cflags=-march=x86-64 -mtune=generic",
+        "--extra-ldflags=-static"
+      ],
+      "gcc": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+      "hub_commit": "fbb1dcfae0d31e893b84ae3397e8fc521bff72f8",
+      "os": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+      "python_wheel_build": {
+        "hatchling": "1.27.0",
+        "rapidfuzz": "wheel.cmake=false; unmodified pinned sdist; pure Python",
+        "scikit-build-core": "0.11.6"
+      },
+      "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+      "rustflags": "-C target-cpu=x86-64 -C target-feature=+crt-static --remap-path-prefix=/home/runner/work/_temp/fpk-work=/build",
+      "source_date_epoch": 1793115699
+    },
+    "compatibility": {
+      "elf_count": 65,
+      "needed": [
+        "ld-linux-x86-64.so.2",
+        "libc.so.6",
+        "libdl.so.2",
+        "libgcc_s.so.1",
+        "libm.so.6",
+        "libpthread.so.0",
+        "libpython3.12.so.1.0",
+        "librt.so.1",
+        "libtcl9.0.so",
+        "libtcl9tk9.0.so",
+        "libutil.so.1"
+      ],
+      "required_glibc": "2.34"
+    },
+    "excluded_stdlib_extensions": [
+      "_crypt (unused; avoids external libcrypt.so.1)"
+    ],
+    "features": {
+      "downloads": [
+        "kuwo"
+      ],
+      "netease_readonly": {
+        "default_enabled": false,
+        "included": true,
+        "real_account": "not_run",
+        "sdk_commit": "9c405f4bae2384d0410e63f8b816a707553d72d3"
+      },
+      "qq_readonly": {
+        "default_enabled": false,
+        "included": true
+      }
+    },
+    "hub_commit": "fbb1dcfae0d31e893b84ae3397e8fc521bff72f8",
+    "hub_version": "0.1.0a1",
+    "inputs_sha256": "47592934099dbf56681edae33a6442088cebd5750bbb5c8c8eb7c71854becbc1",
+    "package_version": "0.1.0-preview.3",
+    "pins": {
+      "app_id": "fnos_music_hub",
+      "cpu": "x86-64-v1",
+      "ffmpeg": {
+        "sha256": "05ee0b03119b45c0bdb4df654b96802e909e0a752f72e4fe3794f487229e5a41",
+        "url": "https://ffmpeg.org/releases/ffmpeg-8.0.1.tar.xz",
+        "version": "8.0.1"
+      },
+      "fnpack": {
+        "sha256": "54b97fa7b70968c4d05c79840f5daeff508957d0bb2062fdb0376d00d9615c93",
+        "url": "https://static2.fnnas.com/fnpack/fnpack-1.2.3-linux-amd64",
+        "version": "1.2.3"
+      },
+      "glibc_max": "2.36",
+      "hot_commit": "07e86c3d06243cf1350925c0dd3be704005abd29",
+      "hot_submodule": "5dad838c33c3e4aab198d995160d3fbb9968470f",
+      "hub_version": "0.1.0a1",
+      "musl": {
+        "sha256": "a9a118bbe84d8764da0ea0d28b3ab3fae8477fc7e4085d90102b8596fc7c75e4",
+        "url": "https://musl.libc.org/releases/musl-1.2.5.tar.gz",
+        "version": "1.2.5"
+      },
+      "netease_commit": "9c405f4bae2384d0410e63f8b816a707553d72d3",
+      "package_version": "0.1.0-preview.3",
+      "platform": "linux/amd64",
+      "python": {
+        "sha256": "6d7521138fd33afddc1ccd08abb007d9a2829e38117c2576f9efdc0ec73ce772",
+        "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261021/cpython-3.12.15%2B20261021-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz",
+        "version": "3.12.15"
+      },
+      "qq_commit": "27861e51432ea6b6e88dc35c4e8c8e239c0339e8",
+      "rapidfuzz": {
+        "build_backend": "scikit-build-core==0.11.6",
+        "build_config": "wheel.cmake=false",
+        "sha256": "e13a8160d017b499ec7a2fa9d0ce1ae2e7377080815785819f966fb235d4eb60",
+        "url": "https://files.pythonhosted.org/packages/18/97/226c43b7b5d957bc3840ed52ea99eed261f99834c4619be7a4742cbaeafa/rapidfuzz-3.14.6.tar.gz",
+        "version": "3.14.6"
+      },
+      "rust": "1.99.1",
+      "rust_target": "x86_64-unknown-linux-musl",
+      "schema": 1
+    },
+    "python_components": {
+      "annotated-doc": {
+        "license_files": [
+          "annotated_doc-0.0.5.dist-info/licenses/LICENSE"
+        ],
+        "requires_dist": [],
+        "sha256": "117bac03a25ede5df5440e855b32d556049ca169ead221505badf432fed4b101",
+        "source_commit": null,
+        "version": "0.0.5",
+        "wheel": "annotated_doc-0.0.5-py3-none-any.whl"
+      },
+      "annotated-types": {
+        "license_files": [
+          "annotated_types-0.8.0.dist-info/licenses/LICENSE"
+        ],
+        "requires_dist": [],
+        "sha256": "f072f4d804ea359e4eaf198b1af7a8b0943881a87f31bb764f8bf219bb9419e0",
+        "source_commit": null,
+        "version": "0.8.0",
+        "wheel": "annotated_types-0.8.0-py3-none-any.whl"
+      },
+      "anyio": {
+        "license_files": [
+          "anyio-4.15.1.dist-info/licenses/LICENSE"
+        ],
+        "requires_dist": [
+          "exceptiongroup>=1.0.2; python_version < \"3.11\"",
+          "idna>=2.8",
+          "typing_extensions>=4.16.0; python_version < \"3.15\"",
+          "trio>=0.32.0; extra == \"trio\""
+        ],
+        "sha256": "6152fdbbf9a77fdec97731721bebf7c4c44f7c29b424b0065826173efc7ed101",
+        "source_commit": null,
+        "version": "4.15.1",
+        "wheel": "anyio-4.15.1-py3-none-any.whl"
+      },
+      "attrs": {
+        "license_files": [
+          "attrs-26.1.0.dist-info/licenses/LICENSE"
+        ],
+        "requires_dist": [],
+        "sha256": "c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309",
+        "source_commit": null,
+        "version": "26.1.0",
+        "wheel": "attrs-26.1.0-py3-none-any.whl"
+      },
+      "brotli": {
+        "license_files": [
+          "brotli-1.2.0.dist-info/licenses/LICENSE"
+        ],
+        "requires_dist": [],
+        "sha256": "072e7624b1fc4d601036ab3f4f27942ef772887e876beff0301d261210bca97f",
+        "source_commit": null,
+        "version": "1.2.0",
+        "wheel": "brotli-1.2.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl"
+      },
+      "cattrs": {
+        "license_files": [
+          "cattrs-26.2.1.dist-info/licenses/LICENSE"
+        ],
+        "requires_dist": [
+          "attrs>=25.4.0",
+          "exceptiongroup>=1.1.1; python_version < '3.11'",
+          "typing-extensions>=4.14.0",
+          "pymongo>=4.4.0; extra == 'bson'",
+          "cbor2>=5.4.6; extra == 'cbor2'",
+          "msgpack>=1.0.5; extra == 'msgpack'",
+          "msgspec>=0.21.1; (implementation_name == 'cpython') and extra == 'msgspec'",
+          "orjson>=3.11.3; (implementation_name == 'cpython') and extra == 'orjson'",
+          "pyyaml>=6.0; extra == 'pyyaml'",
+          "tomlkit>=0.11.8; extra == 'tomlkit'",
+          "tomli-w>=1.1.0; extra == 'tomllib'",
+          "tomli>=1.1.0; (python_version < '3.11') and extra == 'tomllib'",
+          "ujson>=5.10.0; extra == 'ujson'"
+        ],
+        "sha256": "a12aaa3453dc8f633a815293179f08b7421ed18d2575c459c3c736f840beac24",
+        "source_commit": null,
+        "version": "26.2.1",
+        "wheel": "cattrs-26.2.1-py3-none-any.whl"
+      },
+      "certifi": {
+        "license_files": [
+          "certifi-2026.10.19.dist-info/licenses/LICENSE"
+        ],
+        "requires_dist": [],
+        "sha256": "42d35340cc5b9ba78e818ddbff0c5b1c2b779de448a340fd1b989f5fa8670e1b",
+        "source_commit": null,
+        "version": "2026.10.19",
+        "wheel": "certifi-2026.10.19-py3-none-any.whl"
+      },
+      "cffi": {
+        "license_files": [
+          "cffi-2.1.1.dist-info/licenses/LICENSE"
+        ],
+        "requires_dist": [
+          "pycparser; implementation_name != \"PyPy\""
+        ],
+        "sha256": "c1453022f490d2459a11819d83ad1d586e9ff65a12ac3e705ffebd46d3685dcf",
+        "source_commit": null,
+        "version": "2.1.1",
+        "wheel": "cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl"
+      },
+      "charset-normalizer": {
+        "license_files": [
+          "charset_normalizer-3.5.2.dist-info/licenses/LICENSE"
+        ],
+        "requires_dist": [],
+        "sha256": "3d31298449090ab8d47b7b1b2a555ff73cac7ed438a08b7ac160980c7ebed649",
+        "source_commit": null,
+        "version": "3.5.2",
+        "wheel": "charset_normalizer-3.5.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl"
+      },
+      "click": {
+        "license_files": [
+          "click-8.5.0.dist-info/licenses/LICENSE.txt"
+        ],
+        "requires_dist": [],
+        "sha256": "255bc9599cf7748b4b1a446ccc735421bd08a2ae529a8b88597d3de5664ee360",
+        "source_commit": null,
+        "version": "8.5.0",
+        "wheel": "click-8.5.0-py3-none-any.whl"
+      },
+      "cryptography": {
+        "license_files": [
+          "cryptography-50.0.2.dist-info/licenses/LICENSE",
+          "cryptography-50.0.2.dist-info/licenses/LICENSE.APACHE",
+          "cryptography-50.0.2.dist-info/licenses/LICENSE.BSD"
+        ],
+        "requires_dist": [
+          "cffi>=2.0.0 ; platform_python_implementation != 'PyPy'",
+          "typing-extensions>=4.13.2 ; python_full_version < '3.11'",
+          "bcrypt>=3.1.5 ; extra == 'ssh'"
+        ],
+        "sha256": "9dab55f57c74c3cad24c323bacbbd04be4705ba6eb0d92e920b1fc4837ed5079",
+        "source_commit": null,
+        "version": "50.0.2",
+        "wheel": "cryptography-50.0.2-cp311-abi3-manylinux_2_34_x86_64.whl"
+      },
+      "fastapi": {
+        "license_files": [
+          "fastapi-0.156.6.dist-info/licenses/LICENSE"
+        ],
+        "requires_dist": [
+          "starlette>=0.46.0",
+          "pydantic>=2.9.0",
+          "typing-extensions>=4.8.0",
+          "typing-inspection>=0.4.2",
+          "annotated-doc>=0.0.2",
+          "opentelemetry-api>=1.44.0",
+          "opentelemetry-sdk>=1.44.0; extra == \"opentelemetry\"",
+          "opentelemetry-exporter-otlp-proto-http>=1.44.0; extra == \"opentelemetry\"",
+          "opentelemetry-sdk>=1.44.0; extra == \"standard\"",
+          "opentelemetry-exporter-otlp-proto-http>=1.44.0; extra == \"standard\"",
+          "fastapi-cli[standard]>=0.0.32; extra == \"standard\"",
+          "fastar>=0.9.0; extra == \"standard\"",
+          "httpx<1.0.0,>=0.23.0; extra == \"standard\"",
+          "httpx2>=2.0.0; extra == \"standard\"",
+          "jinja2>=3.1.5; extra == \"standard\"",
+          "python-multipart>=0.0.18; extra == \"standard\"",
+          "email-validator>=2.0.0; extra == \"standard\"",
+          "uvicorn[standard]>=0.12.0; extra == \"standard\"",
+          "pydantic-settings>=2.0.0; extra == \"standard\"",
+          "pydantic-extra-types>=2.0.0; extra == \"standard\"",
+          "opentelemetry-sdk>=1.44.0; extra == \"standard-no-fastapi-cloud-cli\"",
+          "opentelemetry-exporter-otlp-proto-http>=1.44.0; extra == \"standard-no-fastapi-cloud-cli\"",
+          "fastapi-cli[standard-no-fastapi-cloud-cli]>=0.0.32; extra == \"standard-no-fastapi-cloud-cli\"",
+          "httpx<1.0.0,>=0.23.0; extra == \"standard-no-fastapi-cloud-cli\"",
+          "httpx2>=2.0.0; extra == \"standard-no-fastapi-cloud-cli\"",
+          "jinja2>=3.1.5; extra == \"standard-no-fastapi-cloud-cli\"",
+          "python-multipart>=0.0.18; extra == \"standard-no-fastapi-cloud-cli\"",
+          "email-validator>=2.0.0; extra == \"standard-no-fastapi-cloud-cli\"",
+          "uvicorn[standard]>=0.12.0; extra == \"standard-no-fastapi-cloud-cli\"",
+          "pydantic-settings>=2.0.0; extra == \"standard-no-fastapi-cloud-cli\"",
+          "pydantic-extra-types>=2.0.0; extra == \"standard-no-fastapi-cloud-cli\"",
+          "opentelemetry-sdk>=1.44.0; extra == \"all\"",
+          "opentelemetry-exporter-otlp-proto-http>=1.44.0; extra == \"all\"",
+          "fastapi-cli[standard]>=0.0.32; extra == \"all\"",
+          "httpx<1.0.0,>=0.23.0; extra == \"all\"",
+          "httpx2>=2.0.0; extra == \"all\"",
+          "jinja2>=3.1.5; extra == \"all\"",
+          "python-multipart>=0.0.18; extra == \"all\"",
+          "itsdangerous>=1.1.0; extra == \"all\"",
+          "pyyaml>=5.3.1; extra == \"all\"",
+          "email-validator>=2.0.0; extra == \"all\"",
+          "uvicorn[standard]>=0.12.0; extra == \"all\"",
+          "pydantic-settings>=2.0.0; extra == \"all\"",
+          "pydantic-extra-types>=2.0.0; extra == \"all\""
+        ],
+        "sha256": "5c27f77aa3866fd4e2faf961ba549f4890a22b7eaa5399308d7db6403be80b91",
+        "source_commit": null,
+        "version": "0.156.6",
+        "wheel": "fastapi-0.156.6-py3-none-any.whl"
+      },
+      "h11": {
+        "license_files": [
+          "h11-0.16.0.dist-info/licenses/LICENSE.txt"
+        ],
+        "requires_dist": [],
+        "sha256": "63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86",
+        "source_commit": null,
+        "version": "0.16.0",
+        "wheel": "h11-0.16.0-py3-none-any.whl"
+      },
+      "httpcore": {
+        "license_files": [
+          "httpcore-1.0.9.dist-info/licenses/LICENSE.md"
+        ],
+        "requires_dist": [
+          "certifi",
+          "h11>=0.16",
+          "anyio<5.0,>=4.0; extra == 'asyncio'",
+          "h2<5,>=3; extra == 'http2'",
+          "socksio==1.*; extra == 'socks'",
+          "trio<1.0,>=0.22.0; extra == 'trio'"
+        ],
+        "sha256": "2d400746a40668fc9dec9810239072b40b4484b640a8c38fd654a024c7a1bf55",
+        "source_commit": null,
+        "version": "1.0.9",
+        "wheel": "httpcore-1.0.9-py3-none-any.whl"
+      },
+      "httpx": {
+        "license_files": [
+          "httpx-0.28.1.dist-info/licenses/LICENSE.md"
+        ],
+        "requires_dist": [
+          "anyio",
+          "certifi",
+          "httpcore==1.*",
+          "idna",
+          "brotli; (platform_python_implementation == 'CPython') and extra == 'brotli'",
+          "brotlicffi; (platform_python_implementation != 'CPython') and extra == 'brotli'",
+          "click==8.*; extra == 'cli'",
+          "pygments==2.*; extra == 'cli'",
+          "rich<14,>=10; extra == 'cli'",
+          "h2<5,>=3; extra == 'http2'",
+          "socksio==1.*; extra == 'socks'",
+          "zstandard>=0.18.0; extra == 'zstd'"
+        ],
+        "sha256": "d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad",
+        "source_commit": null,
+        "version": "0.28.1",
+        "wheel": "httpx-0.28.1-py3-none-any.whl"
+      },
+      "idna": {
+        "license_files": [
+          "idna-3.19.dist-info/licenses/LICENSE.md"
+        ],
+        "requires_dist": [
+          "ruff >= 0.16.0 ; extra == \"all\"",
+          "mypy >= 1.11.2 ; extra == \"all\"",
+          "ty >= 0.0.37 ; extra == \"all\"",
+          "pytest >= 8.3.2 ; extra == \"all\"",
+          "hypothesis >= 6.141.1 ; extra == \"all\"",
+          "coverage >= 7.10.0 ; extra == \"all\""
+        ],
+        "sha256": "815e7be7a7806d54abb586dc943addc79e8b2ee16915059658cbeff4b1b43bf4",
+        "source_commit": null,
+        "version": "3.19",
+        "wheel": "idna-3.19-py3-none-any.whl"
+      },
+      "jh2": {
+        "license_files": [
+          "jh2-5.0.15.dist-info/licenses/LICENSE"
+        ],
+        "requires_dist": [],
+        "sha256": "ea4ac921ddd2d519646df9b94f96e2cd55529f92f6d7ff4c65508ca2f65399ef",
+        "source_commit": null,
+        "version": "5.0.15",
+        "wheel": "jh2-5.0.15-cp311-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
+      },
+      "jsonpath-ng": {
+        "license_files": [
+          "jsonpath_ng-1.12.0.dist-info/licenses/LICENSE"
+        ],
+        "requires_dist": [],
+        "sha256": "6fc33404ab2a9b77895e9acde23f80998c61567c8e9c182301e73a78f158e585",
+        "source_commit": null,
+        "version": "1.12.0",
+        "wheel": "jsonpath_ng-1.12.0-py3-none-any.whl"
+      },
+      "netease-musicbox": {
+        "license_files": [
+          "netease_musicbox-0.5.3.dist-info/licenses/LICENSE"
+        ],
+        "requires_dist": [
+          "pycryptodomex>=3.21",
+          "qrcode>=8.0",
+          "rapidfuzz>=3.9",
+          "requests-cache>=1.3",
+          "requests>=2.32",
+          "urllib3>=2.2"
+        ],
+        "sha256": "604e6ebc9e56b56c2db004dbb6f5e0fe4a73935f133a9a0e8014d167a1ba748a",
+        "source_commit": "9c405f4bae2384d0410e63f8b816a707553d72d3",
+        "version": "0.5.3",
+        "wheel": "netease_musicbox-0.5.3-py3-none-any.whl"
+      },
+      "niquests": {
+        "license_files": [
+          "niquests-3.21.2.dist-info/licenses/LICENSE",
+          "niquests/_vendor/kiss_headers/LICENSE"
+        ],
+        "requires_dist": [
+          "charset-normalizer<4,>=2",
+          "urllib3-future<3,>=2.13.903",
+          "wassima<3,>=1.0.1; sys_platform != 'emscripten'",
+          "urllib3-future[brotli]; extra == 'brotli'",
+          "orjson<4,>=3; extra == 'full'",
+          "urllib3-future[brotli,rtls,socks,ws,zstd]; extra == 'full'",
+          "urllib3-future[qh3]; extra == 'http3'",
+          "urllib3-future[qh3]; extra == 'ocsp'",
+          "urllib3-future[rtls]; extra == 'rtls'",
+          "urllib3-future[socks]; extra == 'socks'",
+          "orjson<4,>=3; extra == 'speedups'",
+          "urllib3-future[brotli,zstd]; extra == 'speedups'",
+          "urllib3-future[utls]; extra == 'utls'",
+          "urllib3-future[ws]; extra == 'ws'",
+          "urllib3-future[ws-fast]; extra == 'ws-fast'",
+          "urllib3-future[zstd]; extra == 'zstd'"
+        ],
+        "sha256": "73e52614a712ee2f4d410bdd29789ca6a4ed031f8961410156e395d42b091208",
+        "source_commit": null,
+        "version": "3.21.2",
+        "wheel": "niquests-3.21.2-py3-none-any.whl"
+      },
+      "opentelemetry-api": {
+        "license_files": [
+          "opentelemetry_api-1.45.1.dist-info/licenses/LICENSE"
+        ],
+        "requires_dist": [
+          "typing-extensions>=4.5.0"
+        ],
+        "sha256": "b31553efa588ae44bc306f863c785c5333a9ecc091248c6ee68b4b6c87fdedfb",
+        "source_commit": null,
+        "version": "1.45.1",
+        "wheel": "opentelemetry_api-1.45.1-py3-none-any.whl"
+      },
+      "orjson": {
+        "license_files": [
+          "orjson-3.13.0.dist-info/licenses/LICENSE-APACHE",
+          "orjson-3.13.0.dist-info/licenses/LICENSE-MIT",
+          "orjson-3.13.0.dist-info/licenses/LICENSE-MPL-2.0"
+        ],
+        "requires_dist": [],
+        "sha256": "bceadfd314bd238f584fc229a4bbaf0e573597e7a026dec5429fbf29fd66c641",
+        "source_commit": null,
+        "version": "3.13.0",
+        "wheel": "orjson-3.13.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
+      },
+      "paho-mqtt": {
+        "license_files": [
+          "paho_mqtt-2.1.0.dist-info/licenses/LICENSE.txt"
+        ],
+        "requires_dist": [
+          "pysocks; extra == 'proxy'"
+        ],
+        "sha256": "6db9ba9b34ed5bc6b6e3812718c7e06e2fd7444540df2455d2c51bd58808feee",
+        "source_commit": null,
+        "version": "2.1.0",
+        "wheel": "paho_mqtt-2.1.0-py3-none-any.whl"
+      },
+      "platformdirs": {
+        "license_files": [
+          "platformdirs-4.13.5.dist-info/licenses/LICENSE"
+        ],
+        "requires_dist": [],
+        "sha256": "53d3ec4280b815c1e0b02edad7f9ee8fda1ba9c0865dd9c2e6e63849ce82fc1e",
+        "source_commit": null,
+        "version": "4.13.5",
+        "wheel": "platformdirs-4.13.5-py3-none-any.whl"
+      },
+      "pycparser": {
+        "license_files": [
+          "pycparser-3.11.dist-info/licenses/LICENSE"
+        ],
+        "requires_dist": [],
+        "sha256": "51d5a8ba2be0bbe440b99d2112604c95bbbc3c2748a64260186c541e1729cd80",
+        "source_commit": null,
+        "version": "3.11",
+        "wheel": "pycparser-3.11-py3-none-any.whl"
+      },
+      "pycryptodomex": {
+        "license_files": [
+          "pycryptodomex-3.24.1.dist-info/LICENSE.rst"
+        ],
+        "requires_dist": [],
+        "sha256": "9b94a8c647c1f80b4c82c7ac9642dda94a71abbb4efa29ad652c410ad7a39879",
+        "source_commit": null,
+        "version": "3.24.1",
+        "wheel": "pycryptodomex-3.24.1-cp37-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl"
+      },
+      "pydantic": {
+        "license_files": [
+          "pydantic-2.14.0.dist-info/licenses/LICENSE"
+        ],
+        "requires_dist": [
+          "annotated-types>=0.6.0",
+          "pydantic-core==2.50.0",
+          "typing-extensions>=4.16.0",
+          "typing-inspection>=0.4.4",
+          "email-validator>=2.0.0; extra == 'email'",
+          "tzdata; (platform_system == 'Windows') and extra == 'timezone'"
+        ],
+        "sha256": "15fab1bea6f1dc5003b54fc2ecab230c1fd1dbade2acd4addc52d81e32416d4b",
+        "source_commit": null,
+        "version": "2.14.0",
+        "wheel": "pydantic-2.14.0-py3-none-any.whl"
+      },
+      "pydantic-core": {
+        "license_files": [
+          "pydantic_core-2.50.0.dist-info/licenses/LICENSE"
+        ],
+        "requires_dist": [
+          "typing-extensions>=4.16.0"
+        ],
+        "sha256": "f187030fc3d62c668feb0f09e92852e0eb414d7fcefc4748f2e67d245aade37e",
+        "source_commit": null,
+        "version": "2.50.0",
+        "wheel": "pydantic_core-2.50.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
+      },
+      "qh3": {
+        "license_files": [
+          "qh3-2.0.4.dist-info/licenses/LICENSE"
+        ],
+        "requires_dist": [],
+        "sha256": "af34fad8554560fa38304f61708176379d5efb192da2ece5fb25dec23c304b36",
+        "source_commit": null,
+        "version": "2.0.4",
+        "wheel": "qh3-2.0.4-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
+      },
+      "qqmusic-api-python": {
+        "license_files": [
+          "qqmusic_api_python-0.8.2.dist-info/licenses/LICENSE"
+        ],
+        "requires_dist": [
+          "anyio>=4.12.1",
+          "cryptography>=47.0.0",
+          "jsonpath-ng>=1.8.0",
+          "niquests[speedups]>=3.18.7",
+          "orjson>=3.10.15",
+          "paho-mqtt>=2.1.0",
+          "pydantic>=2.13.3",
+          "typing-extensions>=4.16.0",
+          "cos-python-sdk-v5>=1.9.44; extra == 'upload'"
+        ],
+        "sha256": "93dd2a5c2b55863424cef5b04c8259083a152dfab24a3e0abb8e493de50a5ffc",
+        "source_commit": "27861e51432ea6b6e88dc35c4e8c8e239c0339e8",
+        "version": "0.8.2",
+        "wheel": "qqmusic_api_python-0.8.2-py3-none-any.whl"
+      },
+      "qrcode": {
+        "license_files": [
+          "qrcode-8.2.dist-info/LICENSE"
+        ],
+        "requires_dist": [
+          "colorama ; sys_platform == \"win32\"",
+          "pillow (>=9.1.0) ; extra == \"pil\" or extra == \"all\"",
+          "pypng ; extra == \"png\" or extra == \"all\""
+        ],
+        "sha256": "16e64e0716c14960108e85d853062c9e8bba5ca8252c0b4d0231b9df4060ff4f",
+        "source_commit": null,
+        "version": "8.2",
+        "wheel": "qrcode-8.2-py3-none-any.whl"
+      },
+      "rapidfuzz": {
+        "license_files": [
+          "rapidfuzz-3.14.6.dist-info/licenses/LICENSE"
+        ],
+        "requires_dist": [
+          "numpy; extra == \"all\""
+        ],
+        "sha256": "d69dc63532df53f81a22d6733981fdb972b6f69c8aec4a0ad526e732e1f3e619",
+        "source_commit": null,
+        "version": "3.14.6",
+        "wheel": "rapidfuzz-3.14.6-py3-none-any.whl"
+      },
+      "requests": {
+        "license_files": [
+          "requests-2.34.2.dist-info/licenses/LICENSE",
+          "requests-2.34.2.dist-info/licenses/NOTICE"
+        ],
+        "requires_dist": [
+          "charset_normalizer<4,>=2",
+          "idna<4,>=2.5",
+          "urllib3<3,>=1.26",
+          "certifi>=2023.5.7",
+          "PySocks!=1.5.7,>=1.5.6; extra == \"socks\"",
+          "chardet<8,>=3.0.2; extra == \"use-chardet-on-py3\""
+        ],
+        "sha256": "2a0d60c172f83ac6ab31e4554906c0f3b3588d37b5cb939b1c061f4907e278e0",
+        "source_commit": null,
+        "version": "2.34.2",
+        "wheel": "requests-2.34.2-py3-none-any.whl"
+      },
+      "requests-cache": {
+        "license_files": [
+          "requests_cache-1.3.3.dist-info/licenses/LICENSE"
+        ],
+        "requires_dist": [
+          "attrs>=21.2",
+          "cattrs>=22.2",
+          "platformdirs>=2.5",
+          "requests>=2.22",
+          "url-normalize>=2.0",
+          "urllib3>=1.25.5",
+          "boto3>=1.15; extra == 'all'",
+          "botocore>=1.18; extra == 'all'",
+          "itsdangerous>=2.0; extra == 'all'",
+          "orjson>=3.0; (python_version < '3.14') and extra == 'all'",
+          "pymongo>=3; extra == 'all'",
+          "pyyaml>=6.0.1; extra == 'all'",
+          "redis>=3; extra == 'all'",
+          "ujson>=5.4; extra == 'all'",
+          "boto3>=1.15; extra == 'dynamodb'",
+          "botocore>=1.18; extra == 'dynamodb'",
+          "pymongo>=3; extra == 'mongodb'",
+          "redis>=3; extra == 'redis'",
+          "itsdangerous>=2.0; extra == 'security'",
+          "pyyaml>=6.0.1; extra == 'yaml'"
+        ],
+        "sha256": "c8df20ff874ebfc026959e3874e6c12bd6724934cdb10925915908453d4b17e4",
+        "source_commit": null,
+        "version": "1.3.3",
+        "wheel": "requests_cache-1.3.3-py3-none-any.whl"
+      },
+      "starlette": {
+        "license_files": [
+          "starlette-1.9.0.dist-info/licenses/LICENSE.md"
+        ],
+        "requires_dist": [
+          "anyio<5,>=4.0.0",
+          "typing-extensions>=4.10.0; python_version < '3.13'",
+          "httpx2>=2.0.0; extra == 'full'",
+          "httpx<0.29.0,>=0.27.0; extra == 'full'",
+          "itsdangerous; extra == 'full'",
+          "jinja2; extra == 'full'",
+          "opentelemetry-api; extra == 'full'",
+          "python-multipart>=0.0.18; extra == 'full'",
+          "pyyaml; extra == 'full'"
+        ],
+        "sha256": "fd3f159936e882d06c1108f84688f7cda2cf85fc6a592a50edbd175e882c2ddc",
+        "source_commit": null,
+        "version": "1.9.0",
+        "wheel": "starlette-1.9.0-py3-none-any.whl"
+      },
+      "typing-extensions": {
+        "license_files": [
+          "typing_extensions-4.16.0.dist-info/licenses/LICENSE"
+        ],
+        "requires_dist": [],
+        "sha256": "481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8",
+        "source_commit": null,
+        "version": "4.16.0",
+        "wheel": "typing_extensions-4.16.0-py3-none-any.whl"
+      },
+      "typing-inspection": {
+        "license_files": [
+          "typing_inspection-0.4.4.dist-info/licenses/LICENSE"
+        ],
+        "requires_dist": [
+          "typing-extensions>=4.15.0"
+        ],
+        "sha256": "65b8397ba37ccbce054456aaccddfc91e6e3083c92824df348d96ca832f3f147",
+        "source_commit": null,
+        "version": "0.4.4",
+        "wheel": "typing_inspection-0.4.4-py3-none-any.whl"
+      },
+      "url-normalize": {
+        "license_files": [
+          "url_normalize-3.0.1.dist-info/licenses/LICENSE"
+        ],
+        "requires_dist": [
+          "idna>=3.3",
+          "mypy; extra == \"dev\"",
+          "pre-commit; extra == \"dev\"",
+          "pytest-cov; extra == \"dev\"",
+          "pytest-socket; extra == \"dev\"",
+          "pytest; extra == \"dev\"",
+          "ruff; extra == \"dev\""
+        ],
+        "sha256": "97ea68fc543b1fc9f270f34c90cf164453e7d490da2ec653dcd8ebd4e3ac1faf",
+        "source_commit": null,
+        "version": "3.0.1",
+        "wheel": "url_normalize-3.0.1-py3-none-any.whl"
+      },
+      "urllib3": {
+        "license_files": [
+          "urllib3-2.8.0.dist-info/licenses/LICENSE.txt"
+        ],
+        "requires_dist": [
+          "brotli>=1.2.0; (platform_python_implementation == 'CPython') and extra == 'brotli'",
+          "brotlicffi>=1.2.0.0; (platform_python_implementation != 'CPython') and extra == 'brotli'",
+          "h2<5,>=4; extra == 'h2'",
+          "pysocks!=1.5.7,<2.0,>=1.5.6; extra == 'socks'",
+          "backports-zstd>=1.0.0; (python_version < '3.14') and extra == 'zstd'"
+        ],
+        "sha256": "0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3",
+        "source_commit": null,
+        "version": "2.8.0",
+        "wheel": "urllib3-2.8.0-py3-none-any.whl"
+      },
+      "urllib3-future": {
+        "license_files": [
+          "urllib3_future-2.25.903.dist-info/licenses/LICENSE.txt"
+        ],
+        "requires_dist": [
+          "h11<1.0.0,>=0.11.0",
+          "jh2<6.0.0,>=5.0.3",
+          "qh3<3.0.0,>=1.5.4; (platform_python_implementation != 'CPython' or python_full_version > '3.7.10') and (platform_system == 'Darwin' or platform_system == 'Windows' or platform_system == 'Linux') and (platform_machine == 'x86_64' or platform_machine == 's390x' or platform_machine == 'armv7l' or platform_machine == 'ppc64le' or platform_machine == 'ppc64' or platform_machine == 'AMD64' or platform_machine == 'aarch64' or platform_machine == 'arm64' or platform_machine == 'ARM64' or platform_machine == 'x86' or platform_machine == 'i686' or platform_machine == 'riscv64' or platform_machine == 'riscv64gc') and (platform_python_implementation == 'CPython' or (platform_python_implementation == 'PyPy' and python_version < '3.12'))",
+          "brotli>=1.0.9; (platform_python_implementation == 'CPython') and extra == 'brotli'",
+          "brotlicffi>=0.8.0; (platform_python_implementation != 'CPython') and extra == 'brotli'",
+          "qh3<3.0.0,>=1.5.4; extra == 'qh3'",
+          "rtls>=2026.9.21; (platform_python_implementation == 'CPython') and extra == 'rtls'",
+          "python-socks<=2.8.1,>=2; extra == 'socks'",
+          "brotli>=1.0.9; (platform_python_implementation == 'CPython') and extra == 'utls'",
+          "utls>=2026.9.21; (platform_python_implementation == 'CPython') and extra == 'utls'",
+          "zstandard>=0.18.0; (python_version < '3.14' and platform_python_implementation == 'CPython') and extra == 'utls'",
+          "wsproto<2,>=1.2; extra == 'ws'",
+          "websockets<18,>=15.0.1; (python_version >= '3.9') and extra == 'ws-fast'",
+          "zstandard>=0.18.0; (python_version < '3.14') and extra == 'zstd'"
+        ],
+        "sha256": "39352d455023402d86c4c1f567eba4f8b1bbf65571f8df96c2f5697c8058825f",
+        "source_commit": null,
+        "version": "2.25.903",
+        "wheel": "urllib3_future-2.25.903-py3-none-any.whl"
+      },
+      "uvicorn": {
+        "license_files": [
+          "uvicorn-0.54.0.dist-info/licenses/LICENSE.md"
+        ],
+        "requires_dist": [
+          "click>=7.0",
+          "h11>=0.8",
+          "typing-extensions>=4.0; python_version < '3.11'",
+          "httptools>=0.8.0; extra == 'standard'",
+          "python-dotenv>=0.13; extra == 'standard'",
+          "pyyaml>=5.1; extra == 'standard'",
+          "uvloop>=0.15.1; (sys_platform != 'win32' and (sys_platform != 'cygwin' and platform_python_implementation != 'PyPy')) and extra == 'standard'",
+          "watchfiles>=0.20; extra == 'standard'",
+          "websockets>=13.0; extra == 'standard'"
+        ],
+        "sha256": "505bdb0f318731d45f1f712071fc781a8981f6847a31c902c9f5e652d4f67faf",
+        "source_commit": null,
+        "version": "0.54.0",
+        "wheel": "uvicorn-0.54.0-py3-none-any.whl"
+      },
+      "wassima": {
+        "license_files": [
+          "wassima-2.1.5.dist-info/licenses/LICENSE"
+        ],
+        "requires_dist": [],
+        "sha256": "53d9a56cf55fc969f8cdd1993f8dc69f857d1c32229fb9084dc2b267044b6dde",
+        "source_commit": null,
+        "version": "2.1.5",
+        "wheel": "wassima-2.1.5-py3-none-any.whl"
+      },
+      "zstandard": {
+        "license_files": [
+          "zstandard-0.25.0.dist-info/licenses/LICENSE"
+        ],
+        "requires_dist": [
+          "cffi~=1.17; (platform_python_implementation != \"PyPy\" and python_version < \"3.14\") and extra == \"cffi\"",
+          "cffi>=2.0.0b; (platform_python_implementation != \"PyPy\" and python_version >= \"3.14\") and extra == \"cffi\""
+        ],
+        "sha256": "5a56ba0db2d244117ed744dfa8f6f5b366e14148e00de44723413b2f3938a902",
+        "source_commit": null,
+        "version": "0.25.0",
+        "wheel": "zstandard-0.25.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl"
+      }
+    },
+    "rapidfuzz_implementation": "pure Python; no external libstdc++ required",
+    "real_nas_acceptance": "pending",
+    "release": false,
+    "runtime_locks": {
+      "requirements-netease.lock": "d14616985fdd9c90ba33d825bd4b35adfd1b4a89762afa646313a4b9db82d885",
+      "requirements-qq.lock": "9dfb18da730249e84edad336b306aba5e3ccd31db61b5b220acef004cc44a4f4",
+      "requirements.lock": "82d427768690b7ce7beaf64a24ba302ae21389d79e84f4e7a96b1dbfc0ae7729"
+    },
+    "schema": 1,
+    "source_date_epoch": 1793115699
+  },
+  "bytes": 66765188,
+  "filename": "fnos-music-hub-0.1.0-preview.3-amd64.fpk",
+  "fpk_static_validation": "passed",
+  "installed_files": 6623,
+  "j4125_device_acceptance": "not_run",
+  "schema": 1,
+  "sha256": "e917bf163df28da31c21e0c9a2b3a078dfeaa9f48c5baa6dd56c416778880644"
+}

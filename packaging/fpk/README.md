@@ -16,10 +16,10 @@
 | --- | --- |
 | 应用 ID / 包用户 / 用户组 | `fnos_music_hub`，`run-as=package`；脚本拒绝 root |
 | 架构 | Linux amd64；Rust `target-cpu=x86-64` + 静态 musl；FFmpeg 通用 x86-64、禁外部汇编；不使用 native CPU 编译 |
-| 主端口 | 固定 `127.0.0.1:8790`；安装/启动检查；不自动换端口 |
+| 主端口 | 默认 `127.0.0.1:8790`；显式内网测试绑定所填 RFC1918 私有IPv4:8790；安装/启动检查，不自动换端口 |
 | Hot | 每个配置的可信 GUID 独立进程、端口、token、状态/下载目录；仅回环 HTTP |
-| 外部前置 | 已运行的音桥 HTTP API 与独立 HTTPS 根地址反向代理；本包不安装/接管音桥或官方音乐 |
-| 桌面入口 | fnOS 登录保护的 CGI 启动页链接到独立 HTTPS 地址；业务 API/SSE 不经 CGI |
+| 外部前置 | 已运行的音桥 HTTP API；默认HTTPS模式需反代，显式内网HTTP无需反代；本包不安装/接管音桥或官方音乐 |
+| 桌面入口 | fnOS 登录保护的 CGI 启动页在新标签打开已配置的独立地址；业务 API/SSE 不经 CGI |
 | 内含 | Python 3.12.15、锁定 wheel 闭包（含可选 QQ 与网易只读 SDK）、Hub Python/静态前台、Hot/FFmpeg/ffprobe、CA、许可证、内容清单 |
 | NAS 无需 | Docker、编译器、系统 Python、Node、联网安装依赖或桌面 Hot 安装包 |
 | OS 边界 | 全部 ELF 检查架构/动态库/GLIBC，构建上限 2.36，实际需求写入报告；需要 Linux pidfd 和一致的 procfs。不虚构最低已验 fnOS 版本，省略 `os_min_version` |
