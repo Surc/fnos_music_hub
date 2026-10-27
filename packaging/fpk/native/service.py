@@ -168,8 +168,9 @@ class Lifecycle:
 
         file = self.config / "hub.json"
         cfg = Settings.load(str(file))
-        if cfg.data_dir != self.state or not cfg.secure_cookie:
-            raise RuntimeError("native_private_state_and_https_required")
+        if cfg.data_dir != self.state:
+            raise RuntimeError("native_private_state_required")
+        self.hub_host(cfg)
         for user in cfg.users.values():
             port = urlsplit(user.engine_url).port
             if not port or not 1024 <= port <= 65535 or port == PORT:
@@ -183,6 +184,17 @@ class Lifecycle:
         if not re.fullmatch(r"HUB_BRIDGE_[A-Z0-9_]+", cfg.bridge_key_env):
             raise RuntimeError("invalid_bridge_key_variable")
         return cfg
+
+    @staticmethod
+    def hub_host(cfg):
+        if cfg.lan_http_test:
+            if urlsplit(cfg.public_origin).port != PORT:
+                raise RuntimeError("native_lan_origin_requires_service_port")
+            # Bind only the selected LAN interface; Hot always stays on loopback.
+            return urlsplit(cfg.public_origin).hostname
+        if not cfg.secure_cookie:
+            raise RuntimeError("native_https_or_explicit_lan_test_required")
+        return "127.0.0.1"
 
     def secrets(self, cfg):
         file = self.config / "secrets.json"
@@ -220,6 +232,9 @@ class Lifecycle:
         if not file.exists():
             if (self.state / "hub.sqlite3").exists():
                 raise RuntimeError("restore_matching_config_before_reinstall")
+            mode = os.environ.get("wizard_access_mode", "https")
+            if mode not in {"https", "lan_http_test"}:
+                raise RuntimeError("invalid_access_mode")
             atomic_json(
                 file,
                 {
@@ -228,7 +243,8 @@ class Lifecycle:
                     "bridge_url": os.environ.get("wizard_bridge_url", ""),
                     "bridge_key_env": "HUB_BRIDGE_KEY",
                     "public_origin": os.environ.get("wizard_public_origin", ""),
-                    "secure_cookie": True,
+                    "secure_cookie": mode == "https",
+                    "lan_http_test": mode == "lan_http_test",
                     "admin_guids": [],
                     "users": {},
                     "qq_accounts_enabled": False,
@@ -247,12 +263,19 @@ class Lifecycle:
 
     def launch_page(self, cfg):
         origin = html.escape(cfg.public_origin, quote=True)
+        instructions = (
+            "<p>内网 HTTP 测试：直接从下方地址打开。密码和会话经明文传输，仅在可信内网使用。</p>"
+            "<p>若无法访问，请检查所填 NAS 内网 IP 和 8790 端口。</p>"
+            if cfg.lan_http_test
+            else "<p>从独立 HTTPS 入口打开并登录。</p>"
+            "<p>若无法访问，请检查反向代理是否转发到 127.0.0.1:8790。</p>"
+        )
         (self.target / "ui/launch.html").write_text(
             '<!doctype html><meta charset="utf-8"><title>音乐 Hub PREVIEW</title>'
             '<meta name="viewport" content="width=device-width,initial-scale=1">'
-            "<h1>音乐 Hub PREVIEW</h1><p>从独立 HTTPS 入口打开并登录：</p>"
-            f'<p><a rel="noopener noreferrer" href="{origin}/">打开音乐 Hub</a></p>'
-            "<p>若无法访问，请检查反向代理是否转发到 127.0.0.1:8790。</p>"
+            "<h1>音乐 Hub PREVIEW</h1>"
+            + instructions
+            + f'<p><a target="_blank" rel="noopener noreferrer" href="{origin}/">打开音乐 Hub</a></p>'
             "<p>本预览版的 J4125 实机验收尚未完成。</p>",
             encoding="utf-8",
         )
@@ -281,10 +304,17 @@ class Lifecycle:
         if cfg.netease_enabled:
             try:
                 subprocess.run(
-                    [str(self.program / "runtime/python/bin/python3"), "-sB",
-                     str(self.program / "native/dependency_probe.py"), "--netease"],
-                    env=env, check=True, timeout=20,
-                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                    [
+                        str(self.program / "runtime/python/bin/python3"),
+                        "-sB",
+                        str(self.program / "native/dependency_probe.py"),
+                        "--netease",
+                    ],
+                    env=env,
+                    check=True,
+                    timeout=20,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
                 )
             except (OSError, subprocess.SubprocessError):
                 raise NeteaseDependenciesMissing() from None
@@ -304,7 +334,8 @@ class Lifecycle:
 
     def health(self, cfg, values):
         hub = get_json(
-            f"http://127.0.0.1:{PORT}/healthz", host=urlsplit(cfg.public_origin).netloc
+            f"http://{self.hub_host(cfg)}:{PORT}/healthz",
+            host=urlsplit(cfg.public_origin).netloc,
         )
         if hub.get("status") != "ok" or hub.get("version") != "0.1.0a1":
             return False
@@ -358,20 +389,24 @@ class Lifecycle:
 
     @staticmethod
     def check_ports(cfg):
-        ports = [PORT, *(urlsplit(e.engine_url).port for e in cfg.users.values())]
+        listeners = [
+            (Lifecycle.hub_host(cfg), PORT),
+            *(("127.0.0.1", urlsplit(e.engine_url).port) for e in cfg.users.values()),
+        ]
         # TIME_WAIT belongs to closed connections, not an active listening owner.
         # SO_REUSEADDR permits restart while still refusing an existing listener.
         with contextlib.ExitStack() as stack:
-            for port in ports:
+            for host, port in listeners:
                 sock = stack.enter_context(socket.socket())
                 sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                sock.bind(("127.0.0.1", port))
+                sock.bind((host, port))
 
     def start(self):
         if self.running():
             return
         self.stop()  # Clean only identities recorded by this application.
         cfg = self.preflight()
+        self.launch_page(cfg)
         self.secrets(cfg)
         self.check_ports(cfg)
         env = self.base_env()
@@ -480,7 +515,7 @@ class Lifecycle:
                         "--config",
                         str(self.config / "hub.json"),
                         "--host",
-                        "127.0.0.1",
+                        self.hub_host(cfg),
                         "--port",
                         str(PORT),
                     ],
@@ -625,8 +660,8 @@ def main():
         # Do not print config values, credentials, upstream bodies or exception text.
         message = (
             "网易目录已启用，但固定版依赖缺失或损坏；请重新安装完整的网易整合预览包。"
-            if isinstance(exc, NeteaseDependenciesMissing) else
-            "音乐 Hub 生命周期失败（"
+            if isinstance(exc, NeteaseDependenciesMissing)
+            else "音乐 Hub 生命周期失败（"
             + type(exc).__name__
             + "）；请检查配置、端口和预览包说明。"
         )

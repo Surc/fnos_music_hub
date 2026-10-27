@@ -1,4 +1,15 @@
 const $ = (s) => document.querySelector(s);
+$("#http-test-notice").hidden =
+  location.protocol !== "http:" ||
+  ["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
+// getRandomValues is available on LAN HTTP too; randomUUID requires a secure context.
+function requestId() {
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
 const providers = { netease: "网易云音乐", qq: "QQ 音乐", kuwo: "酷我音乐" };
 const qualities = {
   "320kmp3": "MP3 · 320 kbps",
@@ -1084,7 +1095,7 @@ async function capturePlaylist(current) {
     current.capture = null;
     current.captureKey = null;
   }
-  current.captureKey ||= crypto.randomUUID();
+  current.captureKey ||= requestId();
   render();
   try {
     if (!current.capture) {
@@ -1816,7 +1827,7 @@ async function submitDownload(event) {
   const draftKey = JSON.stringify(tracks);
   let draft = state.drafts.get(draftKey);
   if (!draft) {
-    draft = { idem: crypto.randomUUID(), manifest_id: null, quality, target };
+    draft = { idem: requestId(), manifest_id: null, quality, target };
     state.drafts.set(draftKey, draft);
   }
   state.submitting = true;

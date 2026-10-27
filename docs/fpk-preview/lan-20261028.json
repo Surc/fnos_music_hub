@@ -1,0 +1,64 @@
+{
+  "package_version": "0.1.0-preview.3",
+  "source_head": "6d7619deb1e833ff8692a433de8f5a7cda0aae6e",
+  "build_commit": "fbb1dcfae0d31e893b84ae3397e8fc521bff72f8",
+  "pull_request": "https://github.com/Surc/fnos_music_hub/pull/6",
+  "workflow_run": 40533510817,
+  "artifact": {
+    "id": 12747932592,
+    "name": "fnos-music-hub-0.1.0-preview.2-netease-readonly-amd64",
+    "size_in_bytes": 181158410,
+    "digest": "sha256:4aa50b40116c676026893bda49abd06501fff4ff5e6b3279456f820c4a189786"
+  },
+  "legacy_workflow_names": "Unchanged CI still labels the ZIP/input archive preview.2; actual FPK/source/bundle are verified preview.3.",
+  "not_downloaded": [
+    "fnos-music-hub-0.1.0-preview.2-inputs.tar.gz"
+  ],
+  "installed_files": 6623,
+  "bundled_tests_passed": 256,
+  "native_smoke_checks": 13,
+  "real_nas_acceptance": "not_run",
+  "release_created": false,
+  "assets": [
+    {
+      "name": "build-report.json",
+      "bytes": 33121,
+      "sha256": "f911dc9e60bbcf2d784b6d495b0bee43d8e66b685ad62da64f38ce279feb9a26"
+    },
+    {
+      "name": "bundle-tests.txt",
+      "bytes": 1182,
+      "sha256": "2d3931e8cf2e67221f78b47b18ece9b2a8572bbb3c1958c69b9823dbeeba7d50"
+    },
+    {
+      "name": "bundle.json",
+      "bytes": 31227,
+      "sha256": "dccd800ded8e2dc84ff927751092bd51f5ad4d86c9616c77c350dfc23f0faf79"
+    },
+    {
+      "name": "CONTENTS.json",
+      "bytes": 978240,
+      "sha256": "45fd0f9c3adc6490f06e8a2618ffa785eb1deb0e47209abe314a8873dc863e2e"
+    },
+    {
+      "name": "fnos-music-hub-0.1.0-preview.3-amd64.fpk",
+      "bytes": 66765188,
+      "sha256": "e917bf163df28da31c21e0c9a2b3a078dfeaa9f48c5baa6dd56c416778880644"
+    },
+    {
+      "name": "fnos-music-hub-0.1.0-preview.3-sources.tar.gz",
+      "bytes": 114072587,
+      "sha256": "542f5460ca9defbdcabf34e0aa2d4476e45dfe4ce9432feba2ecff81d623a4b6"
+    },
+    {
+      "name": "native-smoke.json",
+      "bytes": 752,
+      "sha256": "9798e5604d2562ecd4115982236908978fcee0ab0d3ac1ba7f95017e37d733f7"
+    },
+    {
+      "name": "SHA256SUMS",
+      "bytes": 755,
+      "sha256": "3fcad3717e2aec6bd90d585a913e76e506d9e1d846ee15e3d12fa9207901b1ec"
+    }
+  ]
+}

@@ -96,7 +96,7 @@ description: 维护 Surc/fnos_music_hub 独立飞牛音乐中心。用于接续�
 ## 原生 FPK 预览接续
 
 - 先读 `packaging/fpk/README.md` 和 `versions.json`；在线输入准备与离线组包分开。使用官方固定 fnpack，保留输入闭包、对应源码、包内容/版本/组件 SHA256，构建提交必须清楚；不以设计或缺失工具的输出冒称 FPK 成功。
-- 应用/包用户/组为 `fnos_music_hub`，仅非 root；端口 127.0.0.1:8790，依赖已有音桥 API 与 HTTPS 反代。配置/秘密在独立 var/config，状态 var/state，下载 var/downloads；不接管 Socket、不改 ext、不迁移旧数据。逐用户 Hot/token/端口/下载隔离不变。
+- 应用/包用户/组为 `fnos_music_hub`，仅非 root；默认端口 127.0.0.1:8790，依赖已有音桥 API 与 HTTPS 反代；preview.3 起可显式启用内网 HTTP 测试，只绑定配置的 RFC1918 私有 IPv4:8790，Hot 仍在 loopback。配置/秘密在独立 var/config，状态 var/state，下载 var/downloads；不接管 Socket、不改 ext、不迁移旧数据。逐用户 Hot/token/端口/下载隔离不变。
 - 升级先停服、完整备份程序/config/state，健康失败用保留的旧 Python/程序恢复匹配数据；卸载保留 var。检查备份失败/完整性、PID 复用/锁、坏版本 shell 回滚、密钥恢复及卸载/重装；不能用静态测试代替 fnOS 安装。
 - 运行 `tests/test_fpk_native.py`、普通 Linux 的 `native_smoke.py` 和实际 FPK 校验。root 或 procfs/PID 命名空间不一致的运行器必须记录真服务 smoke blocked，不加生产绕过；J4125/8GB 资源、真实账号/完整下载与 fnOS 安装升级另签收。预览工作流只上传 Actions 附件，本轮不发布正式 Release 或部署 NAS。
 
@@ -107,3 +107,10 @@ description: 维护 Surc/fnos_music_hub 独立飞牛音乐中心。用于接续�
 - 2026-10-26 用户本机 WSL 的 R-KW-001/002 原生 Hot 与 Hub 均取得 320 kbps MP3，完整解码/时长校验通过，各曲跨链路 SHA256 一致；证据见 docs/HOT_LOCAL_RETEST_20261026.md 与 docs/HOT_SMOKE_LOCAL_20261026.json。历史 407 保留，不把本机结果扩大为 NAS 或其他音质通过。
 - 用户于 2026-10-27 明确授权合并 PR #5 并发布预览版。发布使用 preview tag/prerelease，保留真实 NAS/账号/ACL/资源与人工试听待验；发布动作不授权部署 NAS 或升级为稳定版。后续发行仍须以新会话授权判断，不把此次授权当作永久发布授权。
 - 发布前记录精确 Git 提交、构建提交、标签、FPK/对应源码/内容清单/SHA256；代码或锁变更需重新构建验证。最终候选 CI、实际附件摘要与已发布结果分别记录，不把旧 Actions 附件冒称为新 tag 产物。
+
+## 内网测试接续（2026-10-27）
+
+- 用户要求先在内网测试。preview.3 增加显式 `lan_http_test`，HTTPS/secure cookie 仍默认；HTTP 仅接受 RFC1918 私有 IPv4 和固定原生端口8790，绑定选定接口，不开放所有接口。登录、Host/Origin、CSRF、GUID、逐用户 Hot/token/目录隔离仍严格；不新增匿名/共享身份。
+- 先读 docs/fpk-preview/LAN_TEST.md。音桥固定上游 1.0.7 默认 API 是 `http://127.0.0.1:18090/yinqiao/v1`，旧向导默认 18086/api/v1 有误；14040 是播放器/管理入口。缺音桥时不能完成真实登录。
+- 前台请求编号使用 getRandomValues，在真实不安全 HTTP origin 的 Chromium 下覆盖下载幂等/快照和十视口，不拿 localhost 的安全上下文代替。普通 Linux bundled smoke 检查选定 LAN 接口实际监听；真实 fnOS 安装、音桥登录和下载仍待验。
+- preview.3 为独立测试候选，不能覆盖已发布 preview.2 或沿用其产物摘要；本次内网测试授权不扩大为后续永久发布授权。

@@ -17,7 +17,7 @@
 ## 配置与启动
 
 1. 在项目目录创建 Python venv，安装 `python -m pip install -r requirements.lock`。
-2. 复制 `config.example.json` 为 `config.json`，设置稳定的 NAS 实例 ID、独立数据目录、音桥 API base URL 和前台的真实 `public_origin`。生产入口使用 HTTPS，并保留 `secure_cookie=true`；仅本机 HTTP 开发可显式设为 false。
+2. 复制 `config.example.json` 为 `config.json`，设置稳定的 NAS 实例 ID、独立数据目录、音桥 API base URL 和前台的真实 `public_origin`。生产入口使用 HTTPS，并保留 `secure_cookie=true`；本机 HTTP 开发可显式设为 false；可信内网临时测试另显式设置 `lan_http_test=true`，public_origin 必须是 RFC1918 私有 IPv4 与明确端口，参见 [内网测试](fpk-preview/LAN_TEST.md)。
 3. 在进程环境中设置音桥 API key（若音桥启用），以及每个用户的独立 Hot 访问令牌。配置仅保存环境变量名，不包含令牌。令牌至少 16 个字符。
 4. 为每个用户填写实际飞牛音乐 GUID、独立 Hot 端口和不重叠的下载绝对目录。GUID 必须来自可信的当前用户接口；不按用户名猜测。先不配 users 也可以登录并从 `/api/me` 核对本人 GUID，但无法搜索/下载；启用网易可独立只读浏览，不依赖 Hot。
 5. 用 `python scripts/run_hot_user.py --config config.json --guid <GUID> --binary /absolute/path/hotdownloader-server` 为该用户启动独立原生引擎。每个进程由宿主进程管理器分别守护。脚本使用 Hub 专属数据目录，首次初始化关闭音质自动降级，不读取旧 Hot/ext 的账号文件。

@@ -2,9 +2,10 @@
   {
     "stepTitle": "音乐 Hub PREVIEW",
     "items": [
-      {"type": "tips", "helpText": "预览版：尚未通过 J4125 实机验收。请先准备独立音桥 API 和 HTTPS 根域名反向代理，将其转发到本机 127.0.0.1:8790。不会接管官方音乐 Socket、修改 ext 或迁移数据。"},
-      {"type": "text", "field": "wizard_public_origin", "label": "Hub HTTPS 根地址", "rules": [{"required": true, "message": "填写实际 HTTPS 根地址"}, {"pattern": "^https://[^/]+/?$", "message": "仅根地址，不含路径"}]},
-      {"type": "text", "field": "wizard_bridge_url", "label": "现有音桥 API 地址", "initValue": "http://127.0.0.1:18086/api/v1", "rules": [{"required": true, "message": "填写音桥 API 地址"}]},
+      {"type": "tips", "helpText": "预览版：尚未通过 J4125 实机验收。HTTPS 模式需反代到 127.0.0.1:8790；内网 HTTP 测试模式可直接用 NAS 私有 IPv4:8790，仅在可信内网使用，密码和会话经明文传输。两种模式均需先安装音桥。不接管官方音乐 Socket、修改 ext 或迁移数据。"},
+      {"type": "select", "field": "wizard_access_mode", "label": "访问模式", "initValue": "https", "options": [{"label": "HTTPS 反向代理", "value": "https"}, {"label": "内网 HTTP 测试", "value": "lan_http_test"}], "rules": [{"required": true, "message": "选择访问模式"}]},
+      {"type": "text", "field": "wizard_public_origin", "label": "Hub 访问根地址", "rules": [{"required": true, "message": "HTTPS 根地址，或内网测试 http://NAS私有IPv4:8790"}, {"pattern": "^https?://[^/]+/?$", "message": "仅根地址，不含路径"}]},
+      {"type": "text", "field": "wizard_bridge_url", "label": "现有音桥 API 地址", "initValue": "http://127.0.0.1:18090/yinqiao/v1", "rules": [{"required": true, "message": "填写音桥 API 地址"}]},
       {"type": "tips", "helpText": "首次 users 为空：可经音桥登录核对本人 GUID，搜索/下载需管理员随后配置独立 Hot 用户。用户令牌由本机生成，音桥密钥仅写入受保护的 secrets.json。无需在 NAS 安装编译器或联网安装运行依赖。"}
     ]
   }

@@ -1,7 +1,7 @@
 appname = fnos_music_hub
-version = 0.1.0-preview.2
+version = 0.1.0-preview.3
 display_name = 音乐 Hub PREVIEW · 网易只读
-desc = 独立音乐中心预览版；J4125 实机尚待验收。需要现有音桥 API 和 HTTPS 反向代理；不接管官方音乐 Socket，不迁移 ext 数据。
+desc = 独立音乐中心预览版；J4125 实机尚待验收。需要现有音桥 API；支持 HTTPS 反向代理或显式内网 HTTP 测试；不接管官方音乐 Socket，不迁移 ext 数据。
 source = thirdparty
 platform = x86
 maintainer = Surc

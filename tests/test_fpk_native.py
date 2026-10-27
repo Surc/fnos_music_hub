@@ -38,7 +38,7 @@ def manager(tmp_path, monkeypatch):
     monkeypatch.setenv("TRIM_APPDEST", str(program))
     monkeypatch.setenv("TRIM_PKGVAR", str(var))
     monkeypatch.setenv("wizard_public_origin", "https://music.test")
-    monkeypatch.setenv("wizard_bridge_url", "http://127.0.0.1:18086/api/v1")
+    monkeypatch.setenv("wizard_bridge_url", "http://127.0.0.1:18090/yinqiao/v1")
     value = native.Lifecycle(program)
     for path in (value.var, value.config, value.state, value.run):
         path.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -73,6 +73,81 @@ def test_install_is_idempotent_and_launch_has_no_secrets(manager, monkeypatch):
     assert (manager.config / "hub.json").stat().st_mode & 0o777 == 0o600
     assert "music.test" in (manager.target / "ui/launch.html").read_text()
     assert "instance_id" not in (manager.target / "ui/launch.html").read_text()
+
+
+def test_explicit_lan_install_binds_selected_interface_and_preserves_config(
+    manager, monkeypatch
+):
+    (manager.config / "hub.json").unlink()
+    monkeypatch.setenv("wizard_access_mode", "lan_http_test")
+    monkeypatch.setenv("wizard_public_origin", "http://192.168.1.6:8790/")
+    manager.install()
+    cfg = manager.settings()
+    assert cfg.lan_http_test and not cfg.secure_cookie
+    assert manager.hub_host(cfg) == "192.168.1.6"
+    assert "明文" in (manager.target / "ui/launch.html").read_text()
+    before = (manager.config / "hub.json").read_bytes()
+    monkeypatch.setenv("wizard_access_mode", "https")
+    manager.install()
+    assert (manager.config / "hub.json").read_bytes() == before
+
+
+@pytest.mark.parametrize(
+    "mode,origin",
+    [
+        ("https", "http://192.168.1.6:8790"),
+        ("typo", "https://music.test"),
+        ("lan_http_test", "https://music.test"),
+        ("lan_http_test", "http://192.168.1.6:9999"),
+        ("lan_http_test", "http://8.8.8.8:8790"),
+    ],
+)
+def test_install_rejects_invalid_mode_or_origin_without_persisting(
+    manager, monkeypatch, mode, origin
+):
+    (manager.config / "hub.json").unlink()
+    monkeypatch.setenv("wizard_access_mode", mode)
+    monkeypatch.setenv("wizard_public_origin", origin)
+    with pytest.raises((ValueError, RuntimeError)):
+        manager.install()
+    assert not (manager.config / "hub.json").exists()
+
+
+def test_lan_ports_and_health_keep_hot_on_loopback(manager, monkeypatch):
+    cfg = set_users(manager)
+    cfg.update(
+        public_origin="http://192.168.1.6:8790", lan_http_test=True, secure_cookie=False
+    )
+    native.atomic_json(manager.config / "hub.json", cfg)
+    cfg = manager.settings()
+    bound = []
+
+    class Probe:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+        def setsockopt(self, *args):
+            pass
+
+        def bind(self, address):
+            bound.append(address)
+
+    monkeypatch.setattr(native.socket, "socket", Probe)
+    manager.check_ports(cfg)
+    assert bound == [("192.168.1.6", 8790), ("127.0.0.1", 18787), ("127.0.0.1", 18788)]
+    calls = []
+
+    def health(url, **kwargs):
+        calls.append((url, kwargs))
+        return {"status": "ok", "version": "0.1.0a1"}
+
+    monkeypatch.setattr(native, "get_json", health)
+    # A health probe with no users must reach the selected LAN interface, not loopback.
+    assert manager.health(cfg.model_copy(update={"users": {}}), {})
+    assert calls == [("http://192.168.1.6:8790/healthz", {"host": "192.168.1.6:8790"})]
 
 
 @pytest.mark.parametrize("enabled", [False, True])
@@ -115,29 +190,48 @@ def test_runtime_locks_deduplicate_shared_pins_and_reject_drift(tmp_path):
         wheelhouse.requirements(tmp_path)
 
 
-def test_offline_assembly_rejects_stale_runtime_lock_before_tools(tmp_path, monkeypatch):
+def test_offline_assembly_rejects_stale_runtime_lock_before_tools(
+    tmp_path, monkeypatch
+):
     inputs = tmp_path / "inputs"
     inputs.mkdir()
-    common.write_json(inputs / "inputs.json", {
-        "pins": common.PINS, "content": {}, "runtime_locks": {},
-    })
-    monkeypatch.setattr(prepare.subprocess, "run", lambda *a, **kw: pytest.fail("tool started"))
+    common.write_json(
+        inputs / "inputs.json",
+        {
+            "pins": common.PINS,
+            "content": {},
+            "runtime_locks": {},
+        },
+    )
+    monkeypatch.setattr(
+        prepare.subprocess, "run", lambda *a, **kw: pytest.fail("tool started")
+    )
     with pytest.raises(ValueError, match="runtime locks"):
         prepare.assemble(inputs, tmp_path / "output")
 
 
 @pytest.mark.parametrize("fault", ["missing", "version", "license", "duplicate"])
-def test_wheel_manifest_rejects_incomplete_or_unlicensed_inputs(tmp_path, monkeypatch, fault):
-    monkeypatch.setattr(wheelhouse, "requirements", lambda root: {"example": "1", "other": "2"})
+def test_wheel_manifest_rejects_incomplete_or_unlicensed_inputs(
+    tmp_path, monkeypatch, fault
+):
+    monkeypatch.setattr(
+        wheelhouse, "requirements", lambda root: {"example": "1", "other": "2"}
+    )
     monkeypatch.setattr(wheelhouse, "SDKS", {})
 
     def wheel(filename, name, version, license=True):
         with zipfile.ZipFile(tmp_path / filename, "w") as archive:
-            archive.writestr(f"{name}.dist-info/METADATA", f"Name: {name}\nVersion: {version}\n")
+            archive.writestr(
+                f"{name}.dist-info/METADATA", f"Name: {name}\nVersion: {version}\n"
+            )
             if license:
-                archive.writestr(f"{name}.dist-info/licenses/LICENSE", "synthetic-license")
+                archive.writestr(
+                    f"{name}.dist-info/licenses/LICENSE", "synthetic-license"
+                )
 
-    wheel("example.whl", "example", "0" if fault == "version" else "1", fault != "license")
+    wheel(
+        "example.whl", "example", "0" if fault == "version" else "1", fault != "license"
+    )
     if fault != "missing":
         wheel("other.whl", "other", "2")
     if fault == "duplicate":
@@ -146,11 +240,19 @@ def test_wheel_manifest_rejects_incomplete_or_unlicensed_inputs(tmp_path, monkey
         wheelhouse.describe(tmp_path)
 
 
-def test_rapidfuzz_wheel_rejects_hidden_native_runtime_requirement(tmp_path, monkeypatch):
-    monkeypatch.setattr(wheelhouse, "requirements", lambda root: {"rapidfuzz": "3.14.6"})
+def test_rapidfuzz_wheel_rejects_hidden_native_runtime_requirement(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setattr(
+        wheelhouse, "requirements", lambda root: {"rapidfuzz": "3.14.6"}
+    )
     monkeypatch.setattr(wheelhouse, "SDKS", {})
-    with zipfile.ZipFile(tmp_path / "rapidfuzz-3.14.6-py3-none-any.whl", "w") as archive:
-        archive.writestr("rapidfuzz.dist-info/METADATA", "Name: RapidFuzz\nVersion: 3.14.6\n")
+    with zipfile.ZipFile(
+        tmp_path / "rapidfuzz-3.14.6-py3-none-any.whl", "w"
+    ) as archive:
+        archive.writestr(
+            "rapidfuzz.dist-info/METADATA", "Name: RapidFuzz\nVersion: 3.14.6\n"
+        )
         archive.writestr("rapidfuzz.dist-info/licenses/LICENSE", "synthetic-license")
         archive.writestr("rapidfuzz/native.so", b"synthetic-native-library")
     with pytest.raises(ValueError, match="pure Python"):
@@ -509,7 +611,9 @@ def test_restart_port_probe_allows_closed_connection_time_wait(manager, monkeypa
             old_probe.bind(("127.0.0.1", port))
         assert error.value.errno == 98
     monkeypatch.setattr(native, "PORT", port)
-    manager.check_ports(SimpleNamespace(users={}))
+    manager.check_ports(
+        SimpleNamespace(users={}, lan_http_test=False, secure_cookie=True)
+    )
 
 
 def test_restart_port_probe_still_rejects_an_active_listener(manager, monkeypatch):
@@ -520,7 +624,9 @@ def test_restart_port_probe_still_rejects_an_active_listener(manager, monkeypatc
         listener.listen(1)
         monkeypatch.setattr(native, "PORT", address[1])
         with pytest.raises(OSError) as error:
-            manager.check_ports(SimpleNamespace(users={}))
+            manager.check_ports(
+                SimpleNamespace(users={}, lan_http_test=False, secure_cookie=True)
+            )
         assert error.value.errno == 98
         with socket.create_connection(address, timeout=2):
             accepted, _ = listener.accept()

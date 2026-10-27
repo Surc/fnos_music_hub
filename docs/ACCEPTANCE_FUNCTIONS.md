@@ -1,5 +1,7 @@
 # 功能点验收清单
 
+2026-10-27：preview.3 新增显式内网 HTTP 测试与双用户身份/Host/Origin/CSRF回归，见 [步骤](fpk-preview/LAN_TEST.md) 和 [本轮验证](VALIDATION.md)。默认仍HTTPS；用户NAS、音桥登录、下载和ACL未因此签收。
+
 2026-10-26：两首固定酷我样本已在用户本机 WSL 完成 Hot 原生/Hub 对照及真实音频技术校验，见 [本地复测](HOT_LOCAL_RETEST_20261026.md)。原环境 407 保留，人工试听、NAS 身份和安装仍待验。
 
 2026-10-24：网易只读目录和 Cookie/UID 显式关联已开发，模拟与真实 SDK 合成网络检查见 [验证记录](VALIDATION.md)；真实 R-NE-001..004 仍待验。公开/本人/推荐、分页/未知/重复与账号隔离的范围见 [网易模块](NETEASE.md)。没有网易搜索、完整快照、下载、云端写入、NAS 或 FPK 签收。

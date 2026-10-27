@@ -6,6 +6,7 @@ import importlib.util
 import os
 import shutil
 import signal
+import socket
 import subprocess
 import tempfile
 import time
@@ -95,6 +96,30 @@ def smoke(stage, report, require):
             ):
                 time.sleep(0.1)
             assert not any(native.alive(p) for p in before["children"])
+            # Kernel route lookup only: connect on UDP does not send a packet.
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
+                probe.connect(("192.0.2.1", 9))
+                lan_ip = probe.getsockname()[0]
+            cfg.update(
+                public_origin=f"http://{lan_ip}:8790",
+                lan_http_test=True,
+                secure_cookie=False,
+            )
+            native.atomic_json(manager.config / "hub.json", cfg)
+            manager.launch_page(manager.settings())
+            manager.start()
+            assert manager.running()
+            assert native.get_json(f"http://{lan_ip}:8790/healthz")["status"] == "ok"
+            hub_pid = manager.records()["children"][-1]["pid"]
+            command = Path(f"/proc/{hub_pid}/cmdline").read_bytes().split(b"\0")
+            assert command[command.index(b"--host") + 1] == lan_ip.encode()
+            manager.stop()
+            # Return to HTTPS defaults for the existing upgrade/rollback coverage.
+            cfg.update(
+                public_origin="https://native-smoke.test",
+                lan_http_test=False,
+                secure_cookie=True,
+            )
             # Both SDKs enabled against actual packaged dependencies, without an account.
             cfg.update(netease_enabled=True, qq_accounts_enabled=True)
             native.atomic_json(manager.config / "hub.json", cfg)
@@ -104,9 +129,14 @@ def smoke(stage, report, require):
             missing = root / "masked-requests"
             requests.rename(missing)
             try:
-                result = subprocess.run([str(stage / "cmd/main"), "start"], env=env, timeout=60)
+                result = subprocess.run(
+                    [str(stage / "cmd/main"), "start"], env=env, timeout=60
+                )
                 assert result.returncode != 0 and not manager.running()
-                assert "网易目录已启用，但固定版依赖缺失或损坏" in Path(env["TRIM_TEMP_LOGFILE"]).read_text()
+                assert (
+                    "网易目录已启用，但固定版依赖缺失或损坏"
+                    in Path(env["TRIM_TEMP_LOGFILE"]).read_text()
+                )
                 cfg["netease_enabled"] = False
                 native.atomic_json(manager.config / "hub.json", cfg)
                 manager.start()  # Missing optional dependency does not break QQ/Kuwo mode.
@@ -155,6 +185,7 @@ def smoke(stage, report, require):
                         "missing NetEase transitive dependency gives explicit startup error",
                         "disabled NetEase tolerates missing optional dependency with dual Hot/QQ",
                         "child exit stops all",
+                        "explicit LAN HTTP binds selected RFC1918 interface with real bundled Hub/Hot",
                         "backup integrity",
                         "failed upgrade shell rollback",
                         "old program and database/key recovery",

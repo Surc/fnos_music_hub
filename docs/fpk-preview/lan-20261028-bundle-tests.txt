@@ -1,0 +1,15 @@
+........................................................................ [ 28%]
+........................................................................ [ 56%]
+........................................................................ [ 84%]
+........................................                                 [100%]
+=============================== warnings summary ===============================
+fpk-output/stage/app/runtime/site-packages/fastapi/testclient.py:1
+  /home/runner/work/_temp/fpk-output/stage/app/runtime/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+fpk-test-tools/_pytest/cacheprovider.py:469
+  /home/runner/work/_temp/fpk-test-tools/_pytest/cacheprovider.py:469: PytestCacheWarning: could not create cache path /dev/.pytest_cache/v/cache/nodeids: [Errno 13] Permission denied: '/dev/pytest-cache-files-qljob0ws'
+    config.cache.set("cache/nodeids", sorted(self.cached_nodeids))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+256 passed, 2 warnings in 12.60s
