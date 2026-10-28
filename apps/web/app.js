@@ -613,18 +613,34 @@ function accountsPage() {
     const p = panel(name);
     const caps = node("div", undefined, "capability-list");
     caps.append(
-      badge(capability("search", provider) ? "公共搜索" : "搜索待接入"),
-      badge(capability("download", provider) ? "下载已接入" : "下载待接入"),
+      badge(
+        capability("search", provider)
+          ? "公共搜索"
+          : provider === "netease"
+            ? "搜索尚未实现"
+            : "搜索引擎未配置",
+      ),
+      badge(
+        capability("download", provider)
+          ? "下载已接入"
+          : provider === "kuwo"
+            ? "下载引擎未配置"
+            : "下载尚未开放",
+      ),
     );
     p.append(
       caps,
       node(
         "p",
         provider === "kuwo"
-          ? "公共模式；私人账号、歌单推荐尚未开放。"
-          : provider === "qq" && capability("cloud_accounts", "qq")
-            ? "本人创建歌单、账号推荐歌单和猜你喜欢可读取；下载与云端写入尚未开放。"
-            : "本人账号绑定、私人歌单和推荐尚未开放。",
+          ? "公共搜索和下载无需登录酷我账号；私人账号、歌单推荐尚未开放。"
+          : provider === "netease" && capability("cloud_accounts", "netease")
+            ? "公开歌单无需平台登录；本人歌单和账号推荐需关联本人网易账号。搜索、下载与云端写入尚未开放。"
+            : provider === "qq" && capability("cloud_accounts", "qq")
+              ? "本人创建歌单、账号推荐歌单和猜你喜欢可读取；下载与云端写入尚未开放。"
+              : provider === "qq"
+                ? "QQ 账号功能未启用；公共歌曲搜索无需登录 QQ，私人歌单和推荐需启用后关联本人账号。"
+                : "网易歌单与账号功能未启用；公开歌单无需平台登录，私人歌单和推荐需启用后关联本人账号。搜索与下载尚未实现。",
         "small muted",
       ),
     );
@@ -725,8 +741,8 @@ function accountsPage() {
           await navigate("collections");
         }),
       );
-    } else {
-      const bind = node("button", "绑定账号 · 待接入");
+    } else if (provider !== "kuwo") {
+      const bind = node("button", "账号功能未启用");
       bind.disabled = true;
       p.append(bind);
     }
@@ -1581,7 +1597,7 @@ function render() {
         ? state.discovery === "search"
           ? `${providers[state.provider]} · 公共歌曲搜索。本地收藏可独立使用；平台私人内容需要本人账号关联。`
           : "QQ · 本人账号请求。推荐歌单与猜你喜欢歌曲分开显示；个性化效果待与来源客户端对照。不会自动上报播放反馈。"
-        : "当前用户尚未配置可用的搜索引擎，请联系管理员。";
+        : "当前飞牛用户尚未配置独立搜索引擎，请联系管理员完成配置。酷我公共模式无需登录酷我账号。";
   $("#pagination").hidden =
     view !== "discover" ||
     !(state.discovery === "search" ? state.hasMore : state.personal?.has_more);

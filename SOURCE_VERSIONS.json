@@ -355,9 +355,9 @@
   ],
   "maintenance_skill": {
     "name": "maintain-fnos-music-hub",
-    "version": "1.5.5",
+    "version": "1.5.6",
     "files": {
-      "skills/maintain-fnos-music-hub/SKILL.md": "63db39f9526a56dea8f105bd19287e020a7be3bb2391d2493e453b7c5b6bce2f",
+      "skills/maintain-fnos-music-hub/SKILL.md": "d60f8f85f3ac376bcd7d3f5b16905df4143830ee4868bbba33e491a3a9745bc6",
       "skills/maintain-fnos-music-hub/agents/openai.yaml": "43f885a269d77d2173f7480c43e58afcab96777c2546511cdaeb4636349ed40d",
       "skills/maintain-fnos-music-hub/assets/icon.svg": "8936b24f674a1250d999e2c2b5901374fb4240426f32bd1ae340c352a90d617d"
     },
@@ -1044,6 +1044,17 @@
       "docs/fpk-preview/main-20261028-browser-report.json": "160226f764e7cdb5fabb8614ccb0be4d454cc96616df3686d5ee7add10a70230",
       "docs/fpk-preview/main-nas-20261028.json": "f9afef7af9e3875aa7421a97a5daf059e35897be8fe847c2fdd08cc21cc240c7",
       "docs/fpk-preview/MAIN_NAS_20261028.md": "a410333f2c01f8dbb2b14c755e32d4f1eb70f981cf28a46bf61802192c60bf07"
+    },
+    "runtime_setup": {
+      "recorded_on": "2026-10-28",
+      "configured_users": 1,
+      "qq_accounts_enabled": true,
+      "netease_enabled": true,
+      "config_owner_uid": 960,
+      "config_posix_mode": "0600",
+      "config_backup_and_readback_verified": true,
+      "real_search_download": "pending",
+      "evidence": "docs/fpk-preview/USER_SETUP_20261028.md"
     }
   },
   "native_preview_history": [
