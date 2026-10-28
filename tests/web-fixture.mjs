@@ -6,7 +6,10 @@ export const song = {
   artist: "L’Arc〜en〜Ciel",
   album: "KISS",
   duration_seconds: 252,
-  qualities: [{ quality: "320kmp3" }, { quality: "128kmp3" }],
+  qualities: [
+    { quality: "320kmp3", filename: "320.mp3", size: 10080000 },
+    { quality: "128kmp3", filename: "128.mp3", size: 0 },
+  ],
 };
 export function fixture(options = {}) {
   const result = {

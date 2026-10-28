@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "repository": "Surc/fnos_music_hub",
-  "stage": "native-fpk-preview4-service-search-verified-control-state-pending",
+  "stage": "song-list-quality-filters-implemented-nas-update-deferred",
   "recorded_on": "2026-10-29",
   "observation_policy": "Most observations remain the fixed-source v1.6 research of 2026-10-21. MusicBox and legacy ext were rechecked on 2026-10-24 at the same recorded SHAs. Adopted pins require merged Hub code; branch implementation and real acceptance are separate.",
   "design_archive": {
@@ -355,16 +355,16 @@
   ],
   "maintenance_skill": {
     "name": "maintain-fnos-music-hub",
-    "version": "1.5.8",
+    "version": "1.5.9",
     "files": {
-      "skills/maintain-fnos-music-hub/SKILL.md": "8cd2a2df223a8511a23afa0cde2a8c953606003ce5f2fbcb3f3d20dfd54f8b7b",
+      "skills/maintain-fnos-music-hub/SKILL.md": "b525e1693044fcfc8f1671463b075971ce61a8d3285e899fb99b98738899725d",
       "skills/maintain-fnos-music-hub/agents/openai.yaml": "43f885a269d77d2173f7480c43e58afcab96777c2546511cdaeb4636349ed40d",
       "skills/maintain-fnos-music-hub/assets/icon.svg": "8936b24f674a1250d999e2c2b5901374fb4240426f32bd1ae340c352a90d617d"
     },
     "personal_skill_git_commit": "7eb69ae91521f04e6d2f7bcf0229fd791fdb477e",
     "personal_sync": {
       "status": "local_copy_verified_no_personal_git_checkout",
-      "note": "Personal maintenance skill 1.5.5 copied and SHA256 verified on this host; no personal Skills Git checkout is configured. Historical personal_skill_git_commit remains historical."
+      "note": "Personal maintenance skill 1.5.9 copied and SHA256 verified on this host; no personal Skills Git checkout is configured. Historical personal_skill_git_commit remains historical."
     }
   },
   "project_release": {
@@ -1498,5 +1498,26 @@
         "evidence": "docs/fpk-preview/USER_SETUP_20261028.md"
       }
     }
-  ]
+  ],
+  "song_list_ui": {
+    "recorded_on": "2026-10-29",
+    "evidence": "docs/SONG_LIST_20261029.md",
+    "upstream_pin_changed": false,
+    "backend_contract_changed": false,
+    "checks": {
+      "jsdom_passed": 41,
+      "related_pytest_passed": 50,
+      "chromium_viewports_passed": 10
+    },
+    "nas_updated": false,
+    "new_fpk_built": false,
+    "user_requested_deployment_deferred": true,
+    "files_sha256": {
+      "apps/web/app.js": "3a0549f5f70fa88704f6621f9c90bd652d085dcd64c164f956737d852eb69f99",
+      "apps/web/index.html": "8110b36e424f6496bc8a697339522f81d8200ae50f1006c8ace87255f3338c86",
+      "apps/web/style.css": "4e8d374d23a89953f25f6f29174a663d37a90dc74a2eafd7d8367608f338dfec",
+      "docs/SONG_LIST_20261029.md": "784a089c9819e9a4968fc943929f49b62c15382562c9915d1dae50b60f1b4408",
+      "docs/song-list-screenshots/browser-report.json": "eadaeb8b7f909fb0bbe5c93408e7da004a8573692a2ee03eaa486a48a3b70899"
+    }
+  }
 }

@@ -146,7 +146,13 @@ try {
       qqEnabled: true,
       neteaseEnabled: true,
       songs: [
-        song,
+        {
+          ...song,
+          qualities: [
+            ...song.qualities,
+            { quality: "flac", filename: "a.flac", size: 30100000 },
+          ],
+        },
         {
           ...song,
           title: "晴天",
@@ -191,6 +197,43 @@ try {
     await page.getByRole("button", { name: "搜索", exact: true }).click();
     await page.locator(".song-card").first().waitFor();
     assert.equal(await page.locator(".song-card").count(), 3);
+    await page.locator("#quality-sort").selectOption("high");
+    assert.match(
+      await page.locator('.song-card [data-quality="flac"]').textContent(),
+      /FLAC · 30.1 MB/,
+    );
+    await page.locator('[data-quality="flac"]').click();
+    assert.equal(await page.locator(".song-card").count(), 1);
+    assert.equal(await page.locator("#quality-filter").inputValue(), "flac");
+    await layout(page);
+    const qualityCalls = current.calls.length;
+    if (name === "mobile-portrait") {
+      for (const [w, h] of [
+        [844, 390],
+        [390, 360],
+        [390, 844],
+      ]) {
+        await page.setViewportSize({ width: w, height: h });
+        assert.equal(
+          await page.locator("#quality-filter").inputValue(),
+          "flac",
+        );
+        assert.equal(await page.locator("#quality-sort").inputValue(), "high");
+        await layout(page);
+      }
+      assert.equal(
+        current.calls.length,
+        qualityCalls,
+        "quality controls survive rotation without requests",
+      );
+    }
+    await page.locator("#quality-filter").selectOption("all");
+    await page.locator("#quality-sort").selectOption("source");
+    assert.equal(await page.locator(".song-card").count(), 3);
+    await page.evaluate(() => {
+      document.activeElement?.blur();
+      window.scrollTo(0, 0);
+    });
     await layout(page);
     if (
       [
@@ -598,7 +641,7 @@ try {
       transport: "insecure LAN HTTP origin routed to local synthetic API",
       status: "passed",
       coverage:
-        "login/search/unknown metadata/bulk/confirmation/tasks/region details/files with actual container and codec/QQ QR confirmation and explicit binding/QQ recommendations and guess songs/QQ playlist page-only details/failed next page retries the same page/two-pass snapshot UI/1000 ordered snapshot entries/local snapshot history after unlink/confirmed local deletion/NetEase explicit UID consent and rotation-preserved Cookie form/private playlists/duplicate and unknown entries/read-only recommendation songs/unlink/storage/injection/collections/logout/overflow",
+        "login/search/quality row list with source format/size/tags/filter/sort/rotation-preserved controls/unknown metadata/bulk/confirmation/tasks/region details/files with actual container and codec/QQ QR confirmation and explicit binding/QQ recommendations and guess songs/QQ playlist page-only details/failed next page retries the same page/two-pass snapshot UI/1000 ordered snapshot entries/local snapshot history after unlink/confirmed local deletion/NetEase explicit UID consent and rotation-preserved Cookie form/private playlists/duplicate and unknown entries/read-only recommendation songs/unlink/storage/injection/collections/logout/overflow",
     });
     console.log("PASS", name, `${width}x${height}`);
     await context.close();

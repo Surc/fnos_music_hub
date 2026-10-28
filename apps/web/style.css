@@ -569,6 +569,200 @@ input[type="checkbox"] {
   font-size: 12px;
   padding: 8px 11px;
 }
+.song-controls {
+  margin: 18px 0;
+}
+.song-filter-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 20px;
+}
+.song-filter-fields label {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  max-width: 100%;
+}
+.song-filter-fields select {
+  min-height: 44px;
+}
+.song-filter-fields > span {
+  align-self: center;
+  margin-left: auto;
+}
+.song-controls > p {
+  margin: 10px 0 0;
+}
+.results.song-list {
+  display: block;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+}
+.song-list-header,
+.song-list .song-card {
+  display: grid;
+  grid-template-columns: 38px minmax(180px, 1.25fr) 50px minmax(
+      230px,
+      1.4fr
+    ) 142px;
+  grid-template-areas: "check info duration quality actions";
+  gap: 14px;
+  align-items: center;
+  padding: 16px;
+}
+.song-list-header {
+  background: #eef2eb;
+  color: var(--muted);
+  font-size: 11px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+.song-list .song-card {
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+}
+.song-list .song-card:hover {
+  background: #fbfcf9;
+}
+.song-list .song-heading {
+  grid-area: check;
+  justify-content: center;
+}
+.song-list .select-song {
+  min-width: 38px;
+  justify-content: center;
+}
+.song-info {
+  grid-area: info;
+  min-width: 0;
+}
+.song-list h3 {
+  margin: 0 0 4px;
+  line-height: 1.5;
+}
+.song-list .song-info p {
+  line-height: 1.5;
+  margin-bottom: 3px;
+}
+.song-list .song-source {
+  font-size: 10px;
+  letter-spacing: 0;
+}
+.song-duration {
+  grid-area: duration;
+  font-size: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.song-quality {
+  grid-area: quality;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+.quality-tag {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 3px;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 44px;
+  border: 1px solid #dce5e0;
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: #f3f6f4;
+  color: #456557;
+  font-size: 11px;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.quality-tag strong {
+  font-size: 11px;
+  font-weight: 600;
+}
+.quality-tag[data-tier="lossless"] {
+  background: #edf4ec;
+  border-color: #c8dcc5;
+  color: #3c6742;
+}
+.quality-tag[data-tier="hires"] {
+  background: #fbf3e5;
+  border-color: #e9d7ad;
+  color: #86612d;
+}
+.quality-tag[aria-pressed="true"] {
+  outline: 2px solid var(--green);
+  outline-offset: -2px;
+}
+.quality-meta {
+  color: var(--muted);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.song-list .song-actions {
+  grid-area: actions;
+  margin: 0;
+  gap: 6px;
+}
+.song-list .song-actions button {
+  min-height: 44px;
+  padding: 7px 9px;
+}
+#selection-hidden {
+  flex-basis: 100%;
+  order: 2;
+}
+@media (max-width: 1290px) {
+  .song-list-header,
+  .song-list .song-card {
+    grid-template-columns: 38px minmax(0, 1fr) 50px 142px;
+    grid-template-areas: "check info duration actions" ". quality quality actions";
+    gap: 10px 14px;
+  }
+  .song-list-header {
+    grid-template-areas: "check info duration actions";
+  }
+  .song-list-header .song-quality {
+    display: none;
+  }
+}
+@media (max-width: 760px) {
+  .song-list-header {
+    display: none;
+  }
+  .song-list .song-card {
+    grid-template-columns: 28px minmax(0, 1fr) 46px;
+    grid-template-areas: "check info duration" ". quality quality" ". actions actions";
+    padding: 14px 12px;
+    gap: 10px;
+  }
+  .song-list .song-card:first-of-type {
+    border-top: 0;
+  }
+  .song-list .song-heading {
+    align-self: start;
+  }
+  .song-list .select-song {
+    min-width: 28px;
+  }
+  .song-filter-fields {
+    gap: 10px;
+  }
+  .song-filter-fields label {
+    flex: 1 1 140px;
+  }
+  .song-filter-fields > span {
+    flex-basis: 100%;
+    margin-left: 0;
+  }
+}
 .empty {
   padding: 44px 22px;
   text-align: center;

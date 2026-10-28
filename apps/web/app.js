@@ -17,6 +17,32 @@ const qualities = {
   flac: "FLAC · 无损",
   hires: "Hi-Res · 高解析",
 };
+// Display metadata from the pinned Hot contract; download admission stays separate.
+const qualityOrder = [
+  "48kaac",
+  "96kaac",
+  "192kaac",
+  "96kogg",
+  "100kogg",
+  "192kogg",
+  "300kogg",
+  "128kmp3",
+  "320kmp3",
+  "ape",
+  "flac",
+  "hires",
+  "臻品全景声",
+  "臻品全景声 5.1",
+  "臻品全景声 7.1.4",
+  "臻品母带",
+];
+const qualityLabels = {
+  "128kmp3": "标准 · 128k",
+  "320kmp3": "HQ · 320k",
+  flac: "SQ · 无损",
+  ape: "APE · 无损",
+  hires: "Hi-Res",
+};
 const statusNames = {
   queued: "待提交",
   submitting: "正在接单",
@@ -51,6 +77,8 @@ const state = {
   hasMore: false,
   searched: false,
   searchBusy: false,
+  qualityFilter: "all",
+  qualitySort: "source",
   favorites: [],
   tasks: [],
   assets: [],
@@ -198,6 +226,8 @@ function signedOut() {
   state.drafts.clear();
   state.submitting = false;
   state.searchBusy = false;
+  state.qualityFilter = "all";
+  state.qualitySort = "source";
   state.search = "";
   state.page = 0;
   state.searched = false;
@@ -216,6 +246,13 @@ function signedOut() {
   $("#target-path").textContent = "";
   $("#download-quality").replaceChildren();
   $("#download-target").replaceChildren();
+  $("#song-controls").hidden = true;
+  $("#quality-filter").replaceChildren(
+    Object.assign(node("option", "全部品质"), { value: "all" }),
+  );
+  $("#quality-sort").value = "source";
+  $("#song-result-count").textContent = "";
+  $("#selection-hidden").textContent = "";
   $("#page-error span").textContent = "";
   $("#page-status").textContent = "";
   $("#toast").textContent = "";
@@ -268,6 +305,96 @@ function qualityList(song) {
     (song.qualities || []).some((item) => item.quality === q),
   );
 }
+function metadataQualities(song) {
+  return (song.qualities || [])
+    .filter((q) => typeof q.quality === "string" && q.quality)
+    .slice()
+    .sort(
+      (a, b) =>
+        qualityOrder.indexOf(b.quality) - qualityOrder.indexOf(a.quality),
+    );
+}
+function qualityFormat(q) {
+  const extension = /\.([a-z0-9]{2,5})$/i.exec(q.filename || "")?.[1];
+  const format =
+    extension || /(?:\d+k)?(mp3|aac|ogg|flac|ape)$/i.exec(q.quality)?.[1];
+  return format &&
+    ["mp3", "flac", "ape", "aac", "m4a", "ogg", "opus", "wav"].includes(
+      format.toLowerCase(),
+    )
+    ? format.toUpperCase()
+    : "格式未提供";
+}
+function sourceSize(size) {
+  if (!Number.isSafeInteger(size) || size <= 0) return "大小未提供";
+  if (size < 1000) return `${size} B`;
+  const units = ["kB", "MB", "GB", "TB"];
+  const power = Math.min(4, Math.floor(Math.log10(size) / 3));
+  return `${(size / 1000 ** power).toFixed(1)} ${units[power - 1]}`;
+}
+function searchPresentation(rows) {
+  const result = rows.filter(
+    ({ song }) =>
+      state.qualityFilter === "all" ||
+      metadataQualities(song).some((q) => q.quality === state.qualityFilter) ||
+      (state.qualityFilter === "unknown" && !metadataQualities(song).length),
+  );
+  if (state.qualitySort === "source") return result;
+  const rank = (row) =>
+    Math.max(
+      -1,
+      ...metadataQualities(row.song).map((q) =>
+        qualityOrder.indexOf(q.quality),
+      ),
+    );
+  return result.sort((a, b) => {
+    const left = rank(a),
+      right = rank(b);
+    if (left < 0 || right < 0) return (left < 0) - (right < 0);
+    return state.qualitySort === "high" ? right - left : left - right;
+  });
+}
+function renderSongControls() {
+  const active =
+    state.view === "discover" &&
+    state.discovery === "search" &&
+    state.rows.length > 0;
+  $("#song-controls").hidden = !active;
+  if (!active) return;
+  const options = new Set(
+    state.rows.flatMap(({ song }) =>
+      metadataQualities(song).map((q) => q.quality),
+    ),
+  );
+  // Keep a chosen filter when loading another page or when a new search has no matches.
+  if (!["all", "unknown"].includes(state.qualityFilter))
+    options.add(state.qualityFilter);
+  const select = $("#quality-filter");
+  select.replaceChildren(
+    ...[
+      "all",
+      ...[...options].sort(
+        (a, b) => qualityOrder.indexOf(b) - qualityOrder.indexOf(a),
+      ),
+      "unknown",
+    ].map((q) => {
+      const option = node(
+        "option",
+        q === "all"
+          ? "全部品质"
+          : q === "unknown"
+            ? "品质未提供"
+            : qualityLabels[q] || q,
+      );
+      option.value = q;
+      return option;
+    }),
+  );
+  select.value = state.qualityFilter;
+  $("#quality-sort").value = state.qualitySort;
+  $("#song-result-count").textContent =
+    `显示 ${visibleRows().length} / 已加载 ${state.rows.length} 首${state.hasMore ? " · 可继续加载" : ""}`;
+}
 function downloadable(song) {
   return Boolean(
     song.track &&
@@ -290,7 +417,7 @@ function visibleRows() {
       id: "recommend:" + i,
       song,
     }));
-  return state.discovery === "search" ? state.rows : [];
+  return state.discovery === "search" ? searchPresentation(state.rows) : [];
 }
 function selection() {
   return state.selected[state.view];
@@ -304,7 +431,15 @@ function updateSelection() {
   const count = selected
     ? eligible.filter((r) => selected.has(r.id)).length
     : 0;
-  $("#selection-bar").hidden = !eligible.length;
+  const shown = new Set(rows.map((r) => r.id));
+  const hiddenCount =
+    state.view === "discover" && state.discovery === "search"
+      ? state.rows.filter((r) => selected?.has(r.id) && !shown.has(r.id)).length
+      : 0;
+  $("#selection-bar").hidden = !eligible.length && !hiddenCount;
+  $("#selection-hidden").hidden = !hiddenCount;
+  $("#selection-hidden").textContent =
+    `另有 ${hiddenCount} 首选中项被筛选隐藏，本次不会下载；切回全部品质可查看。`;
   $("#selection-count").textContent = `已选 ${count} 首`;
   $("#download-selected").disabled = !count;
   $("#select-all").checked = Boolean(
@@ -313,17 +448,33 @@ function updateSelection() {
   $("#select-all").indeterminate = count > 0 && count < eligible.length;
 }
 function songCards(rows) {
-  const grid = node("div", undefined, "results");
+  if (!rows.length)
+    return empty(
+      "没有符合品质的歌曲",
+      "切换到全部品质，或继续加载更多搜索结果。",
+    );
+  const grid = node("div", undefined, "results song-list");
+  grid.setAttribute("role", "table");
+  grid.setAttribute("aria-label", "歌曲列表");
+  const header = node("div", undefined, "song-list-header");
+  header.setAttribute("role", "row");
+  for (const [text, name] of [
+    ["选择", "song-heading"],
+    ["歌曲 / 歌手 / 专辑", "song-info"],
+    ["时长", "song-duration"],
+    ["品质 · 格式 · 来源大小", "song-quality"],
+    ["操作", "song-actions"],
+  ]) {
+    const cell = node("span", text, name);
+    cell.setAttribute("role", "columnheader");
+    header.append(cell);
+  }
+  grid.append(header);
   for (const { song, id } of rows) {
     const card = node("article", undefined, "song-card");
+    card.setAttribute("role", "row");
     const head = node("div", undefined, "song-heading");
-    head.append(
-      node(
-        "span",
-        providers[song.track?.provider] || "来源未知",
-        "song-source",
-      ),
-    );
+    head.setAttribute("role", "cell");
     if (downloadable(song)) {
       const label = node("label", undefined, "select-song");
       const check = node("input");
@@ -337,31 +488,87 @@ function songCards(rows) {
         else selected.delete(id);
         updateSelection();
       });
-      label.append(node("span", "选择"), check);
+      label.append(check);
       head.append(label);
     }
-    card.append(
-      head,
+    const info = node("div", undefined, "song-info");
+    info.setAttribute("role", "cell");
+    info.append(
       node("h3", song.title || "来源中的未知条目"),
       node("p", song.artist || "歌手信息未知"),
+      node("p", song.album || "专辑信息未知"),
       node(
-        "p",
-        [
-          song.album,
-          song.duration_seconds
-            ? `${Math.round(song.duration_seconds)} 秒`
-            : "时长未知",
-        ]
-          .filter(Boolean)
-          .join(" · "),
+        "span",
+        providers[song.track?.provider] || "来源未知",
+        "song-source",
       ),
     );
+    const seconds = Math.round(Number(song.duration_seconds));
+    const duration = node(
+      "span",
+      seconds > 0
+        ? `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`
+        : "未知",
+      "song-duration",
+    );
+    duration.setAttribute("role", "cell");
+    duration.setAttribute(
+      "aria-label",
+      seconds > 0 ? `时长 ${seconds} 秒` : "时长未知",
+    );
+    const qualityCell = node("div", undefined, "song-quality");
+    qualityCell.setAttribute("role", "cell");
+    for (const q of metadataQualities(song)) {
+      const tag =
+        state.view === "discover" && state.discovery === "search"
+          ? button(
+              "",
+              () => {
+                state.qualityFilter = q.quality;
+                render();
+                $("#quality-filter").focus();
+              },
+              "quality-tag",
+            )
+          : node("span", undefined, "quality-tag");
+      tag.dataset.quality = q.quality;
+      tag.dataset.tier = ["flac", "ape"].includes(q.quality)
+        ? "lossless"
+        : q.quality === "hires"
+          ? "hires"
+          : "standard";
+      if (tag.tagName === "BUTTON") {
+        tag.setAttribute(
+          "aria-label",
+          `筛选品质 ${qualityLabels[q.quality] || q.quality}`,
+        );
+        tag.setAttribute(
+          "aria-pressed",
+          String(state.qualityFilter === q.quality),
+        );
+      }
+      tag.append(
+        node("strong", qualityLabels[q.quality] || q.quality),
+        node(
+          "span",
+          `${qualityFormat(q)} · ${sourceSize(q.size)}`,
+          "quality-meta",
+        ),
+      );
+      qualityCell.append(tag);
+    }
+    if (!qualityCell.childNodes.length)
+      qualityCell.append(
+        node("span", "品质 / 格式 / 大小未提供", "small muted"),
+      );
+    card.append(head, info, duration, qualityCell);
     if (!song.track) {
-      card.append(node("p", "来源条目暂时无法识别，仍保留原位置。", "error"));
+      info.append(node("p", "来源条目暂时无法识别，仍保留原位置。", "error"));
       grid.append(card);
       continue;
     }
     const actions = node("div", undefined, "song-actions");
+    actions.setAttribute("role", "cell");
     const favorite = button(
       state.favorites.some((s) => s.track && key(s.track) === key(song.track))
         ? "取消本地收藏"
@@ -393,8 +600,14 @@ function songCards(rows) {
     actions.append(favorite, download);
     card.append(actions);
     if (!qualityList(song).length)
-      card.append(
-        node("p", "暂未提供可用音质，仍可浏览和本地收藏。", "small muted"),
+      info.append(
+        node(
+          "p",
+          metadataQualities(song).length
+            ? "本版暂不支持下载这些品质，仍可浏览和本地收藏。"
+            : "暂未提供可用音质，仍可浏览和本地收藏。",
+          "small muted",
+        ),
       );
     grid.append(card);
   }
@@ -1605,7 +1818,7 @@ function render() {
   $("#view-content").removeAttribute("aria-labelledby");
   if (view === "discover")
     result = state.rows.length
-      ? songCards(state.rows)
+      ? songCards(visibleRows())
       : empty(
           state.searched ? "没有找到歌曲" : "从一首喜欢的歌开始",
           state.searched
@@ -1656,6 +1869,7 @@ function render() {
   if (view === "storage") result = storagePage();
   if (view === "injection") result = injectionPage();
   content.replaceChildren(result);
+  renderSongControls();
   updateSelection();
 }
 function pageError(message) {
@@ -2086,6 +2300,14 @@ for (const [id, collectionTab] of [
     state.selected.collections.clear();
     render();
     await loadView();
+  });
+for (const [id, field] of [
+  ["quality-filter", "qualityFilter"],
+  ["quality-sort", "qualitySort"],
+])
+  $("#" + id).addEventListener("change", (event) => {
+    state[field] = event.target.value;
+    render();
   });
 $("#select-all").addEventListener("change", (event) => {
   const set = selection();

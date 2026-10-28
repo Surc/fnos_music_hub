@@ -131,6 +131,194 @@ test("bulk selection preserves displayed order and duplicate occurrences", async
     r.close();
   }
 });
+test("quality list exposes source format and size without inventing unknown values", async () => {
+  const r = await boot({
+    songs: [
+      {
+        ...song,
+        qualities: [
+          ...song.qualities,
+          { quality: "flac", filename: "lossless.flac", size: 30100000 },
+          { quality: "hires", filename: "", size: 0 },
+          {
+            quality: '<img src=x onerror="window.pwned=true">',
+            filename: "unknown.bin",
+            size: -1,
+          },
+        ],
+      },
+    ],
+  });
+  try {
+    await r.search();
+    const row = r.d.querySelector(".song-card");
+    assert.equal(
+      row.closest('[role="table"]').getAttribute("aria-label"),
+      "歌曲列表",
+    );
+    assert.match(
+      row.querySelector('[data-quality="320kmp3"]').textContent,
+      /MP3 · 10.1 MB/,
+    );
+    assert.match(
+      row.querySelector('[data-quality="128kmp3"]').textContent,
+      /大小未提供/,
+    );
+    assert.match(
+      row.querySelector('[data-quality="flac"]').textContent,
+      /SQ · 无损FLAC · 30.1 MB/,
+    );
+    assert.match(
+      row.querySelector('[data-quality="hires"]').textContent,
+      /格式未提供 · 大小未提供/,
+    );
+    assert.equal(row.querySelector(".song-duration").textContent, "4:12");
+    assert.equal(r.d.querySelectorAll("img").length, 0);
+    assert.equal(r.dom.window.pwned, undefined);
+    assert.equal(r.calls.filter((c) => c.method === "POST").length, 0);
+  } finally {
+    r.close();
+  }
+});
+test("quality sorting is stable, keeps unknown rows last and restores source duplicates", async () => {
+  const flac = {
+    ...song,
+    title: "Lossless",
+    qualities: [{ quality: "flac", filename: "a.flac", size: 12 }],
+  };
+  const low = {
+    ...song,
+    title: "Standard",
+    qualities: [{ quality: "128kmp3" }],
+  };
+  const r = await boot({
+    songs: [
+      song,
+      { title: "Unknown", track: null, qualities: [] },
+      flac,
+      low,
+      song,
+    ],
+  });
+  const titles = () =>
+    [...r.d.querySelectorAll(".song-card h3")].map((e) => e.textContent);
+  const sort = (value) => {
+    const el = r.d.querySelector("#quality-sort");
+    el.value = value;
+    el.dispatchEvent(new r.dom.window.Event("change"));
+  };
+  try {
+    await r.search();
+    r.click("[data-row]");
+    sort("high");
+    assert.deepEqual(titles(), [
+      "Lossless",
+      song.title,
+      song.title,
+      "Standard",
+      "Unknown",
+    ]);
+    assert.equal(r.d.querySelectorAll("[data-row]:checked").length, 1);
+    sort("low");
+    assert.deepEqual(titles(), [
+      "Standard",
+      song.title,
+      song.title,
+      "Lossless",
+      "Unknown",
+    ]);
+    sort("source");
+    assert.deepEqual(titles(), [
+      song.title,
+      "Unknown",
+      "Lossless",
+      "Standard",
+      song.title,
+    ]);
+    assert.equal(
+      r.calls.filter((c) => c.path.startsWith("/api/search")).length,
+      1,
+    );
+  } finally {
+    r.close();
+  }
+});
+test("quality tags filter loaded results; hidden selections never enter the download", async () => {
+  const lossless = {
+    ...song,
+    title: "Lossless",
+    track: { ...track, id: "228908" },
+    qualities: [{ quality: "flac", filename: "a.flac", size: 1000 }],
+  };
+  const r = await boot({ songs: [song, lossless, lossless], searchMore: true });
+  try {
+    await r.search();
+    r.click("#select-all");
+    r.click('[data-quality="flac"]');
+    assert.equal(r.d.querySelector("#quality-filter").value, "flac");
+    assert.equal(r.d.querySelectorAll(".song-card").length, 2);
+    assert.match(
+      r.d.querySelector("#song-result-count").textContent,
+      /显示 2 \/ 已加载 3 首 · 可继续加载/,
+    );
+    assert.match(
+      r.d.querySelector("#selection-hidden").textContent,
+      /另有 1 首/,
+    );
+    assert.equal(
+      r.d.querySelector("#selection-count").textContent,
+      "已选 2 首",
+    );
+    const before = r.calls.length;
+    r.dom.window.dispatchEvent(new r.dom.window.Event("resize"));
+    assert.equal(r.d.querySelector("#quality-filter").value, "flac");
+    assert.equal(r.calls.length, before);
+    r.click("#download-selected");
+    assert.equal(r.d.querySelector("#download-quality").value, "flac");
+    r.submit("#download-form");
+    await waitFor(() => r.rig.manifests.length);
+    assert.deepEqual(r.rig.manifests[0], [lossless.track, lossless.track]);
+    assert.equal(
+      r.calls.filter((c) => c.path.startsWith("/api/search")).length,
+      1,
+    );
+  } finally {
+    r.close();
+  }
+});
+test("quality filter survives new pages, reports no matches, and resets on logout", async () => {
+  const r = await boot({ searchMore: true });
+  try {
+    await r.search();
+    const filter = r.d.querySelector("#quality-filter");
+    filter.value = "128kmp3";
+    filter.dispatchEvent(new r.dom.window.Event("change"));
+    r.rig.songs = [
+      { ...song, title: "Other", qualities: [{ quality: "flac" }] },
+    ];
+    r.click("#next-page");
+    await waitFor(() =>
+      r.d
+        .querySelector("#song-result-count")
+        .textContent.includes("已加载 2 首"),
+    );
+    assert.equal(filter.value, "128kmp3");
+    assert.equal(r.d.querySelectorAll(".song-card").length, 1);
+    filter.value = "unknown";
+    filter.dispatchEvent(new r.dom.window.Event("change"));
+    assert.match(
+      r.d.querySelector("#view-content").textContent,
+      /没有符合品质的歌曲/,
+    );
+    assert.equal(r.d.querySelector("#pagination").hidden, false);
+    r.click("#logout");
+    await waitFor(() => !r.d.querySelector("#login").hidden);
+    assert.equal(filter.value, "all");
+    assert.equal(filter.options.length, 1);
+  } finally {
+    r.close();
+  }
+});
 test("window resizing preserves selected tracks, modal fields and request count", async () => {
   const r = await boot();
   try {

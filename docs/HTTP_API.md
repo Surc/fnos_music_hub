@@ -1,5 +1,9 @@
 # 开发接口 v0.1
 
+## 搜索品质元数据展示（2026-10-29）
+
+沿用现有`GET /api/search`的`items[].qualities[] = {quality,filename,size}`，size为来源字节数，0代表未提供；没有新增取流探测或服务端全库排序API。前台格式取来源文件扩展或明确的格式标签；未知不猜测，品质/大小不等于实际文件校验。筛选与排序只作用于已加载结果，不改变缓存、清单、任务准入或上游采用版本。
+
 ## 网易只读扩展（可选）
 
 默认 `netease_enabled=false`；固定依赖、隔离和错误语义见 [网易模块](NETEASE.md)。沿用身份、CSRF 和 no-store，Cookie 仅放在下表 POST 请求体，不进入 GET、URL 或响应。

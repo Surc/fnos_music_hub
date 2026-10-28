@@ -311,13 +311,43 @@
           <div id="page-error" class="page-error" role="alert" hidden>
             <span></span><button type="button" id="retry-page">重试</button>
           </div>
+          <section
+            id="song-controls"
+            class="song-controls"
+            aria-label="歌曲品质筛选与排序"
+            hidden
+          >
+            <div class="song-filter-fields">
+              <label
+                >品质筛选<select id="quality-filter">
+                  <option value="all">全部品质</option>
+                </select></label
+              >
+              <label
+                >排序<select id="quality-sort">
+                  <option value="source">来源顺序</option>
+                  <option value="high">最高品质：高 → 低</option>
+                  <option value="low">最高品质：低 → 高</option>
+                </select></label
+              >
+              <span
+                id="song-result-count"
+                class="small muted"
+                role="status"
+              ></span>
+            </div>
+            <p class="small muted">
+              点击歌曲的品质标签可筛选已加载结果。格式与大小由来源提供，未提供时标为未知；实际文件以下载校验为准。
+            </p>
+          </section>
           <div id="selection-bar" class="selection-bar" hidden>
             <label
               ><input
                 id="select-all"
                 type="checkbox"
-              />选择本页可下载歌曲</label
+              />选择当前显示的可下载歌曲</label
             ><span id="selection-count" aria-live="polite">已选 0 首</span
+            ><span id="selection-hidden" class="small muted" hidden></span
             ><button
               type="button"
               id="download-selected"
