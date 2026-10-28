@@ -1,0 +1,17 @@
+{
+  "checks": [
+    {
+      "path": "/static/app.js",
+      "status": 200,
+      "sha256": "455c95bcd6e302c0aef715d69a1f79f27f7e6bfff2783dda9e04a0f586ce50e1",
+      "matches_build": true
+    },
+    {
+      "path": "/",
+      "status": 200,
+      "sha256": "6937eefa5bed2b1d647be2c480b72233705003fc25e525fcea609508a97b1386",
+      "matches_build": true
+    }
+  ],
+  "health": "ok"
+}

@@ -1,0 +1,96 @@
+{
+  "recorded_on": "2026-10-29",
+  "source_commit": "2a7d58d20ac8ff125e97895021013da7ca12c403",
+  "package_version": "0.1.0-preview.4",
+  "artifacts": [
+    {
+      "name": "fnos-music-hub-0.1.0-preview.4-amd64.fpk",
+      "bytes": 66767877,
+      "sha256": "9448d10310f5e9b31cbf0d957ae22a2696b7f2f577d0dcb9e805047c36f27d5a"
+    },
+    {
+      "name": "fnos-music-hub-0.1.0-preview.4-sources.tar.gz",
+      "bytes": 114106699,
+      "sha256": "67f8ce5bd5e55724d61223c0ef8a47dc251068493ae5140617f3b090a9c949bc"
+    }
+  ],
+  "installed_files": 6623,
+  "build_kind": "offline non-root WSL, clean Linux checkout; unchanged component closure with package-version derivation",
+  "inputs_manifest_sha256": "6fbcdb2b458e39d7769ced6def59bb576de3a1e05bd71d75b29123f7e694f648",
+  "checks": {
+    "bundled_tests_passed": 257,
+    "fpk_tests_passed": 54,
+    "jsdom_passed": 37,
+    "chromium_synthetic_viewports_passed": 10,
+    "linux_lifecycle_checks_passed": 13,
+    "ruff": "passed",
+    "node_syntax": "passed"
+  },
+  "nas_upgrade": {
+    "task_status_observed": 2,
+    "health": "ok",
+    "progress_observed": 100,
+    "version": "0.1.0-preview.4",
+    "task_status_later": 5,
+    "app_center_status": "start",
+    "config": {
+      "config_matches_candidate": true,
+      "configured_users": 1,
+      "qq_enabled": true,
+      "netease_enabled": true
+    }
+  },
+  "nas_supervisor": {
+    "child_uids": [
+      960,
+      960
+    ],
+    "supervisor_uid": 960,
+    "children": 2,
+    "ready": true
+  },
+  "real_observations": {
+    "source": "agent browser observation and explicit user confirmation; sanitized transcription",
+    "existing_authenticated_me": {
+      "has_principal": true,
+      "search": [
+        "kuwo",
+        "qq"
+      ],
+      "download": [
+        "kuwo"
+      ]
+    },
+    "kuwo_search": {
+      "query": "晴天",
+      "count": 30,
+      "has_more": true,
+      "first": {
+        "title": "晴天",
+        "artist": "周杰伦",
+        "provider": "kuwo",
+        "id_type": "rid",
+        "id": "228908"
+      },
+      "platform_login_required": false
+    },
+    "new_login_failure": {
+      "message": "identity_unavailable",
+      "bridge_health": "ok",
+      "bridge_status": "API ready / upstream ready",
+      "bridge_url_unchanged": true,
+      "user_retry_result": "now able to sign in",
+      "root_cause": "not established; preserve reported failure"
+    },
+    "full_music_download": "not_run_user_deferred",
+    "qq_netease_private_login": "not_run",
+    "double_user_acl": "not_run"
+  },
+  "failed_candidate": {
+    "commit": "d95400a5aef710d66fd494ee79b6dfc8de86c530",
+    "bundle_tests_passed": 256,
+    "linux_smoke": "registry deletion race failed",
+    "deployed": false
+  },
+  "release_created": false
+}

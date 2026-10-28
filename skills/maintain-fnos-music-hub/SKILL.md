@@ -130,3 +130,9 @@ description: 维护 Surc/fnos_music_hub 独立飞牛音乐中心。用于接续�
 - trim-cli下载uri会脱敏；需要文件内容时按fnos skill的受认证下载流程，仅在内存复用已有会话，不记录令牌/链接。真实搜索、下载及平台关联与服务健康分开验收。
 
 - 状态读取不能先exists再读registry；supervisor退出会删除文件。只将读取时FileNotFoundError视为stopped，其他损坏/权限错误仍拒绝。保留真实子进程退出→重启smoke和确定性删除竞态回归。
+
+## preview.4 实机交接（2026-10-29）
+
+- 实际包来自 `2a7d58d20ac8ff125e97895021013da7ca12c403`，FPK SHA256 `9448d10310f5e9b31cbf0d957ae22a2696b7f2f577d0dcb9e805047c36f27d5a`。包内257项、原生54项、jsdom37项、十视口及Linux十三项通过；精确证据见docs/fpk-preview/CAPABILITY_20261029.md。
+- 已配置一个用户并在NAS换包保留配置；已有会话/API身份与酷我真实搜索30项通过，无酷我平台登录；用户确认新登录恢复，先前identity_unavailable具体根因未确定。完整NAS下载由用户稍后测试，私人平台关联/双用户ACL仍待验。
+- 应用中心曾回读升级2/100与running，后续任务5、应用状态start；实际监督器ready、两个UID960子进程与HTTP/搜索正常。应用中心控制状态差异待排查，不把基本服务通过扩大为全部FPK生命周期签收。
