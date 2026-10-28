@@ -328,9 +328,11 @@ class Lifecycle:
         return cfg
 
     def records(self):
-        if not self.registry.exists():
+        try:
+            return read_json(self.registry)
+        except FileNotFoundError:
+            # The supervisor removes its registry on exit, including during status.
             return {}
-        return read_json(self.registry)
 
     def health(self, cfg, values):
         hub = get_json(

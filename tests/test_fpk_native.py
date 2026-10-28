@@ -64,6 +64,20 @@ def set_users(manager):
     return cfg
 
 
+def test_registry_removed_during_status_is_stopped(manager, monkeypatch):
+    native.atomic_json(manager.registry, {"ready": True})
+    original_read = native.read_json
+
+    def supervisor_exit(path):
+        if path == manager.registry:
+            path.unlink(missing_ok=True)
+        return original_read(path)
+
+    monkeypatch.setattr(native, "read_json", supervisor_exit)
+    assert manager.records() == {}
+    assert manager.running() is False
+
+
 def test_install_is_idempotent_and_launch_has_no_secrets(manager, monkeypatch):
     assert native.read_json(manager.config / "hub.json")["netease_enabled"] is False
     old = (manager.config / "hub.json").read_bytes()

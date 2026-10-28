@@ -355,9 +355,9 @@
   ],
   "maintenance_skill": {
     "name": "maintain-fnos-music-hub",
-    "version": "1.5.6",
+    "version": "1.5.7",
     "files": {
-      "skills/maintain-fnos-music-hub/SKILL.md": "d60f8f85f3ac376bcd7d3f5b16905df4143830ee4868bbba33e491a3a9745bc6",
+      "skills/maintain-fnos-music-hub/SKILL.md": "23cb05ef2f9cfa4b5676c4e7973adccda89777b772fa1653e8e6cf542d5b6830",
       "skills/maintain-fnos-music-hub/agents/openai.yaml": "43f885a269d77d2173f7480c43e58afcab96777c2546511cdaeb4636349ed40d",
       "skills/maintain-fnos-music-hub/assets/icon.svg": "8936b24f674a1250d999e2c2b5901374fb4240426f32bd1ae340c352a90d617d"
     },

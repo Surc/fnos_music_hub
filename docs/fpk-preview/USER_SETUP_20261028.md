@@ -19,3 +19,7 @@ trim-cli 的 `file download-url` 输出会脱敏 uri，无法直接下载。本�
 ## 新包与验证
 
 平台文案修复使用新版本 preview.4；实际构建提交、产物摘要、升级和测试结果随后另记，不把旧 preview.3 FPK 重标为修复后产物。本次不发布正式 Release。真实 QQ/网易账号、双用户 ACL、完整音乐下载与资源验收继续独立记录。
+
+## 构建时检出的启停竞态
+
+首个preview.4候选 `d95400a` 的包内256项通过，但普通Linux真实生命周期在“子进程退出后重新启动”检出registry删除竞态：exists检查后supervisor删除processes.json，status抛FileNotFoundError。该失败候选未安装/分发。改为直接读取、仅对文件已删除返回stopped，保留其他错误；新增确定性删除竞态回归，原生相关54项与Ruff通过。修复后必须按新提交重新组包。
