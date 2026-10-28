@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "repository": "Surc/fnos_music_hub",
-  "stage": "native-fpk-lan-http-merged-candidate",
+  "stage": "native-fpk-main-basic-nas-install-verified",
   "recorded_on": "2026-10-28",
   "observation_policy": "Most observations remain the fixed-source v1.6 research of 2026-10-21. MusicBox and legacy ext were rechecked on 2026-10-24 at the same recorded SHAs. Adopted pins require merged Hub code; branch implementation and real acceptance are separate.",
   "design_archive": {
@@ -355,16 +355,16 @@
   ],
   "maintenance_skill": {
     "name": "maintain-fnos-music-hub",
-    "version": "1.5.4",
+    "version": "1.5.5",
     "files": {
-      "skills/maintain-fnos-music-hub/SKILL.md": "d12589be21cc6b59cdd9ea82799eb0bc7d38d936aa46b9565b8956a4d3f3ed0e",
+      "skills/maintain-fnos-music-hub/SKILL.md": "63db39f9526a56dea8f105bd19287e020a7be3bb2391d2493e453b7c5b6bce2f",
       "skills/maintain-fnos-music-hub/agents/openai.yaml": "43f885a269d77d2173f7480c43e58afcab96777c2546511cdaeb4636349ed40d",
       "skills/maintain-fnos-music-hub/assets/icon.svg": "8936b24f674a1250d999e2c2b5901374fb4240426f32bd1ae340c352a90d617d"
     },
     "personal_skill_git_commit": "7eb69ae91521f04e6d2f7bcf0229fd791fdb477e",
     "personal_sync": {
       "status": "local_copy_verified_no_personal_git_checkout",
-      "note": "No personal Skills Git checkout is configured on this host; historical personal_skill_git_commit remains historical."
+      "note": "Personal maintenance skill 1.5.5 copied and SHA256 verified on this host; no personal Skills Git checkout is configured. Historical personal_skill_git_commit remains historical."
     }
   },
   "project_release": {
@@ -931,94 +931,120 @@
     "app_id": "fnos_music_hub",
     "platform": "linux/amd64",
     "pins_file": "packaging/fpk/versions.json",
-    "status": "merged_candidate_static_bundled_tests_and_linux_lifecycle_passed_nas_pending",
+    "status": "main_built_nas_install_start_stop_public_http_passed_identity_download_pending",
     "release_created": false,
-    "real_nas_acceptance": "not_run",
-    "instructions": "docs/fpk-preview/LAN_TEST.md",
-    "default_access": "HTTPS reverse proxy to 127.0.0.1:8790",
-    "opt_in_access": "HTTP bound only to the configured RFC1918 IPv4:8790; strict identity/Origin/CSRF preserved",
-    "bridge_default_correction": "Pinned upstream ad9ce203 uses http://127.0.0.1:18090/yinqiao/v1; old 18086/api/v1 was incorrect",
-    "local_validation": {
-      "python": "217 passed / 29 optional-SDK skips, WSL Python 3.12",
-      "web_jsdom": "37 passed",
-      "browser": "10 passed, Edge Chromium 156.0.4314.42",
-      "browser_origin": "insecure HTTP LAN origin routed to local synthetic API",
-      "browser_report": "docs/fpk-preview/lan-browser-report.json",
-      "browser_report_sha256": "160226f764e7cdb5fabb8614ccb0be4d454cc96616df3686d5ee7add10a70230",
-      "real_nas": "not_run"
+    "source_head": "1ad75a4282ced75ea9c9699266330bb2dc037866",
+    "build_commit": "1ad75a4282ced75ea9c9699266330bb2dc037866",
+    "build_kind": "local non-root WSL, clean Linux checkout, offline assembly",
+    "local_build": {
+      "component_bytes_modes_locks_environment": "unchanged and verified",
+      "original_archive": "fnos-music-hub-0.1.0-preview.2-inputs.tar.gz",
+      "original_archive_sha256": "691353f93d076bc84776299490b2fbe9b9c7249a8467591aab38223d3796c084",
+      "original_inputs_json_sha256": "c93914aebde4e91e1378d95694e7ec404882300232d3ce31b63bea205e8a8a5e",
+      "original_pins": {
+        "app_id": "fnos_music_hub",
+        "cpu": "x86-64-v1",
+        "ffmpeg": {
+          "sha256": "05ee0b03119b45c0bdb4df654b96802e909e0a752f72e4fe3794f487229e5a41",
+          "url": "https://ffmpeg.org/releases/ffmpeg-8.0.1.tar.xz",
+          "version": "8.0.1"
+        },
+        "fnpack": {
+          "sha256": "54b97fa7b70968c4d05c79840f5daeff508957d0bb2062fdb0376d00d9615c93",
+          "url": "https://static2.fnnas.com/fnpack/fnpack-1.2.3-linux-amd64",
+          "version": "1.2.3"
+        },
+        "glibc_max": "2.36",
+        "hot_commit": "07e86c3d06243cf1350925c0dd3be704005abd29",
+        "hot_submodule": "5dad838c33c3e4aab198d995160d3fbb9968470f",
+        "hub_version": "0.1.0a1",
+        "musl": {
+          "sha256": "a9a118bbe84d8764da0ea0d28b3ab3fae8477fc7e4085d90102b8596fc7c75e4",
+          "url": "https://musl.libc.org/releases/musl-1.2.5.tar.gz",
+          "version": "1.2.5"
+        },
+        "netease_commit": "9c405f4bae2384d0410e63f8b816a707553d72d3",
+        "package_version": "0.1.0-preview.2",
+        "platform": "linux/amd64",
+        "python": {
+          "sha256": "6d7521138fd33afddc1ccd08abb007d9a2829e38117c2576f9efdc0ec73ce772",
+          "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261021/cpython-3.12.15%2B20261021-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz",
+          "version": "3.12.15"
+        },
+        "qq_commit": "27861e51432ea6b6e88dc35c4e8c8e239c0339e8",
+        "rapidfuzz": {
+          "build_backend": "scikit-build-core==0.11.6",
+          "build_config": "wheel.cmake=false",
+          "sha256": "e13a8160d017b499ec7a2fa9d0ce1ae2e7377080815785819f966fb235d4eb60",
+          "url": "https://files.pythonhosted.org/packages/18/97/226c43b7b5d957bc3840ed52ea99eed261f99834c4619be7a4742cbaeafa/rapidfuzz-3.14.6.tar.gz",
+          "version": "3.14.6"
+        },
+        "rust": "1.99.1",
+        "rust_target": "x86_64-unknown-linux-musl",
+        "schema": 1
+      },
+      "retargeted_fields": [
+        "package_version"
+      ]
     },
-    "source_head": "6d7619deb1e833ff8692a433de8f5a7cda0aae6e",
-    "build_commit": "fbb1dcfae0d31e893b84ae3397e8fc521bff72f8",
-    "pull_request": "https://github.com/Surc/fnos_music_hub/pull/6",
-    "workflow_run": 40533510817,
-    "workflow_attempt": 2,
-    "regular_ci_run": 40533510659,
-    "regular_ci_attempt": 2,
-    "regular_ci_jobs": "9 succeeded",
+    "real_nas_acceptance": {
+      "cpu": "Intel Celeron J4125",
+      "memory_bytes": 8589934592,
+      "fnos_version": "1.2.0800",
+      "official_music_version": "1.0.10",
+      "bridge_version": "1.0.7",
+      "hub_version": "0.1.0-preview.3",
+      "hub_install_volume": 1,
+      "data_owner_uid": 960,
+      "hub_install_task": "1793201013959811688-fnos_music_hub",
+      "bridge_install_task": "1793200975582118441-yinqiao",
+      "install_task_status": 2,
+      "install_task_progress": 100,
+      "install": "passed",
+      "stop_closes_port": "passed",
+      "start_after_stop": "passed",
+      "health_duration_seconds": 60.53,
+      "health_samples_passed": 13,
+      "public_static_matches_build_commit": true,
+      "unauthenticated_private_endpoints_return_401": 5,
+      "untrusted_host_status": 400,
+      "login_page_viewports_passed": 5,
+      "real_account_guid_login": "not_run",
+      "per_user_hot_configuration": "not_configured",
+      "full_music_download": "not_run",
+      "two_user_acl": "not_run",
+      "nas_reboot": "not_run",
+      "upgrade_rollback_uninstall": "not_run",
+      "cpu_rss_disk_budget": "not_run"
+    },
+    "instructions": "docs/fpk-preview/LAN_TEST.md",
+    "evidence": "docs/fpk-preview/MAIN_NAS_20261028.md",
     "installed_files": 6623,
     "bundled_tests_passed": 256,
     "native_smoke_checks": 13,
     "artifacts": [
       {
-        "name": "build-report.json",
-        "bytes": 33121,
-        "sha256": "f911dc9e60bbcf2d784b6d495b0bee43d8e66b685ad62da64f38ce279feb9a26"
-      },
-      {
-        "name": "bundle-tests.txt",
-        "bytes": 1182,
-        "sha256": "2d3931e8cf2e67221f78b47b18ece9b2a8572bbb3c1958c69b9823dbeeba7d50"
-      },
-      {
-        "name": "bundle.json",
-        "bytes": 31227,
-        "sha256": "dccd800ded8e2dc84ff927751092bd51f5ad4d86c9616c77c350dfc23f0faf79"
-      },
-      {
-        "name": "CONTENTS.json",
-        "bytes": 978240,
-        "sha256": "45fd0f9c3adc6490f06e8a2618ffa785eb1deb0e47209abe314a8873dc863e2e"
-      },
-      {
         "name": "fnos-music-hub-0.1.0-preview.3-amd64.fpk",
-        "bytes": 66765188,
-        "sha256": "e917bf163df28da31c21e0c9a2b3a078dfeaa9f48c5baa6dd56c416778880644"
+        "bytes": 66765696,
+        "sha256": "6adcd44c4875f71cd06a5d0b917662f27f853b3a114690ff987b6cf118cf5a68"
       },
       {
         "name": "fnos-music-hub-0.1.0-preview.3-sources.tar.gz",
-        "bytes": 114072587,
-        "sha256": "542f5460ca9defbdcabf34e0aa2d4476e45dfe4ce9432feba2ecff81d623a4b6"
-      },
-      {
-        "name": "native-smoke.json",
-        "bytes": 752,
-        "sha256": "9798e5604d2562ecd4115982236908978fcee0ab0d3ac1ba7f95017e37d733f7"
-      },
-      {
-        "name": "SHA256SUMS",
-        "bytes": 755,
-        "sha256": "3fcad3717e2aec6bd90d585a913e76e506d9e1d846ee15e3d12fa9207901b1ec"
+        "bytes": 114088494,
+        "sha256": "9256d32e2c6c10be21978803b1514d5fe3f2e6662ad65cc5fde6413d542ffa5e"
       }
     ],
-    "artifact_zip": {
-      "id": 12747932592,
-      "name": "fnos-music-hub-0.1.0-preview.2-netease-readonly-amd64",
-      "size_in_bytes": 181158410,
-      "digest": "sha256:4aa50b40116c676026893bda49abd06501fff4ff5e6b3279456f820c4a189786"
-    },
     "evidence_files_sha256": {
-      "docs/fpk-preview/lan-20261028-build-report.json": "f911dc9e60bbcf2d784b6d495b0bee43d8e66b685ad62da64f38ce279feb9a26",
-      "docs/fpk-preview/lan-20261028-bundle-tests.txt": "2d3931e8cf2e67221f78b47b18ece9b2a8572bbb3c1958c69b9823dbeeba7d50",
-      "docs/fpk-preview/lan-20261028-native-smoke.json": "9798e5604d2562ecd4115982236908978fcee0ab0d3ac1ba7f95017e37d733f7",
-      "docs/fpk-preview/lan-20261028-SHA256SUMS": "3fcad3717e2aec6bd90d585a913e76e506d9e1d846ee15e3d12fa9207901b1ec",
-      "docs/fpk-preview/lan-20261028.json": "0c7ce68a71719b2a86144ba83749b697dd45dff6ac73393682dd6257833a1c2e"
-    },
-    "legacy_workflow_names": "Unchanged CI still labels the ZIP/input archive preview.2; actual FPK/source/bundle are verified preview.3.",
-    "merge_commit": "d67e558eb7790ca499e8a31b2b050ab85a0151e5",
-    "merged_at": "2026-10-27T23:43:44Z",
-    "merged_head": "b0d102b3a0409755ed0cd4f3fdc2f55583ba5350",
-    "merge_tree_matches_head": true,
-    "merge_evidence": "docs/fpk-preview/LAN_20261028.md"
+      "docs/fpk-preview/main-20261028-build-report.json": "07d439ba42e890144bd6f71e52f59a302ee36f038936a2337037d800567bc9b1",
+      "docs/fpk-preview/main-20261028-native-smoke.json": "9798e5604d2562ecd4115982236908978fcee0ab0d3ac1ba7f95017e37d733f7",
+      "docs/fpk-preview/main-20261028-bundle-tests.txt": "a5a0ed1866cc6843675db030e1c21d345146f3e7e3cfe57729efa198e3f4d5ec",
+      "docs/fpk-preview/nas-20261028-http.json": "394c6f8b017eb5f9d879ae157f463354fe0b82cee7e0dbd357c8a1ddbb757be1",
+      "docs/fpk-preview/nas-20261028-browser.json": "b6243bb646c66ff231a149e574f52092e13be27b6ef533f5641a1f6beef067dd",
+      "docs/fpk-preview/nas-20261028-apps.json": "49f41221fb9a716dfa53147ab8ab2b9b01ffc0525dbf37b6fc9de20f3ff1b6ef",
+      "docs/fpk-preview/main-20261028-browser-report.json": "160226f764e7cdb5fabb8614ccb0be4d454cc96616df3686d5ee7add10a70230",
+      "docs/fpk-preview/main-nas-20261028.json": "f9afef7af9e3875aa7421a97a5daf059e35897be8fe847c2fdd08cc21cc240c7",
+      "docs/fpk-preview/MAIN_NAS_20261028.md": "a410333f2c01f8dbb2b14c755e32d4f1eb70f981cf28a46bf61802192c60bf07"
+    }
   },
   "native_preview_history": [
     {
@@ -1275,6 +1301,101 @@
         "docs/fpk-preview/release-20261027-bundle-tests.txt": "7f84f8b9c9ee286e7f6b260726038e0ab88991c2646dd98e7f0b051da6d2f454",
         "docs/fpk-preview/release-20261027-SHA256SUMS": "a7a50a194e77f3b03696f6e08134b842830b35548e87f2dc50d7435370f20ada"
       }
+    },
+    {
+      "package_version": "0.1.0-preview.3",
+      "hub_version": "0.1.0a1",
+      "app_id": "fnos_music_hub",
+      "platform": "linux/amd64",
+      "pins_file": "packaging/fpk/versions.json",
+      "status": "merged_candidate_static_bundled_tests_and_linux_lifecycle_passed_nas_pending",
+      "release_created": false,
+      "real_nas_acceptance": "not_run",
+      "instructions": "docs/fpk-preview/LAN_TEST.md",
+      "default_access": "HTTPS reverse proxy to 127.0.0.1:8790",
+      "opt_in_access": "HTTP bound only to the configured RFC1918 IPv4:8790; strict identity/Origin/CSRF preserved",
+      "bridge_default_correction": "Pinned upstream ad9ce203 uses http://127.0.0.1:18090/yinqiao/v1; old 18086/api/v1 was incorrect",
+      "local_validation": {
+        "python": "217 passed / 29 optional-SDK skips, WSL Python 3.12",
+        "web_jsdom": "37 passed",
+        "browser": "10 passed, Edge Chromium 156.0.4314.42",
+        "browser_origin": "insecure HTTP LAN origin routed to local synthetic API",
+        "browser_report": "docs/fpk-preview/lan-browser-report.json",
+        "browser_report_sha256": "160226f764e7cdb5fabb8614ccb0be4d454cc96616df3686d5ee7add10a70230",
+        "real_nas": "not_run"
+      },
+      "source_head": "6d7619deb1e833ff8692a433de8f5a7cda0aae6e",
+      "build_commit": "fbb1dcfae0d31e893b84ae3397e8fc521bff72f8",
+      "pull_request": "https://github.com/Surc/fnos_music_hub/pull/6",
+      "workflow_run": 40533510817,
+      "workflow_attempt": 2,
+      "regular_ci_run": 40533510659,
+      "regular_ci_attempt": 2,
+      "regular_ci_jobs": "9 succeeded",
+      "installed_files": 6623,
+      "bundled_tests_passed": 256,
+      "native_smoke_checks": 13,
+      "artifacts": [
+        {
+          "name": "build-report.json",
+          "bytes": 33121,
+          "sha256": "f911dc9e60bbcf2d784b6d495b0bee43d8e66b685ad62da64f38ce279feb9a26"
+        },
+        {
+          "name": "bundle-tests.txt",
+          "bytes": 1182,
+          "sha256": "2d3931e8cf2e67221f78b47b18ece9b2a8572bbb3c1958c69b9823dbeeba7d50"
+        },
+        {
+          "name": "bundle.json",
+          "bytes": 31227,
+          "sha256": "dccd800ded8e2dc84ff927751092bd51f5ad4d86c9616c77c350dfc23f0faf79"
+        },
+        {
+          "name": "CONTENTS.json",
+          "bytes": 978240,
+          "sha256": "45fd0f9c3adc6490f06e8a2618ffa785eb1deb0e47209abe314a8873dc863e2e"
+        },
+        {
+          "name": "fnos-music-hub-0.1.0-preview.3-amd64.fpk",
+          "bytes": 66765188,
+          "sha256": "e917bf163df28da31c21e0c9a2b3a078dfeaa9f48c5baa6dd56c416778880644"
+        },
+        {
+          "name": "fnos-music-hub-0.1.0-preview.3-sources.tar.gz",
+          "bytes": 114072587,
+          "sha256": "542f5460ca9defbdcabf34e0aa2d4476e45dfe4ce9432feba2ecff81d623a4b6"
+        },
+        {
+          "name": "native-smoke.json",
+          "bytes": 752,
+          "sha256": "9798e5604d2562ecd4115982236908978fcee0ab0d3ac1ba7f95017e37d733f7"
+        },
+        {
+          "name": "SHA256SUMS",
+          "bytes": 755,
+          "sha256": "3fcad3717e2aec6bd90d585a913e76e506d9e1d846ee15e3d12fa9207901b1ec"
+        }
+      ],
+      "artifact_zip": {
+        "id": 12747932592,
+        "name": "fnos-music-hub-0.1.0-preview.2-netease-readonly-amd64",
+        "size_in_bytes": 181158410,
+        "digest": "sha256:4aa50b40116c676026893bda49abd06501fff4ff5e6b3279456f820c4a189786"
+      },
+      "evidence_files_sha256": {
+        "docs/fpk-preview/lan-20261028-build-report.json": "f911dc9e60bbcf2d784b6d495b0bee43d8e66b685ad62da64f38ce279feb9a26",
+        "docs/fpk-preview/lan-20261028-bundle-tests.txt": "2d3931e8cf2e67221f78b47b18ece9b2a8572bbb3c1958c69b9823dbeeba7d50",
+        "docs/fpk-preview/lan-20261028-native-smoke.json": "9798e5604d2562ecd4115982236908978fcee0ab0d3ac1ba7f95017e37d733f7",
+        "docs/fpk-preview/lan-20261028-SHA256SUMS": "3fcad3717e2aec6bd90d585a913e76e506d9e1d846ee15e3d12fa9207901b1ec",
+        "docs/fpk-preview/lan-20261028.json": "0c7ce68a71719b2a86144ba83749b697dd45dff6ac73393682dd6257833a1c2e"
+      },
+      "legacy_workflow_names": "Unchanged CI still labels the ZIP/input archive preview.2; actual FPK/source/bundle are verified preview.3.",
+      "merge_commit": "d67e558eb7790ca499e8a31b2b050ab85a0151e5",
+      "merged_at": "2026-10-27T23:43:44Z",
+      "merged_head": "b0d102b3a0409755ed0cd4f3fdc2f55583ba5350",
+      "merge_tree_matches_head": true,
+      "merge_evidence": "docs/fpk-preview/LAN_20261028.md"
     }
   ]
 }

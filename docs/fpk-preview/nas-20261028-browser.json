@@ -1,0 +1,38 @@
+{
+  "scope": "real installed NAS login page in Chromium; no login or music download",
+  "status": "passed",
+  "cases": [
+    {
+      "name": "pc-landscape",
+      "width": 1440,
+      "height": 900,
+      "status": "passed"
+    },
+    {
+      "name": "pc-portrait",
+      "width": 900,
+      "height": 1440,
+      "status": "passed"
+    },
+    {
+      "name": "mobile-portrait",
+      "width": 390,
+      "height": 844,
+      "status": "passed"
+    },
+    {
+      "name": "mobile-landscape",
+      "width": 844,
+      "height": 390,
+      "status": "passed"
+    },
+    {
+      "name": "mobile-keyboard-height",
+      "width": 390,
+      "height": 360,
+      "status": "passed"
+    }
+  ],
+  "rotation_preserves_login_form": true,
+  "page_errors": []
+}

@@ -1,5 +1,7 @@
 # fnos_music_hub
 
+2026-10-28 已从 main `1ad75a4` 重建 preview.3，并在真实 J4125/8GB/fnOS 1.2.0800 安装、停启和60秒健康检查通过；音桥1.0.7已安装。真实账号/逐用户Hot与完整下载尚待验证。[实机与产物证据](docs/fpk-preview/MAIN_NAS_20261028.md)。下方旧候选/Release说明保留对应原始构建范围。
+
 `preview.3` 内网测试支持已通过 [PR #6](https://github.com/Surc/fnos_music_hub/pull/6) 合入 main：无需域名/HTTPS 反代，显式选择后直接访问 NAS 私有 IPv4:8790；仍需音桥验证身份。安装和填写说明见 [内网测试](docs/fpk-preview/LAN_TEST.md)。现有测试包仍来自 PR 构建，尚未发布 preview.3 Release，与下方已发布 preview.2 分开记录。
 
 已发布 [v0.1.0-preview.2 · amd64 原生预览](https://github.com/Surc/fnos_music_hub/releases/tag/v0.1.0-preview.2)，包含 FPK、对应源码、离线输入与 SHA256；最终提交/附件验证见 [发行记录](docs/fpk-preview/RELEASE_20261027.md)。**真实 J4125/fnOS 实机验收仍待完成。**

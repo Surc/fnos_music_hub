@@ -1,0 +1,126 @@
+{
+  "recorded_at": "2026-10-28T15:26:39.263805+00:00",
+  "scope": "real J4125 fnOS installation, public HTTP only, no account login or download",
+  "hub_commit": "1ad75a4282ced75ea9c9699266330bb2dc037866",
+  "package_version": "0.1.0-preview.3",
+  "status": "passed",
+  "checks": [
+    {
+      "path": "/",
+      "status": 200,
+      "sha256_matches_source": "c8f267258556941230c0f846bf44ad217b12d60abcb04976cec5f7a0de3d2cb3",
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
+    },
+    {
+      "path": "/static/app.js",
+      "status": 200,
+      "sha256_matches_source": "19621f05c49b7a6c5adaac401f13cfd8d33d078431854dafab86195594c24259",
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
+    },
+    {
+      "path": "/static/style.css",
+      "status": 200,
+      "sha256_matches_source": "3d790550ec44222a3a7e566bdc3373110d4e7eae3eb3440652a54d7b9804ae39",
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
+    },
+    {
+      "path": "/api/me",
+      "status": 401,
+      "code": "auth_required"
+    },
+    {
+      "path": "/api/tasks",
+      "status": 401,
+      "code": "auth_required"
+    },
+    {
+      "path": "/api/assets",
+      "status": 401,
+      "code": "auth_required"
+    },
+    {
+      "path": "/api/accounts",
+      "status": 401,
+      "code": "auth_required"
+    },
+    {
+      "path": "/api/admin/injection",
+      "status": 401,
+      "code": "auth_required"
+    },
+    {
+      "path": "/api/me",
+      "untrusted_host_status": 400
+    }
+  ],
+  "health_samples": [
+    {
+      "elapsed_seconds": 0.38,
+      "status": 200,
+      "latency_ms": 2.84
+    },
+    {
+      "elapsed_seconds": 5.4,
+      "status": 200,
+      "latency_ms": 15.74
+    },
+    {
+      "elapsed_seconds": 10.4,
+      "status": 200,
+      "latency_ms": 3.98
+    },
+    {
+      "elapsed_seconds": 15.4,
+      "status": 200,
+      "latency_ms": 3.11
+    },
+    {
+      "elapsed_seconds": 20.41,
+      "status": 200,
+      "latency_ms": 3.4
+    },
+    {
+      "elapsed_seconds": 25.43,
+      "status": 200,
+      "latency_ms": 21.91
+    },
+    {
+      "elapsed_seconds": 30.46,
+      "status": 200,
+      "latency_ms": 27.41
+    },
+    {
+      "elapsed_seconds": 35.46,
+      "status": 200,
+      "latency_ms": 4.21
+    },
+    {
+      "elapsed_seconds": 40.48,
+      "status": 200,
+      "latency_ms": 18.18
+    },
+    {
+      "elapsed_seconds": 45.48,
+      "status": 200,
+      "latency_ms": 3.74
+    },
+    {
+      "elapsed_seconds": 50.49,
+      "status": 200,
+      "latency_ms": 3.73
+    },
+    {
+      "elapsed_seconds": 55.51,
+      "status": 200,
+      "latency_ms": 17.05
+    },
+    {
+      "elapsed_seconds": 60.53,
+      "status": 200,
+      "latency_ms": 22.62
+    }
+  ],
+  "duration_seconds": 60.53,
+  "real_identity": "not_run",
+  "full_music_download": "not_run"
+}

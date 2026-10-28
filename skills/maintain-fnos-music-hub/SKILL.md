@@ -116,3 +116,9 @@ description: 维护 Surc/fnos_music_hub 独立飞牛音乐中心。用于接续�
 - preview.3 为独立测试候选，不能覆盖已发布 preview.2 或沿用其产物摘要；本次内网测试授权不扩大为后续永久发布授权。
 
 - 2026-10-28 用户明确授权合并PR #6，main合并提交为 `d67e558eb7790ca499e8a31b2b050ab85a0151e5`。已验证测试FPK仍来自PR合成构建 `fbb1dcfae0d31e893b84ae3397e8fc521bff72f8`，不可重标为合并后产物；本轮没有新建Release。实际NAS安装、音桥GUID登录、ACL/资源和完整下载仍待验，后续按LAN_TEST.md接续。
+
+## 主干重建与真实 NAS 首次安装（2026-10-28）
+
+- 新主干包来自 `1ad75a4282ced75ea9c9699266330bb2dc037866`，不是此前PR合成产物。非root WSL干净Linux checkout复用逐项核验组件闭包、重新生成Hub源码；FPK SHA256 `6adcd44c4875f71cd06a5d0b917662f27f853b3a114690ff987b6cf118cf5a68`，详见 docs/fpk-preview/MAIN_NAS_20261028.md。
+- 用户已授权安装测试并明确同意既有可信内网HTTP会话。音桥1.0.7与Hub preview.3在J4125/8GB/fnOS1.2.0800安装并运行，应用停启、60秒健康、部署字节、未登录401/Host400和登录页五视口通过。fnOS本机CLI默认未命名profile不等于用户没有已保存的命名profile；先核对现有配置/已知会话。
+- 仅签收基本安装/停启/公开HTTP；首次users为空，真实音桥GUID登录、逐用户Hot、双用户ACL、完整音乐下载、升级/回退/卸载、NAS整机重启及CPU/RSS/磁盘预算仍待验。不得复用OAuth系统会话绕过Hub飞牛音乐身份，不把基本健康升级为完整NAS验收。

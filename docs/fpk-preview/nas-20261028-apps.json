@@ -1,0 +1,22 @@
+{
+  "trim.music": {
+    "docker": false,
+    "status": "running",
+    "version": "1.0.10"
+  },
+  "fnos_music_hub": {
+    "docker": false,
+    "status": "running",
+    "version": "0.1.0-preview.3"
+  },
+  "yinqiao": {
+    "docker": false,
+    "status": "running",
+    "version": "1.0.7"
+  },
+  "miyabi-native": {
+    "docker": false,
+    "status": "running",
+    "version": "0.4.5"
+  }
+}
